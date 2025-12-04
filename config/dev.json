@@ -1,6 +1,6 @@
 {
   "environment":{
-    "DB": "mongodb://root:rootpassword@localhost:27017/",
+    "DB": "mongodb://localhost:27017/resgatar_community",
     "API_KEY": "123",
     "SERVICE": "resgatar-community"
   }
