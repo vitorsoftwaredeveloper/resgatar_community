@@ -1,0 +1,30 @@
+service: resgatar-community
+
+frameworkVersion: "3"
+
+custom:
+  environment: ${file(./config/${self:provider.stage}.json):environment}
+  esbuild: ${file(esbuild.config.js)}
+
+provider:
+  name: aws
+  runtime: nodejs24.x
+  region: ${opt:region, 'us-east-1'}
+  stage: ${opt:stage, 'dev'}
+  environment:
+    DB: ${self:custom.environment.DB}
+    APIKEY: ${self:custom.environment.API_KEY}
+    STAGE: ${self:provider.stage}
+    SERVICE_NAME: ${self:custom.environment.SERVICE}
+
+plugins:
+  - serverless-esbuild
+  - serverless-offline
+
+functions:
+  hello:
+    handler: src/handler.handler
+    events:
+      - httpApi:
+          method: get
+          path: /hello

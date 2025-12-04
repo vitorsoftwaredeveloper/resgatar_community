@@ -1,0 +1,7 @@
+{
+  "environment":{
+    "DB": "1213",
+    "API_KEY": "123",
+    "SERVICE": "resgatar-community"
+  }
+}
