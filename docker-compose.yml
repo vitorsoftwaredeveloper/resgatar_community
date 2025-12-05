@@ -2,16 +2,30 @@ version: "3.9"
 
 services:
   mongo:
-    image: mongo:6.0-jammy   # imagem leve, estável e oficial
+    image: mongo:6.0-jammy
     container_name: mongo_local
     restart: unless-stopped
     ports:
       - "27017:27017"
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: root
-      MONGO_INITDB_ROOT_PASSWORD: rootpassword
     volumes:
       - mongo_data:/data/db
 
+  localstack:
+    image: localstack/localstack:3.5
+    container_name: localstack
+    restart: unless-stopped
+    ports:
+      - "4566:4566"   # porta principal do LocalStack
+      - "4510-4559:4510-4559"  # portas adicionais quando necessário
+    environment:
+      - SERVICES=s3,ssm,secretsmanager,sqs,lambda,cloudwatch,sts
+      - DEBUG=1
+      - LOCALSTACK_AUTH_TOKEN=${LOCALSTACK_AUTH_TOKEN-}
+      - AWS_DEFAULT_REGION=us-east-1
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"  # necessário para lambdas em container
+      - localstack_data:/var/lib/localstack
+
 volumes:
   mongo_data:
+  localstack_data:

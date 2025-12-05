@@ -1,7 +1,8 @@
 {
   "environment":{
-    "DB": "1213",
-    "API_KEY": "123",
-    "SERVICE": "resgatar-community"
+    "DB": "${ssm:/resgatar_community/db}",
+    "SERVICE": "resgatar_community",
+    "COGNITO_URL": "${ssm:/resgatar_community/cognito_url}",
+    "CLIENT_ID": "${ssm:/resgatar_community/client_id}"
   }
 }
