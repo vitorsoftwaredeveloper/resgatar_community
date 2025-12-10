@@ -8,12 +8,11 @@ custom:
 
 provider:
   name: aws
-  runtime: nodejs24.x
+  runtime: nodejs20.x
   region: ${opt:region, 'us-east-1'}
   stage: ${opt:stage, 'dev'}
   environment:
     DB: ${self:custom.environment.DB}
-    APIKEY: ${self:custom.environment.API_KEY}
     STAGE: ${self:provider.stage}
     SERVICE_NAME: ${self:custom.environment.SERVICE}
 
@@ -22,9 +21,9 @@ plugins:
   - serverless-offline
 
 functions:
-  hello:
-    handler: src/handler.handler
+  signup:
+    handler: src/handler/members/signup.execute
     events:
       - httpApi:
-          method: get
-          path: /hello
+          method: POST
+          path: /signup

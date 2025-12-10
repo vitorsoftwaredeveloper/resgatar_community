@@ -1,4 +1,4 @@
-import { APIGatewayEvent } from "aws-lambda";
+import { APIGatewayEvent, APIGatewayProxyResult } from "aws-lambda";
 import { db } from "../../db";
 import { MemberModel } from "../../model/Member";
 import {
@@ -6,42 +6,123 @@ import {
   AdminSetUserPasswordCommand,
   CognitoIdentityProviderClient,
 } from "@aws-sdk/client-cognito-identity-provider";
+import { validate } from "../../utils/validate";
+import { SignUpValidatorSchema } from "./validation/signup";
+import { SignUpPayload } from "../../types/members";
 
-export const execute = async (event: APIGatewayEvent) => {
-  const cognito = new CognitoIdentityProviderClient({
+export const execute = async (
+  event: APIGatewayEvent
+): Promise<APIGatewayProxyResult> => {
+  try {
+    const payload = parseRequestBody(event.body) as any;
+
+    const errors = validate(SignUpValidatorSchema, payload);
+    if (errors.length > 0) {
+      return sendErrorResponse({
+        statusCode: 400,
+        message: "Validation Error",
+        errors,
+      });
+    }
+
+    const cognito = createCognitoClient();
+
+    await createCognitoUser(cognito, payload.email, payload.password);
+    const newMember = await createMember(payload);
+
+    return sendSuccessResponse(newMember);
+  } catch (error) {
+    return sendErrorResponse(error);
+  }
+};
+
+const createCognitoClient = () => {
+  console.log("IN - createCognitoClient");
+
+  const cognitoClient = new CognitoIdentityProviderClient({
     region: process.env.REGION,
   });
 
-  const { email, password } = event.body ? JSON.parse(event.body) : {};
+  console.log("OUT - createCognitoClient");
+  return cognitoClient;
+};
 
+const parseRequestBody = (body: string | null): SignUpPayload | null => {
+  console.log("IN - parseRequestBody");
+
+  if (!body) return null;
   try {
-    await cognito.send(
-      new AdminCreateUserCommand({
-        UserPoolId: process.env.USER_POOL_ID,
-        Username: email,
-        TemporaryPassword: "Temp123!",
-      })
-    );
-
-    await cognito
-      .send(
-        new AdminSetUserPasswordCommand({
-          UserPoolId: process.env.USER_POOL_ID,
-          Username: email,
-          Password: password,
-          Permanent: true,
-        })
-      )
-      .then(() => {
-        console.log("Senha definida com sucesso!");
-      });
-
-    return {
-      success: true,
-      message: "Usuário criado com sucesso!",
-    };
+    return JSON.parse(body);
   } catch (error) {
-    console.error(error);
-    return { success: false, error };
+    throw error;
+  } finally {
+    console.log("OUT - parseRequestBody");
   }
 };
+
+const createCognitoUser = async (
+  cognito: CognitoIdentityProviderClient,
+  email: string,
+  password: string
+): Promise<void> => {
+  console.log("IN - createCognitoUser");
+
+  await cognito.send(
+    new AdminCreateUserCommand({
+      UserPoolId: process.env.USER_POOL_ID!,
+      Username: email,
+      TemporaryPassword: "Temp123!",
+    })
+  );
+
+  await cognito.send(
+    new AdminSetUserPasswordCommand({
+      UserPoolId: process.env.USER_POOL_ID!,
+      Username: email,
+      Password: password,
+      Permanent: true,
+    })
+  );
+
+  console.log("OUT - createCognitoUser");
+};
+
+const createMember = async (payload: SignUpPayload): Promise<any> => {
+  console.log("IN - createMember");
+
+  await db();
+
+  const memberData = {
+    username: payload.username || payload.email,
+    email: payload.email,
+    name: payload.name,
+    bio: payload.bio,
+    age: payload.age,
+    address: payload.address,
+    passwordHash: payload.passwordSalt, // Should hash password before saving
+    passwordSalt: payload.passwordSalt,
+    role: payload.role || "user",
+  };
+
+  const newMember = new MemberModel(memberData);
+  await newMember.save();
+
+  console.log("OUT - createMember");
+  return newMember;
+};
+
+const sendErrorResponse = (error: any): APIGatewayProxyResult => ({
+  statusCode: error.statusCode || 500,
+  body: JSON.stringify({
+    message: error.message || "Internal Server Error",
+    errors: error.errors || null,
+  }),
+});
+
+const sendSuccessResponse = (data: any): APIGatewayProxyResult => ({
+  statusCode: 201,
+  body: JSON.stringify({
+    message: "Member created successfully!",
+    data,
+  }),
+});
