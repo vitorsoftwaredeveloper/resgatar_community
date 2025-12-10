@@ -14,6 +14,9 @@ provider:
   environment:
     STAGE: ${self:provider.stage}
     SERVICE_NAME: ${self:custom.environment.SERVICE}
+    USER_POOL_ID: ${self:custom.environment.USER_POOL_ID}
+    CLIENT_ID: ${self:custom.environment.CLIENT_ID}
+    DB: ${self:custom.environment.DB}
 
   httpApi:
     authorizers:
@@ -23,16 +26,27 @@ provider:
         issuerUrl: ${self:custom.environment.COGNITO_URL}
         audience:
           - ${self:custom.environment.CLIENT_ID}
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - cognito-idp:AdminCreateUser
+        - cognito-idp:AdminInitiateAuth
+        - cognito-idp:AdminSetUserPassword
+        - cognito-idp:AdminRespondToAuthChallenge
+        - cognito-idp:AdminGetUser
+        - cognito-idp:ListUsers
+      Resource:
+        - ${self:custom.environment.COGNITO_USER_POOL_ARN}
 
 plugins:
   - serverless-esbuild
 
 functions:
-  hello:
-    handler: src/handler.hello
+  signup:
+    handler: src/handler/members/signup.execute
     events:
       - httpApi:
-          path: /hello
-          method: get
+          path: /signup
+          method: POST
           authorizer:
             name: cognitoAuthorizer

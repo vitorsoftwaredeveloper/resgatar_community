@@ -3,6 +3,9 @@
     "DB": "${ssm:/resgatar_community/db}",
     "SERVICE": "resgatar_community",
     "COGNITO_URL": "${ssm:/resgatar_community/cognito_url}",
-    "CLIENT_ID": "${ssm:/resgatar_community/client_id}"
+    "CLIENT_ID": "${ssm:/resgatar_community/client_id}",
+    "USER_POOL_ID": "${ssm:/resgatar_community/user_pool_id}",
+    "REGION": "us-east-1",
+    "COGNITO_USER_POOL_ARN": "${ssm:/resgatar_community/cognito_user_pool_arn}"
   }
 }
