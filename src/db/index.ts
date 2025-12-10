@@ -2,10 +2,18 @@ import mongoose, { mongo } from "mongoose";
 
 let connection: any = null;
 export const db = async () => {
-  if (connection) {
-    return connection;
-  }
+  console.log("IN - db");
+  try {
+    if (connection) {
+      return connection;
+    }
 
-  connection = await mongoose.connect(process.env.DB as string);
-  return connection;
+    connection = await mongoose.connect(process.env.DB as string);
+    console.log("connection database successful");
+    return connection;
+  } catch (err) {
+    console.log("connection database error", err);
+  } finally {
+    console.log("OUT - db");
+  }
 };
