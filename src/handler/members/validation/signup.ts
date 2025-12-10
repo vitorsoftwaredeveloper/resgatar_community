@@ -7,6 +7,7 @@ export const SignUpValidatorSchema: any = {
     name: { type: "string", nullable: true },
     bio: { type: "string", nullable: true },
     age: { type: "integer", minimum: 1, nullable: true },
+    phoneNumber: { type: "string", format: "phone" },
     address: {
       type: "object",
       properties: {
@@ -22,6 +23,6 @@ export const SignUpValidatorSchema: any = {
     },
     password: { type: "string" },
   },
-  required: ["email", "password"],
+  required: ["email", "password", "phoneNumber"],
   additionalProperties: false,
 };
