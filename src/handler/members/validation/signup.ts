@@ -1,5 +1,3 @@
-import { JSONSchemaType } from "ajv";
-
 export const SignUpValidatorSchema: any = {
   type: "object",
   properties: {
@@ -21,8 +19,18 @@ export const SignUpValidatorSchema: any = {
       additionalProperties: false,
       nullable: true,
     },
+    paymentInfo: {
+      type: "object",
+      properties: {
+        datePayment: { type: "number", nullable: true },
+        amount: { type: "number", nullable: true },
+      },
+      required: ["datePayment", "amount"],
+      additionalProperties: false,
+    },
     password: { type: "string" },
+    role: { type: "string", enum: ["admin", "user"], nullable: true },
   },
-  required: ["email", "password", "phoneNumber"],
+  required: ["email", "password", "phoneNumber", "paymentInfo"],
   additionalProperties: false,
 };

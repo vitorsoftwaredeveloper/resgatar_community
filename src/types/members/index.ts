@@ -1,8 +1,6 @@
 interface SignUpPayload {
   email: string;
-  password: string;
-  passwordSalt: string;
-  username?: string;
+  phoneNumber: string;
   name?: string;
   bio?: string;
   age?: number;
@@ -13,7 +11,15 @@ interface SignUpPayload {
     state?: string;
     zip?: string;
   };
+  paymentInfo: {
+    datePayment: number;
+    amount: number;
+  };
   role?: "admin" | "user";
 }
 
-export { SignUpPayload };
+interface SignUpPayloadDTO extends SignUpPayload {
+  status: "active" | "defaulter";
+}
+
+export { SignUpPayload, SignUpPayloadDTO };

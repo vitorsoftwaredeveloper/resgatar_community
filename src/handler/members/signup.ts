@@ -1,5 +1,5 @@
 import { APIGatewayEvent, APIGatewayProxyResult } from "aws-lambda";
-import { db } from "../../db";
+
 import { MemberModel } from "../../model/Member";
 import {
   AdminCreateUserCommand,
@@ -8,7 +8,7 @@ import {
 } from "@aws-sdk/client-cognito-identity-provider";
 import { validate } from "../../utils/validate";
 import { SignUpValidatorSchema } from "./validation/signup";
-import { SignUpPayload } from "../../types/members";
+import { SignUpPayload, SignUpPayloadDTO } from "../../types/members";
 
 export const execute = async (
   event: APIGatewayEvent
@@ -67,22 +67,27 @@ const createCognitoUser = async (
 ): Promise<void> => {
   console.log("IN - createCognitoUser");
 
-  await cognito.send(
-    new AdminCreateUserCommand({
-      UserPoolId: process.env.USER_POOL_ID!,
-      Username: email,
-      TemporaryPassword: "Temp123!",
-    })
-  );
+  try {
+    await cognito.send(
+      new AdminCreateUserCommand({
+        UserPoolId: process.env.USER_POOL_ID!,
+        Username: email,
+        TemporaryPassword: "Temp123!",
+      })
+    );
 
-  await cognito.send(
-    new AdminSetUserPasswordCommand({
-      UserPoolId: process.env.USER_POOL_ID!,
-      Username: email,
-      Password: password,
-      Permanent: true,
-    })
-  );
+    await cognito.send(
+      new AdminSetUserPasswordCommand({
+        UserPoolId: process.env.USER_POOL_ID!,
+        Username: email,
+        Password: password,
+        Permanent: true,
+      })
+    );
+  } catch (error) {
+    console.error("Error creating Cognito user:", error);
+    throw error;
+  }
 
   console.log("OUT - createCognitoUser");
 };
@@ -90,25 +95,25 @@ const createCognitoUser = async (
 const createMember = async (payload: SignUpPayload): Promise<any> => {
   console.log("IN - createMember");
 
-  await db();
-
-  const memberData = {
-    username: payload.username || payload.email,
+  const memberData: SignUpPayloadDTO = {
     email: payload.email,
+    status: "active",
+    phoneNumber: payload.phoneNumber,
     name: payload.name,
     bio: payload.bio,
     age: payload.age,
     address: payload.address,
-    passwordHash: payload.passwordSalt, // Should hash password before saving
-    passwordSalt: payload.passwordSalt,
+    paymentInfo: {
+      datePayment: payload.paymentInfo.datePayment,
+      amount: payload.paymentInfo.amount,
+    },
     role: payload.role || "user",
   };
 
-  const newMember = new MemberModel(memberData);
-  await newMember.save();
+  await MemberModel.insertOne(memberData);
 
   console.log("OUT - createMember");
-  return newMember;
+  return memberData;
 };
 
 const sendErrorResponse = (error: any): APIGatewayProxyResult => ({

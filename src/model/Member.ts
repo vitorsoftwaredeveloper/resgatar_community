@@ -1,5 +1,6 @@
 import mongoose, { Schema } from "mongoose";
 import { v4 as uuidv4 } from "uuid";
+import { createInstanceMongoose } from "../repositories/mongoose";
 
 const AddressSchema = new Schema(
   {
@@ -12,11 +13,8 @@ const AddressSchema = new Schema(
   { _id: false }
 );
 
-const PaymentSchema = new Schema(
-  {
-    datePayment: { type: Date },
-    amount: { type: Number, min: 1 },
-  },
+const PaymentInfoSchema = new Schema(
+  { datePayment: { type: Number }, amount: { type: Number, min: 1 } },
   { _id: false }
 );
 
@@ -36,14 +34,10 @@ const MemberSchema = new Schema(
     bio: { type: String, trim: true },
     age: { type: Number, min: 1 },
     address: { type: AddressSchema },
-    passwordHash: { type: String, required: true },
-    passwordSalt: { type: String, required: true },
     role: { type: String, enum: ["admin", "user"], default: "user" },
     lastLoginAt: { type: Date },
-    contributions: { type: Map, of: Boolean, default: {} },
-    paymentInfo: { type: PaymentSchema },
+    paymentInfo: { type: PaymentInfoSchema },
   },
   { timestamps: true }
 );
-
-export const MemberModel = mongoose.model("members", MemberSchema);
+export const MemberModel = createInstanceMongoose("members", MemberSchema);
