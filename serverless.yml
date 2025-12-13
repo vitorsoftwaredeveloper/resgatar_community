@@ -34,6 +34,7 @@ provider:
       Action:
         - cognito-idp:AdminCreateUser
         - cognito-idp:AdminInitiateAuth
+        - cognito-idp:AdminDeleteUser
         - cognito-idp:AdminSetUserPassword
         - cognito-idp:AdminRespondToAuthChallenge
         - cognito-idp:AdminGetUser
@@ -52,5 +53,13 @@ functions:
       - httpApi:
           path: /signup
           method: POST
+          authorizer:
+            name: cognitoAuthorizer
+  removeMember:
+    handler: src/handlers/members/removeMember.execute
+    events:
+      - httpApi:
+          path: /removeMember/{memberId}
+          method: DELETE
           authorizer:
             name: cognitoAuthorizer
