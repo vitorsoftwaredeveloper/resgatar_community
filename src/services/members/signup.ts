@@ -1,29 +1,30 @@
 import {
   AdminCreateUserCommand,
+  AdminGetUserCommand,
   AdminSetUserPasswordCommand,
   CognitoIdentityProviderClient,
 } from "@aws-sdk/client-cognito-identity-provider";
 import { MemberModel } from "../../models/Member";
 import { SignUpPayload, SignUpPayloadDTO } from "../../types/members";
-import { DUPLICATE_KEY_ERROR_CODE, STATUS_CODES } from "../../constants";
+import { DUPLICATE_KEY_ERROR_CODE, STATUS_CODE } from "../../constants";
 import { createCognitoClient } from "../../utils/cognito";
-import { executeMongoTransaction } from "../../utils/mongoose";
-import { ClientSession } from "mongoose";
+import { removeMemberService } from "./remove";
 
 export const signUpService = async (payload: SignUpPayload): Promise<any> => {
   console.log("IN - signUpService");
 
   try {
-    let newMember;
-    await executeMongoTransaction(async (session) => {
-      newMember = await createMember(payload, session);
+    const cognito = createCognitoClient();
+    payload["_id"] = await createCognitoUser(
+      cognito,
+      payload.email,
+      payload.password
+    );
 
-      const cognito = createCognitoClient();
-      await createCognitoUser(cognito, payload.email, payload.password);
-    });
-
-    return newMember;
+    return await createMember(payload);
   } catch (error) {
+    await removeMemberService(payload._id as string);
+
     throw error;
   } finally {
     console.log("OUT - signUpService");
@@ -34,9 +35,10 @@ const createCognitoUser = async (
   cognito: CognitoIdentityProviderClient,
   email: string,
   password: string
-): Promise<void> => {
+): Promise<string> => {
   console.log("IN - createCognitoUser");
 
+  let idMember = "";
   try {
     await cognito.send(
       new AdminCreateUserCommand({
@@ -54,21 +56,30 @@ const createCognitoUser = async (
         Permanent: true,
       })
     );
+
+    const member = await cognito.send(
+      new AdminGetUserCommand({
+        UserPoolId: process.env.USER_POOL_ID!,
+        Username: email,
+      })
+    );
+
+    idMember = member.UserAttributes?.find((attr) => attr.Name === "sub")
+      ?.Value as string;
   } catch (error) {
     console.error("Error creating Cognito user:", error);
     throw error;
   }
 
   console.log("OUT - createCognitoUser");
+  return idMember;
 };
 
-const createMember = async (
-  payload: SignUpPayload,
-  session: ClientSession
-): Promise<any> => {
+const createMember = async (payload: SignUpPayload): Promise<any> => {
   console.log("IN - createMember");
 
   const memberData: SignUpPayloadDTO = {
+    _id: payload._id,
     email: payload.email,
     status: "active",
     phoneNumber: payload.phoneNumber,
@@ -83,10 +94,10 @@ const createMember = async (
     role: payload.role || "user",
   };
 
-  await MemberModel.insertOne(memberData, { session }).catch((error) => {
+  await MemberModel.insertOne(memberData).catch(async (error) => {
     if (error.code === DUPLICATE_KEY_ERROR_CODE) {
       throw {
-        statusCode: STATUS_CODES.BAD_REQUEST,
+        statusCode: STATUS_CODE.BAD_REQUEST,
         message: "Member with this email already exists.",
       };
     }
@@ -94,5 +105,5 @@ const createMember = async (
   });
 
   console.log("OUT - createMember");
-  return memberData;
+  return memberData._id;
 };

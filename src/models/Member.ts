@@ -20,7 +20,7 @@ const PaymentInfoSchema = new Schema(
 
 const MemberSchema = new Schema(
   {
-    _id: { type: String, default: () => uuidv4() },
+    _id: { type: String, required: true },
     email: {
       type: String,
       required: true,

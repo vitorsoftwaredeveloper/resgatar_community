@@ -1,8 +1,9 @@
 import { APIGatewayEvent, APIGatewayProxyResult } from "aws-lambda";
-import { validate } from "../../utils/validate";
+import { parseRequestBody, validate } from "../../utils/validate";
 import { SignUpValidatorSchema } from "./validation/signup";
-import { SignUpPayload } from "../../types/members";
 import { signUpService } from "../../services/members/signup";
+import { sendErrorResponse, sendSuccessResponse } from "../../utils/http";
+import { STATUS_CODE } from "../../constants";
 
 export const execute = async (
   event: APIGatewayEvent
@@ -19,39 +20,14 @@ export const execute = async (
       });
     }
 
-    const newMember = await signUpService(payload);
+    const memberId = await signUpService(payload);
 
-    return sendSuccessResponse(newMember);
+    return sendSuccessResponse(
+      "Member created successfully!",
+      STATUS_CODE.CREATED,
+      { _id: memberId }
+    );
   } catch (error) {
     return sendErrorResponse(error);
   }
 };
-
-const parseRequestBody = (body: string | null): SignUpPayload | null => {
-  console.log("IN - parseRequestBody");
-
-  if (!body) return null;
-  try {
-    return JSON.parse(body);
-  } catch (error) {
-    throw error;
-  } finally {
-    console.log("OUT - parseRequestBody");
-  }
-};
-
-const sendErrorResponse = (error: any): APIGatewayProxyResult => ({
-  statusCode: error.statusCode || 500,
-  body: JSON.stringify({
-    message: error.message || "Internal Server Error",
-    errors: error.errors || null,
-  }),
-});
-
-const sendSuccessResponse = (data: any): APIGatewayProxyResult => ({
-  statusCode: 201,
-  body: JSON.stringify({
-    message: "Member created successfully!",
-    data,
-  }),
-});
