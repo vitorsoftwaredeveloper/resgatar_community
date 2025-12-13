@@ -1,5 +1,6 @@
 interface SignUpPayload {
   email: string;
+  password: string;
   phoneNumber: string;
   name?: string;
   bio?: string;
@@ -18,8 +19,8 @@ interface SignUpPayload {
   role?: "admin" | "user";
 }
 
-interface SignUpPayloadDTO extends SignUpPayload {
+type SignUpPayloadDTO = Omit<SignUpPayload, "password"> & {
   status: "active" | "defaulter";
-}
+};
 
 export { SignUpPayload, SignUpPayloadDTO };

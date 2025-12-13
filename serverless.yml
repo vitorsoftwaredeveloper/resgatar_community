@@ -47,7 +47,7 @@ plugins:
 
 functions:
   signup:
-    handler: src/handler/members/signup.execute
+    handler: src/handlers/members/signup.execute
     events:
       - httpApi:
           path: /signup

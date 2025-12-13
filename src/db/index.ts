@@ -5,6 +5,7 @@ export const db = async () => {
   console.log("IN - db");
   try {
     if (connection) {
+      console.log("db connection reused");
       return connection;
     }
 

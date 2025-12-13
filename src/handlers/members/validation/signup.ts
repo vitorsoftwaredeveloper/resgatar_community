@@ -5,7 +5,7 @@ export const SignUpValidatorSchema: any = {
     name: { type: "string", nullable: true },
     bio: { type: "string", nullable: true },
     age: { type: "integer", minimum: 1, nullable: true },
-    phoneNumber: { type: "string", format: "phone" },
+    phoneNumber: { type: "string" },
     address: {
       type: "object",
       properties: {
