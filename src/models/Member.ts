@@ -28,15 +28,24 @@ const MemberSchema = new Schema(
       trim: true,
       lowercase: true,
     },
-    status: { type: String, enum: ["active", "defaulter"], default: "active" },
     phoneNumber: { type: String, trim: true },
-    name: { type: String, trim: true },
+    firstName: { type: String, trim: true },
+    lastName: { type: String, trim: true },
     bio: { type: String, trim: true },
     age: { type: Number, min: 1 },
     address: { type: AddressSchema },
     role: { type: String, enum: ["admin", "user"], default: "user" },
-    lastLoginAt: { type: Date },
     paymentInfo: { type: PaymentInfoSchema },
+    identification: {
+      type: {
+        type: String,
+        enum: ["CPF", "CNPJ"],
+        required: true,
+      },
+      number: { type: String, required: true },
+    },
+    status: { type: String, enum: ["active", "defaulter"], default: "active" },
+    lastLoginAt: { type: Date },
   },
   { timestamps: true }
 );

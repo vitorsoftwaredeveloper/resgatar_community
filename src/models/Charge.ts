@@ -29,7 +29,7 @@ const ChargeSchema = new Schema(
       required: true,
       enum: ["pix", "boleto", "credit_card"],
     },
-    payment_type_id: {
+    paymentTypeId: {
       type: String,
       required: true,
       enum: ["bank_transfer", "ticket", "credit_card"],
@@ -44,6 +44,19 @@ const ChargeSchema = new Schema(
     feeDetails: { type: String, required: true },
     pointOfInteraction: { type: PointOfInteractionSchema },
     externalReference: { type: String, required: true },
+    payer: {
+      firstName: { type: String, required: true },
+      lastName: { type: String, required: true },
+      email: { type: String, required: true },
+      identification: {
+        type: {
+          type: String,
+          enum: ["CPF", "CNPJ"],
+          required: true,
+        },
+        number: { type: String, required: true },
+      },
+    },
   },
   { timestamps: true }
 );

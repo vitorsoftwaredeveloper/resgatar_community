@@ -55,11 +55,21 @@ functions:
           method: POST
           authorizer:
             name: cognitoAuthorizer
+
   removeMember:
-    handler: src/handlers/members/removeMember.execute
+    handler: src/handlers/members/remove.execute
     events:
       - httpApi:
           path: /removeMember/{memberId}
           method: DELETE
+          authorizer:
+            name: cognitoAuthorizer
+
+  createCharge:
+    handler: src/handlers/charges/create.execute
+    events:
+      - httpApi:
+          method: POST
+          path: /charges
           authorizer:
             name: cognitoAuthorizer

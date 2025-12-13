@@ -27,14 +27,16 @@ functions:
       - httpApi:
           method: POST
           path: /signup
+
   removeMember:
-    handler: src/handlers/members/removeMember.execute
+    handler: src/handlers/members/remove.execute
     events:
       - httpApi:
           method: DELETE
           path: /removeMember/{memberId}
+
   createCharge:
-    handler: src/handlers/charges/createCharge.execute
+    handler: src/handlers/charges/create.execute
     events:
       - httpApi:
           method: POST

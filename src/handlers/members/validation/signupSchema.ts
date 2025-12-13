@@ -2,10 +2,11 @@ export const SignUpValidatorSchema: any = {
   type: "object",
   properties: {
     email: { type: "string", format: "email" },
-    name: { type: "string", nullable: true },
+    phoneNumber: { type: "string" },
+    firstName: { type: "string", nullable: true },
+    lastName: { type: "string", nullable: true },
     bio: { type: "string", nullable: true },
     age: { type: "integer", minimum: 1, nullable: true },
-    phoneNumber: { type: "string" },
     address: {
       type: "object",
       properties: {
@@ -19,6 +20,7 @@ export const SignUpValidatorSchema: any = {
       additionalProperties: false,
       nullable: true,
     },
+    role: { type: "string", enum: ["admin", "user"], nullable: true },
     paymentInfo: {
       type: "object",
       properties: {
@@ -28,9 +30,23 @@ export const SignUpValidatorSchema: any = {
       required: ["datePayment", "amount"],
       additionalProperties: false,
     },
+    identification: {
+      type: "object",
+      properties: {
+        type: { type: "string", enum: ["CPF", "CNPJ"] },
+        number: { type: "string" },
+      },
+      required: ["type", "number"],
+      additionalProperties: false,
+    },
     password: { type: "string" },
-    role: { type: "string", enum: ["admin", "user"], nullable: true },
   },
-  required: ["email", "password", "phoneNumber", "paymentInfo"],
+  required: [
+    "email",
+    "password",
+    "phoneNumber",
+    "paymentInfo",
+    "identification",
+  ],
   additionalProperties: false,
 };

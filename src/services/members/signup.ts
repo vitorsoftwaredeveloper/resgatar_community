@@ -5,12 +5,12 @@ import {
   CognitoIdentityProviderClient,
 } from "@aws-sdk/client-cognito-identity-provider";
 import { MemberModel } from "../../models/Member";
-import { SignUpPayload, SignUpPayloadDTO } from "../../types/members";
+import { ISignUpPayload, IMember } from "../../types/members";
 import { DUPLICATE_KEY_ERROR_CODE, STATUS_CODE } from "../../constants";
 import { createCognitoClient } from "../../utils/cognito";
 import { removeMemberService } from "./remove";
 
-export const signUpService = async (payload: SignUpPayload): Promise<any> => {
+export const signUpService = async (payload: ISignUpPayload): Promise<any> => {
   console.log("IN - signUpService");
 
   try {
@@ -75,21 +75,26 @@ const createCognitoUser = async (
   return idMember;
 };
 
-const createMember = async (payload: SignUpPayload): Promise<any> => {
+const createMember = async (payload: ISignUpPayload): Promise<any> => {
   console.log("IN - createMember");
 
-  const memberData: SignUpPayloadDTO = {
+  const memberData: IMember = {
     _id: payload._id,
     email: payload.email,
     status: "active",
     phoneNumber: payload.phoneNumber,
-    name: payload.name,
+    firstName: payload.firstName,
+    lastName: payload.lastName,
     bio: payload.bio,
     age: payload.age,
     address: payload.address,
     paymentInfo: {
       datePayment: payload.paymentInfo.datePayment,
       amount: payload.paymentInfo.amount,
+    },
+    identification: {
+      type: payload.identification.type,
+      number: payload.identification.number,
     },
     role: payload.role || "user",
   };
