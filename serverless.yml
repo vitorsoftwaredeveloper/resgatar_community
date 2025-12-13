@@ -5,10 +5,13 @@ frameworkVersion: "3"
 custom:
   environment: ${file(./config/${self:provider.stage}.json):environment}
   esbuild: ${file(esbuild.config.js)}
+  prune:
+    automatic: true
+    number: 0
 
 provider:
   name: aws
-  runtime: nodejs20.x
+  runtime: nodejs24.x
   region: ${opt:region, 'us-east-1'}
   stage: ${opt:stage, 'hml'}
   environment:
@@ -40,10 +43,11 @@ provider:
 
 plugins:
   - serverless-esbuild
+  - serverless-prune-plugin
 
 functions:
   signup:
-    handler: src/handler/members/signup.execute
+    handler: src/handlers/members/signup.execute
     events:
       - httpApi:
           path: /signup
