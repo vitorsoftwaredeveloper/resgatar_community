@@ -1,7 +1,6 @@
 {
   "name": "resgatar_community",
   "version": "1.0.0",
-  "main": "index.js",
   "scripts": {
     "dev": "nodemon",
     "deploy:dev": "serverless deploy --stage dev",

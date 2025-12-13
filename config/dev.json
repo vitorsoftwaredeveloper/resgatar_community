@@ -1,6 +1,6 @@
 {
   "environment":{
-    "DB": "mongodb://localhost:27017/resgatar_community",
+    "DB": "mongodb://localhost:27017/resgatar_community?replicaSet=rs0",
     "SERVICE": "resgatar_community",
     "COGNITO_URL": "${ssm:/resgatar_community/cognito_url}",
     "CLIENT_ID": "${ssm:/resgatar_community/client_id}",
