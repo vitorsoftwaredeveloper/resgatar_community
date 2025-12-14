@@ -57,11 +57,20 @@ functions:
             name: cognitoAuthorizer
 
   removeMember:
-    handler: src/handlers/members/remove.execute
+    handler: src/handlers/members/removeMember.execute
     events:
       - httpApi:
           path: /removeMember/{memberId}
           method: DELETE
+          authorizer:
+            name: cognitoAuthorizer
+
+  listMembers:
+    handler: src/handlers/members/listMembers.execute
+    events:
+      - httpApi:
+          method: GET
+          path: /members
           authorizer:
             name: cognitoAuthorizer
 

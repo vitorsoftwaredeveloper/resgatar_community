@@ -11,7 +11,8 @@ export const execute = async (
   event: APIGatewayEvent
 ): Promise<APIGatewayProxyResult> => {
   try {
-    console.log("IN - createChargeHandler", { event });
+    console.log("IN - createChargeHandler");
+
     const memberData = jwt.decode(
       (event.headers.authorization as string).replace("Bearer ", "")
     );

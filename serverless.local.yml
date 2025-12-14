@@ -29,11 +29,18 @@ functions:
           path: /signup
 
   removeMember:
-    handler: src/handlers/members/remove.execute
+    handler: src/handlers/members/removeMember.execute
     events:
       - httpApi:
           method: DELETE
           path: /removeMember/{memberId}
+
+  listMembers:
+    handler: src/handlers/members/listMembers.execute
+    events:
+      - httpApi:
+          method: GET
+          path: /members
 
   createCharge:
     handler: src/handlers/charges/createCharge.execute

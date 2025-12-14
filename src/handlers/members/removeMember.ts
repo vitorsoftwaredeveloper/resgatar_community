@@ -1,4 +1,4 @@
-import { removeMemberService } from "../../services/members/remove";
+import { removeMemberService } from "../../services/members/removeMember";
 
 export const execute = async (idMember: string): Promise<void> => {
   console.log("IN - removeMember");

@@ -8,7 +8,7 @@ import { MemberModel } from "../../models/Member";
 import { ISignUpPayload, IMember } from "../../types/members";
 import { DUPLICATE_KEY_ERROR_CODE, STATUS_CODE } from "../../constants";
 import { createCognitoClient } from "../../utils/cognito";
-import { removeMemberService } from "./remove";
+import { removeMemberService } from "./removeMember";
 
 export const signUpService = async (payload: ISignUpPayload): Promise<any> => {
   console.log("IN - signUpService");
