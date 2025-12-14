@@ -20,7 +20,7 @@ const PaymentInfoSchema = new Schema(
 
 const MemberSchema = new Schema(
   {
-    _id: { type: String, default: () => uuidv4() },
+    _id: { type: String, required: true },
     email: {
       type: String,
       required: true,
@@ -28,15 +28,23 @@ const MemberSchema = new Schema(
       trim: true,
       lowercase: true,
     },
-    status: { type: String, enum: ["active", "defaulter"], default: "active" },
     phoneNumber: { type: String, trim: true },
-    name: { type: String, trim: true },
+    firstName: { type: String, trim: true },
+    lastName: { type: String, trim: true },
     bio: { type: String, trim: true },
     age: { type: Number, min: 1 },
     address: { type: AddressSchema },
     role: { type: String, enum: ["admin", "user"], default: "user" },
-    lastLoginAt: { type: Date },
     paymentInfo: { type: PaymentInfoSchema },
+    identification: {
+      type: {
+        type: String,
+        enum: ["CPF", "CNPJ"],
+        required: true,
+      },
+      number: { type: String, required: true },
+    },
+    status: { type: String, enum: ["active", "defaulter"], default: "active" },
   },
   { timestamps: true }
 );

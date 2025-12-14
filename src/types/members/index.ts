@@ -1,8 +1,10 @@
-interface SignUpPayload {
+interface ISignUpPayload {
+  _id: string;
   email: string;
   password: string;
   phoneNumber: string;
-  name?: string;
+  firstName: string;
+  lastName: string;
   bio?: string;
   age?: number;
   address?: {
@@ -16,11 +18,30 @@ interface SignUpPayload {
     datePayment: number;
     amount: number;
   };
+  identification: {
+    type: "CPF" | "CNPJ";
+    number: string;
+  };
   role?: "admin" | "user";
 }
 
-type SignUpPayloadDTO = Omit<SignUpPayload, "password"> & {
+type IMember = Omit<ISignUpPayload, "password"> & {
   status: "active" | "defaulter";
 };
 
-export { SignUpPayload, SignUpPayloadDTO };
+interface IMemberCredentials {
+  sub: string;
+  iss: string;
+  client_id: string;
+  origin_jti: string;
+  event_id: string;
+  token_use: string;
+  scope: string;
+  auth_time: number;
+  exp: number;
+  iat: number;
+  jti: string;
+  username: string;
+}
+
+export { ISignUpPayload, IMember, IMemberCredentials };

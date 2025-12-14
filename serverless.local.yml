@@ -27,3 +27,31 @@ functions:
       - httpApi:
           method: POST
           path: /signup
+
+  removeMember:
+    handler: src/handlers/members/removeMember.execute
+    events:
+      - httpApi:
+          method: DELETE
+          path: /removeMember/{memberId}
+
+  listMembers:
+    handler: src/handlers/members/listMembers.execute
+    events:
+      - httpApi:
+          method: GET
+          path: /members
+
+  getMember:
+    handler: src/handlers/members/getMember.execute
+    events:
+      - httpApi:
+          method: GET
+          path: /member
+
+  createCharge:
+    handler: src/handlers/charges/createCharge.execute
+    events:
+      - httpApi:
+          method: POST
+          path: /charges

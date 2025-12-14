@@ -27,6 +27,12 @@ export function createInstanceMongoose<T>(
       await db();
       return await mongooseModel.find(filter, { ...options }).lean();
     },
+    findById: async (id: any, projection?: any, options?: any) => {
+      await db();
+      return await mongooseModel
+        .findById(id, projection, { ...options })
+        .lean();
+    },
     deleteOne: async (filter: any, options?: any) => {
       await db();
       return await mongooseModel.deleteOne(filter, { ...options });
