@@ -1,10 +1,11 @@
 import { APIGatewayProxyResult } from "aws-lambda";
 
 const sendErrorResponse = (error: any): APIGatewayProxyResult => ({
-  statusCode: error.statusCode || 500,
+  statusCode: error.statusCode || error.status || 500,
   body: JSON.stringify({
     message: error.message || "Internal Server Error",
-    errors: error.errors || null,
+    ...(error.errors && { errors: error.errors }),
+    ...(error.code && { code: error.code }),
   }),
 });
 

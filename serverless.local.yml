@@ -36,7 +36,7 @@ functions:
           path: /removeMember/{memberId}
 
   createCharge:
-    handler: src/handlers/charges/create.execute
+    handler: src/handlers/charges/createCharge.execute
     events:
       - httpApi:
           method: POST

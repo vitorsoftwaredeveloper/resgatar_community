@@ -15,8 +15,7 @@ const PointOfInteractionSchema = new Schema(
 
 const ChargeSchema = new Schema(
   {
-    _id: { type: String, default: () => uuidv4() },
-    referenceId: { type: String, required: true, unique: true },
+    _id: { type: String, unique: true, required: true },
     status: {
       type: String,
       required: true,
@@ -29,21 +28,13 @@ const ChargeSchema = new Schema(
       required: true,
       enum: ["pix", "boleto", "credit_card"],
     },
-    paymentTypeId: {
-      type: String,
-      required: true,
-      enum: ["bank_transfer", "ticket", "credit_card"],
-    },
     currencyId: { type: String, required: true },
     dateCreated: { type: Date, required: true },
     dateOfExpiration: { type: Date, required: true },
-    date_approved: { type: Date, required: true },
-    transaction_details: {
+    dateApproved: { type: Date, required: true },
+    transactionDetails: {
       netReceivedAmount: { type: Number, required: true },
     },
-    feeDetails: { type: String, required: true },
-    pointOfInteraction: { type: PointOfInteractionSchema },
-    externalReference: { type: String, required: true },
     payer: {
       firstName: { type: String, required: true },
       lastName: { type: String, required: true },
