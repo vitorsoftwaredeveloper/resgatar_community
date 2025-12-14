@@ -96,6 +96,7 @@ const formatChargeDTO = (
       netReceivedAmount: chargeData.transaction_amount,
     },
     payer: {
+      memberId: member._id,
       firstName: member.firstName,
       lastName: member.lastName,
       email: member.email,

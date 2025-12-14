@@ -34,7 +34,7 @@ export const execute = async (
     );
 
     return sendSuccessResponse(
-      "Cobrança criada com sucesso",
+      "Charge created successfully!",
       STATUS_CODE.CREATED,
       response
     );

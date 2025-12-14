@@ -43,6 +43,8 @@ export const SignUpValidatorSchema: any = {
   },
   required: [
     "email",
+    "firstName",
+    "lastName",
     "password",
     "phoneNumber",
     "paymentInfo",

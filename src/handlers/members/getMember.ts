@@ -1,7 +1,6 @@
 import { APIGatewayEvent, APIGatewayProxyResult } from "aws-lambda";
-import { listMembersService } from "../../services/members/listMembers";
-import jwt from "jsonwebtoken";
 import { sendErrorResponse, sendSuccessResponse } from "../../utils/http";
+import { getMemberService } from "../../services/members/getMember";
 import { decodeToken } from "../../utils/helper";
 
 export const execute = async (
@@ -12,9 +11,9 @@ export const execute = async (
   const memberCredentials = decodeToken(event.headers.authorization as string);
 
   try {
-    const members = await listMembersService(memberCredentials.sub);
+    const member = await getMemberService(memberCredentials.sub);
 
-    return sendSuccessResponse("Members listed successfully", 200, members);
+    return sendSuccessResponse("Member retrieved successfully", 200, member);
   } catch (error) {
     return sendErrorResponse(error);
   } finally {
