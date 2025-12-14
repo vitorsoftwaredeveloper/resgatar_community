@@ -45,7 +45,6 @@ const MemberSchema = new Schema(
       number: { type: String, required: true },
     },
     status: { type: String, enum: ["active", "defaulter"], default: "active" },
-    lastLoginAt: { type: Date },
   },
   { timestamps: true }
 );

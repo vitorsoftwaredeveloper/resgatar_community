@@ -74,6 +74,15 @@ functions:
           authorizer:
             name: cognitoAuthorizer
 
+  getMember:
+    handler: src/handlers/members/getMember.execute
+    events:
+      - httpApi:
+          method: GET
+          path: /member
+          authorizer:
+            name: cognitoAuthorizer
+
   createCharge:
     handler: src/handlers/charges/createCharge.execute
     events:
