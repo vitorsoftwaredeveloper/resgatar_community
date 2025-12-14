@@ -1,9 +1,7 @@
 import { APIGatewayEvent, APIGatewayProxyResult } from "aws-lambda";
 import { listMembersService } from "../../services/members/listMembers";
 import jwt from "jsonwebtoken";
-import { send } from "process";
 import { sendErrorResponse, sendSuccessResponse } from "../../utils/http";
-import { IMember } from "../../types/members";
 
 export const execute = async (
   event: APIGatewayEvent
