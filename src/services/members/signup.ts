@@ -10,7 +10,10 @@ import { DUPLICATE_KEY_ERROR_CODE, STATUS_CODE } from "../../constants";
 import { createCognitoClient } from "../../utils/cognito";
 import { removeMemberService } from "./removeMember";
 
-export const signUpService = async (payload: ISignUpPayload): Promise<any> => {
+export const signUpService = async (
+  adminId: string,
+  payload: ISignUpPayload
+): Promise<any> => {
   console.log("IN - signUpService");
 
   try {
@@ -23,7 +26,7 @@ export const signUpService = async (payload: ISignUpPayload): Promise<any> => {
 
     return await createMember(payload);
   } catch (error) {
-    await removeMemberService(payload._id as string);
+    await removeMemberService(adminId, payload._id as string);
 
     throw error;
   } finally {
