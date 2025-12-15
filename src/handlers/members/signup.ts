@@ -4,11 +4,13 @@ import { SignUpValidatorSchema } from "./validation/signupSchema";
 import { signUpService } from "../../services/members/signup";
 import { sendErrorResponse, sendSuccessResponse } from "../../utils/http";
 import { STATUS_CODE } from "../../constants";
+import { decodeToken } from "../../utils/helper";
 
 export const execute = async (
   event: APIGatewayEvent
 ): Promise<APIGatewayProxyResult> => {
   try {
+    const admin = decodeToken(event.headers.authorization as string);
     const payload = parseRequestBody(event.body) as any;
 
     const errors = validate(SignUpValidatorSchema, payload);
@@ -20,7 +22,7 @@ export const execute = async (
       });
     }
 
-    const memberId = await signUpService(payload);
+    const memberId = await signUpService(admin.sub, payload);
 
     return sendSuccessResponse(
       "Member created successfully!",
