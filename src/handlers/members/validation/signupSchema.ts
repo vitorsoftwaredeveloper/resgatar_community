@@ -20,12 +20,12 @@ export const SignUpValidatorSchema: any = {
       additionalProperties: false,
       nullable: true,
     },
-    role: { type: "string", enum: ["admin", "user"], nullable: true },
+    role: { type: "string", enum: ["admin", "user"] },
     paymentInfo: {
       type: "object",
       properties: {
-        datePayment: { type: "number", nullable: true },
-        amount: { type: "number", nullable: true },
+        datePayment: { type: "number", minimum: 1 },
+        amount: { type: "string", pattern: "^[0-9]+\\.[0-9]{2}$" },
       },
       required: ["datePayment", "amount"],
       additionalProperties: false,
