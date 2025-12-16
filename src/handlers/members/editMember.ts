@@ -7,6 +7,7 @@ import { editMemberService } from "../../services/members/editMember";
 export const execute = async (
   event: APIGatewayEvent
 ): Promise<APIGatewayProxyResult> => {
+  console.log("Event:", event);
   console.log("IN - editMember");
 
   const memberCredentials = decodeToken(event.headers.authorization as string);
