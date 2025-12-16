@@ -13,9 +13,9 @@ export const execute = async (
   const payload = parseRequestBody(event.body) as any;
 
   try {
-    await editMemberService(memberCredentials.sub, payload);
+    const member = await editMemberService(memberCredentials.sub, payload);
 
-    return sendSuccessResponse("Member updated successfully", 204);
+    return sendSuccessResponse("Member updated successfully", 204, member);
   } catch (error) {
     return sendErrorResponse(error);
   } finally {

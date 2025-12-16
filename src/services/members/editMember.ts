@@ -29,7 +29,7 @@ export const editMemberService = async (
       }
     });
 
-    return true;
+    return updatedMember;
   } catch (err) {
     throw err;
   } finally {
