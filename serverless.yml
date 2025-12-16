@@ -36,6 +36,7 @@ provider:
         - cognito-idp:AdminInitiateAuth
         - cognito-idp:AdminDeleteUser
         - cognito-idp:AdminSetUserPassword
+        - cognito-idp:AdminUpdateUserAttributes
         - cognito-idp:AdminRespondToAuthChallenge
         - cognito-idp:AdminGetUser
         - cognito-idp:ListUsers
@@ -79,6 +80,15 @@ functions:
     events:
       - httpApi:
           method: GET
+          path: /member
+          authorizer:
+            name: cognitoAuthorizer
+
+  editMember:
+    handler: src/handlers/members/editMember.execute
+    events:
+      - httpApi:
+          method: PUT
           path: /member
           authorizer:
             name: cognitoAuthorizer
