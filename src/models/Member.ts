@@ -9,12 +9,21 @@ const AddressSchema = new Schema(
     city: { type: String },
     state: { type: String },
     zip: { type: String },
+    complement: { type: String },
   },
   { _id: false }
 );
 
 const PaymentInfoSchema = new Schema(
   { datePayment: { type: Number }, amount: { type: Number, min: 1 } },
+  { _id: false }
+);
+
+const IdentificationSchema = new Schema(
+  {
+    type: { type: String, enum: ["CPF", "CNPJ"], required: true },
+    numberType: { type: String, required: true },
+  },
   { _id: false }
 );
 
@@ -28,22 +37,15 @@ const MemberSchema = new Schema(
       trim: true,
       lowercase: true,
     },
-    phoneNumber: { type: String, trim: true },
-    firstName: { type: String, trim: true },
-    lastName: { type: String, trim: true },
-    bio: { type: String, trim: true },
-    age: { type: Number, min: 1 },
+    phoneNumber: { type: String, trim: true, required: true },
+    firstName: { type: String, trim: true, required: true },
+    lastName: { type: String, trim: true, required: true },
+    bio: { type: String, trim: true, default: "" },
+    dateOfBirth: { type: String, required: true },
     address: { type: AddressSchema },
     role: { type: String, enum: ["admin", "user"], default: "user" },
-    paymentInfo: { type: PaymentInfoSchema },
-    identification: {
-      type: {
-        type: String,
-        enum: ["CPF", "CNPJ"],
-        required: true,
-      },
-      number: { type: String, required: true },
-    },
+    paymentInfo: { type: PaymentInfoSchema, required: true },
+    identification: { type: IdentificationSchema, required: true },
     status: { type: String, enum: ["active", "defaulter"], default: "active" },
   },
   { timestamps: true }

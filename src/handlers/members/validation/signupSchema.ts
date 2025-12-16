@@ -6,7 +6,7 @@ export const SignUpValidatorSchema: any = {
     firstName: { type: "string", nullable: true },
     lastName: { type: "string", nullable: true },
     bio: { type: "string", nullable: true },
-    age: { type: "integer", minimum: 1, nullable: true },
+    dateOfBirth: { type: "number", minimum: 0, nullable: true },
     address: {
       type: "object",
       properties: {
@@ -34,19 +34,20 @@ export const SignUpValidatorSchema: any = {
       type: "object",
       properties: {
         type: { type: "string", enum: ["CPF", "CNPJ"] },
-        number: { type: "string" },
+        numberType: { type: "string" },
       },
-      required: ["type", "number"],
+      required: ["type", "numberType"],
       additionalProperties: false,
     },
     password: { type: "string" },
   },
   required: [
     "email",
+    "phoneNumber",
     "firstName",
     "lastName",
+    "dateOfBirth",
     "password",
-    "phoneNumber",
     "paymentInfo",
     "identification",
   ],

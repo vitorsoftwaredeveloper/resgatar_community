@@ -6,7 +6,7 @@ interface ISignUpPayload {
   firstName: string;
   lastName: string;
   bio?: string;
-  age?: number;
+  dateOfBirth: number;
   address?: {
     street?: string;
     number?: string;
@@ -20,7 +20,7 @@ interface ISignUpPayload {
   };
   identification: {
     type: "CPF" | "CNPJ";
-    number: string;
+    numberType: string;
   };
   role?: "admin" | "user";
 }

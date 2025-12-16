@@ -15,6 +15,9 @@ export const getMemberService = async (memberId: string): Promise<IMember> => {
       status: 1,
       firstName: 1,
       lastName: 1,
+      bio: 1,
+      dateOfBirth: 1,
+      address: 1,
     });
   } catch (err) {
     throw err;
