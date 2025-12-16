@@ -13,4 +13,23 @@ const decodeToken = (token: string): IMemberCredentials => {
   }
 };
 
-export { decodeToken };
+function parseDateBRToUTC(date: string): number {
+  const [day, month, year] = date.split("/").map(Number);
+
+  if (!day || !month || !year) {
+    throw new Error("Data inválida");
+  }
+
+  return Date.UTC(year, month - 1, day);
+}
+
+/**
+ * Converte timestamp UTC → DD/MM/YYYY
+ */
+function formatUTCToDateBR(timestamp: number): string {
+  return new Date(timestamp).toLocaleDateString("pt-BR", {
+    timeZone: "UTC",
+  });
+}
+
+export { decodeToken, parseDateBRToUTC, formatUTCToDateBR };

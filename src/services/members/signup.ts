@@ -89,16 +89,10 @@ const createMember = async (payload: ISignUpPayload): Promise<any> => {
     firstName: payload.firstName,
     lastName: payload.lastName,
     bio: payload.bio,
-    age: payload.age,
+    dateOfBirth: payload.dateOfBirth,
     address: payload.address,
-    paymentInfo: {
-      datePayment: payload.paymentInfo.datePayment,
-      amount: payload.paymentInfo.amount,
-    },
-    identification: {
-      type: payload.identification.type,
-      number: payload.identification.number,
-    },
+    paymentInfo: payload.paymentInfo,
+    identification: payload.identification,
     role: payload.role || "user",
   };
 
