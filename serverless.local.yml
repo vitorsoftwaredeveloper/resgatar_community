@@ -49,6 +49,13 @@ functions:
           method: GET
           path: /member
 
+  editMember:
+    handler: src/handlers/members/editMember.execute
+    events:
+      - httpApi:
+          method: PUT
+          path: /member
+
   createCharge:
     handler: src/handlers/charges/createCharge.execute
     events:

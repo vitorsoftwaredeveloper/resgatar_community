@@ -1,5 +1,5 @@
 import { AdminDeleteUserCommand } from "@aws-sdk/client-cognito-identity-provider";
-import { createCognitoClient } from "../../utils/cognito";
+import { createCognitoClient, removeMemberCognito } from "../../utils/cognito";
 import { MemberModel } from "../../models/Member";
 import { verifyAdmin } from "./helper";
 
@@ -20,19 +20,4 @@ export const removeMemberService = async (
   } finally {
     console.log("OUT - removeMemberService");
   }
-};
-
-const removeMemberCognito = async (idMember: string): Promise<void> => {
-  console.log("IN - removeMemberCognito");
-
-  const cognito = createCognitoClient();
-
-  await cognito.send(
-    new AdminDeleteUserCommand({
-      UserPoolId: process.env.USER_POOL_ID!,
-      Username: idMember,
-    })
-  );
-
-  console.log("OUT - removeMemberCognito");
 };

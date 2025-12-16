@@ -20,6 +20,8 @@ const findMemberById = async (
     };
   }
 
+  console.log("Member found:", member);
+
   console.log("OUT - findMemberById");
   return member;
 };
