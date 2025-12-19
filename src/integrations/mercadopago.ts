@@ -33,9 +33,23 @@ export const createMercadoPagoClient = async () => {
           throw error;
         });
     },
-    consultPayment: async (payment: PaymentGetData) => {
-      const response = await mercadoPagoClient.get(payment);
-      return response;
+    consultPayment: async (transactionId: string) => {
+      return await axios
+        .get(`${process.env.MPAGO_TRANSACTION_URL}/${transactionId}`, {
+          headers: {
+            Authorization: `Bearer ${process.env.MPAGO_ACCESS_TOKEN}`,
+            "Content-Type": "application/json",
+            "X-Idempotency-Key": randomUUID(),
+          },
+        })
+        .then((response) => {
+          console.log(response.data);
+          return response.data;
+        })
+        .catch((error) => {
+          console.error(error);
+          throw error;
+        });
     },
   };
 };

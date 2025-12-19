@@ -84,6 +84,7 @@ const formatChargeDTO = (
   console.log("IN - formatChargeDTO");
 
   const chargeDTO = {
+    transactionId: chargeData.id,
     memberId: member._id,
     status: chargeData.status,
     statusDetail: chargeData.status_detail,

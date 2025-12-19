@@ -3,6 +3,7 @@ import { createInstanceMongoose } from "../repositories/mongoose";
 
 const ChargeSchema = new Schema(
   {
+    transactionId: { type: String, required: true },
     memberId: { type: String, required: true },
     status: {
       type: String,
