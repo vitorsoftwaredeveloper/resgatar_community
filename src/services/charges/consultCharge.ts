@@ -32,7 +32,7 @@ export const consultChargeService = async (
       await updateCharge(charge, response);
     }
 
-    return { charge, ...(response && { status: response.status }) };
+    return { ...charge, ...(response && { status: response.status }) };
   } catch (error) {
     throw error;
   } finally {
