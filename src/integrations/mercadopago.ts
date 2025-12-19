@@ -5,6 +5,7 @@ import {
   ICreateChargeMPagoResponse,
 } from "../types/charges";
 import { randomUUID } from "crypto";
+import axios from "axios";
 
 export const createMercadoPagoClient = async () => {
   const MP = new MercadoPagoConfig({
@@ -14,54 +15,23 @@ export const createMercadoPagoClient = async () => {
   const mercadoPagoClient = new Payment(MP);
 
   return {
-    createPayment: async (
-      chargeData: ICreateChargeMPagoRequest
-    ): Promise<ICreateChargeMPagoResponse> => {
-      console.log("IN - createPayment - MercadoPago");
-
-      const response = await mercadoPagoClient
-        .create({
-          body: chargeData,
-          requestOptions: {
-            idempotencyKey: randomUUID(),
+    createPayment: async (chargeData: ICreateChargeMPagoRequest) => {
+      return await axios
+        .post(process.env.MPAGO_TRANSACTION_URL as string, chargeData, {
+          headers: {
+            Authorization: `Bearer ${process.env.MPAGO_ACCESS_TOKEN}`,
+            "Content-Type": "application/json",
+            "X-Idempotency-Key": randomUUID(),
           },
         })
+        .then((response) => {
+          console.log(response.data);
+          return response.data;
+        })
         .catch((error) => {
-          console.error("Error creating payment in MercadoPago:", error);
+          console.error(error);
           throw error;
         });
-
-      console.log("Charge created in MercadoPago:", response);
-
-      const formattedResponse: ICreateChargeMPagoResponse = {
-        id: response.id!,
-        date_created: response.date_created!,
-        date_of_expiration: response.date_of_expiration,
-        status: response.status as ICreateChargeMPagoResponse["status"],
-        status_detail:
-          response.status_detail as ICreateChargeMPagoResponse["status_detail"],
-        transaction_amount: response.transaction_amount!,
-        currency_id: response.currency_id as "BRL",
-        payment_method_id: "pix",
-        payer: {
-          email: response.payer?.email!,
-        },
-        point_of_interaction: {
-          type: "PIX",
-          transaction_data: {
-            qr_code: response.point_of_interaction!.transaction_data!.qr_code!,
-            qr_code_base64:
-              response.point_of_interaction!.transaction_data!.qr_code_base64!,
-            ticket_url:
-              response.point_of_interaction!.transaction_data!.ticket_url!,
-          },
-        },
-        metadata: response.metadata,
-        notification_url: response.notification_url,
-      };
-
-      console.log("OUT - createPayment - MercadoPago");
-      return formattedResponse;
     },
     consultPayment: async (payment: PaymentGetData) => {
       const response = await mercadoPagoClient.get(payment);

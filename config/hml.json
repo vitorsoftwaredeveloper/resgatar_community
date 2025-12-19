@@ -7,6 +7,7 @@
     "USER_POOL_ID": "${ssm:/resgatar_community/user_pool_id}",
     "REGION": "us-east-1",
     "COGNITO_USER_POOL_ARN": "${ssm:/resgatar_community/cognito_user_pool_arn}",
-    "MPAGO_ACCESS_TOKEN": "${ssm:/resgatar_community/mercado_pago_access_token}"
+    "MPAGO_ACCESS_TOKEN": "${ssm:/resgatar_community/mercado_pago_access_token}",
+    "MPAGO_TRANSACTION_URL": "${ssm:/resgatar_community/mercado_pago_transacation_url}"
   }
 }

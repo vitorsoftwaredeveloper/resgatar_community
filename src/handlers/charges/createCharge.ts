@@ -39,6 +39,7 @@ export const execute = async (
       response
     );
   } catch (error) {
+    console.log({ error });
     return sendErrorResponse(error);
   }
 };
