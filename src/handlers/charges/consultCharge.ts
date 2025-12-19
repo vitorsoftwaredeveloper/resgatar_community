@@ -6,33 +6,28 @@ import { createChargeService } from "../../services/charges/createCharge";
 import jwt from "jsonwebtoken";
 import { STATUS_CODE } from "../../constants";
 import { sendErrorResponse, sendSuccessResponse } from "../../utils/http";
+import { consultChargeService } from "../../services/charges/consultCharge";
 import { decodeToken } from "../../utils/helper";
 
 export const execute = async (
   event: APIGatewayEvent
 ): Promise<APIGatewayProxyResult> => {
   try {
-    console.log("IN - createChargeHandler");
+    console.log("IN - consultChargeHandler");
 
     const memberCredentials = decodeToken(
       event.headers.authorization as string
     );
 
-    const payload = parseRequestBody(event.body) as any;
+    const transactionId = event.pathParameters?.transactionId;
 
-    const errors = validate(CreateChargeValidatorSchema, payload);
-    if (errors.length > 0) {
-      return sendErrorResponse({
-        statusCode: STATUS_CODE.BAD_REQUEST,
-        message: "Validation Error",
-        errors,
-      });
-    }
-
-    const response = await createChargeService(memberCredentials.sub, payload);
+    const response = await consultChargeService(
+      memberCredentials.sub,
+      transactionId as string
+    );
 
     return sendSuccessResponse(
-      "Charge created successfully!",
+      "Charge consulted successfully!",
       STATUS_CODE.CREATED,
       response
     );
@@ -40,19 +35,6 @@ export const execute = async (
     console.log({ error });
     return sendErrorResponse(error);
   } finally {
-    console.log("OUT - createChargeHandler");
-  }
-};
-
-const parseRequestBody = (body: string | null): ISignUpPayload | null => {
-  console.log("IN - parseRequestBody");
-
-  if (!body) return null;
-  try {
-    return JSON.parse(body);
-  } catch (error) {
-    throw error;
-  } finally {
-    console.log("OUT - parseRequestBody");
+    console.log("OUT - consultChargeHandler");
   }
 };

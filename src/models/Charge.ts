@@ -1,13 +1,22 @@
 import mongoose, { Schema } from "mongoose";
 import { createInstanceMongoose } from "../repositories/mongoose";
+import { TRANSACTION_STATUS } from "../constants/charges";
 
 const ChargeSchema = new Schema(
   {
+    transactionId: { type: String, required: true },
     memberId: { type: String, required: true },
     status: {
       type: String,
       required: true,
-      enum: ["pending", "approved", "rejected", "cancelled"],
+      enum: [
+        TRANSACTION_STATUS.PENDING,
+        TRANSACTION_STATUS.APPROVED,
+        TRANSACTION_STATUS.REJECTED,
+        TRANSACTION_STATUS.CANCELLED,
+        TRANSACTION_STATUS.REFUNDED,
+        TRANSACTION_STATUS.CHARGED_BACK,
+      ],
     },
     statusDetail: { type: String, required: true },
     transactionAmount: { type: Number, required: true },

@@ -62,3 +62,10 @@ functions:
       - httpApi:
           method: POST
           path: /charges
+
+  consultCharge:
+    handler: src/handlers/charges/consultCharge.execute
+    events:
+      - httpApi:
+          method: GET
+          path: /charges/{transactionId}
