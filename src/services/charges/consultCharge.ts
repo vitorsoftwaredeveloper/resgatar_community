@@ -2,6 +2,8 @@ import { ChargeModel } from "../../models/Charge";
 import { createMercadoPagoClient } from "../../integrations/mercadopago";
 import { STATUS_CODE } from "../../constants";
 import { findMemberById } from "../members/helper";
+import { TRANSACTION_STATUS } from "../../constants/charges";
+import { IChargeDTO, IConsultChargeMPagoResponse } from "../../types/charges";
 
 export const consultChargeService = async (
   memberId: string,
@@ -23,11 +25,14 @@ export const consultChargeService = async (
       };
     }
 
-    const response = await mpClient.consultPayment(transactionId);
+    let response: any = null;
+    if (charge.status === TRANSACTION_STATUS.PENDING) {
+      response = await mpClient.consultPayment(transactionId);
 
-    await updateCharge(charge, response);
+      await updateCharge(charge, response);
+    }
 
-    return { charge, status: response.status };
+    return { charge, ...(response && { status: response.status }) };
   } catch (error) {
     throw error;
   } finally {
@@ -35,13 +40,21 @@ export const consultChargeService = async (
   }
 };
 
-const updateCharge = async (charge: any, chargeConsulted: any) => {
+const updateCharge = async (
+  charge: IChargeDTO,
+  chargeConsulted: IConsultChargeMPagoResponse
+) => {
   console.log("IN - updateCharge");
 
   if (charge.status !== chargeConsulted.status) {
     await ChargeModel.updateOne(
       { transactionId: charge.transactionId },
-      { $set: { statusDetail: chargeConsulted.status_detail } }
+      {
+        $set: {
+          statusDetail: chargeConsulted.status_detail,
+          dateApproved: chargeConsulted.date_approved,
+        },
+      }
     );
   }
 

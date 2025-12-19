@@ -17,7 +17,7 @@ interface ICreateChargeMPagoRequest {
     email: string;
   };
 }
-export interface ICreateChargeMPagoResponse {
+interface ICreateChargeMPagoResponse {
   id: number;
   date_created: string;
   date_approved: string | null;
@@ -185,4 +185,61 @@ export interface ICreateChargeMPagoResponse {
   tags: string[] | null;
 }
 
-export { ICreateChargePayload, ICreateChargeMPagoRequest };
+interface IConsultChargeMPagoResponse {
+  id: number;
+  status: string;
+  status_detail: string;
+  payment_method_id: string;
+  payment_type_id: string;
+  transaction_amount: number;
+  currency_id: string;
+  date_created: string;
+  date_approved: string;
+  date_last_updated: string;
+  external_reference: string;
+  payer: {
+    email: string;
+  };
+  point_of_interaction: {
+    transaction_data: {
+      qr_code: string;
+      qr_code_base64: string;
+      ticket_url: string;
+    };
+  };
+}
+
+interface IChargeDTO {
+  transactionId: number;
+  memberId: string;
+  status: string;
+  statusDetail: string;
+  transactionAmount: number;
+  paymentMethodId: string;
+  currencyId: string;
+  dateCreated: string;
+  dateOfExpiration: string;
+  dateApproved?: string;
+  payer: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    identification: {
+      type: "CPF" | "CNPJ";
+      numberType: string;
+    };
+  };
+  transactionData: {
+    qrCode?: string;
+    qrCodeBase64?: string;
+    ticketUrl?: string;
+  };
+}
+
+export {
+  ICreateChargePayload,
+  ICreateChargeMPagoRequest,
+  IConsultChargeMPagoResponse,
+  ICreateChargeMPagoResponse,
+  IChargeDTO,
+};

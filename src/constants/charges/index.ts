@@ -16,4 +16,13 @@ const CURRENCY_ID = {
   EUR: "EUR",
 };
 
-export { PAYMENT_METHOD_ID, PAYMENT_TYPE_ID, CURRENCY_ID };
+const TRANSACTION_STATUS = {
+  PENDING: "pending",
+  APPROVED: "approved",
+  REJECTED: "rejected",
+  CANCELLED: "cancelled",
+  REFUNDED: "refunded",
+  CHARGED_BACK: "charged_back",
+};
+
+export { PAYMENT_METHOD_ID, PAYMENT_TYPE_ID, CURRENCY_ID, TRANSACTION_STATUS };

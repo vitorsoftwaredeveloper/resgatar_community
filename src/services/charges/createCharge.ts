@@ -1,18 +1,13 @@
 import { ChargeModel } from "../../models/Charge";
 import {
   ICreateChargePayload,
-  ICreateChargeMPagoRequest,
   ICreateChargeMPagoResponse,
+  IChargeDTO,
 } from "../../types/charges";
 import { createMercadoPagoClient } from "../../integrations/mercadopago";
-import {
-  CURRENCY_ID,
-  PAYMENT_METHOD_ID,
-  PAYMENT_TYPE_ID,
-} from "../../constants/charges";
+import { PAYMENT_METHOD_ID } from "../../constants/charges";
 import { MemberModel } from "../../models/Member";
 import { IMember } from "../../types/members";
-import { create } from "domain";
 
 export const createChargeService = async (
   memberId: string,
@@ -80,7 +75,7 @@ const formatCharge = (member: IMember, payload: ICreateChargePayload): any => {
 const formatChargeDTO = (
   member: IMember,
   chargeData: ICreateChargeMPagoResponse
-): any => {
+): IChargeDTO => {
   console.log("IN - formatChargeDTO");
 
   const chargeDTO = {
