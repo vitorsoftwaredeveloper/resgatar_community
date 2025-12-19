@@ -55,22 +55,23 @@ const findMemberById = async (memberId: string) => {
   }
 };
 
-const formatCharge = (
-  member: IMember,
-  payload: ICreateChargePayload
-): ICreateChargeMPagoRequest => {
+const formatCharge = (member: IMember, payload: ICreateChargePayload): any => {
   console.log("IN - formatCharge");
 
   const charge = {
-    transaction_amount: payload.transactionAmount,
+    transaction_amount: Number(payload.transactionAmount),
     payment_method_id: PAYMENT_METHOD_ID.PIX as "pix",
     description: payload.description,
     payer: {
+      identification: {
+        number: member.identification.numberType.replace(/\D/g, ""),
+        type: member.identification.type,
+      },
+      last_name: member.lastName,
+      first_name: member.firstName,
       email: member.email,
     },
   };
-
-  console.log("Charge formatted:", { charge });
 
   console.log("OUT - formatCharge");
   return charge;
@@ -83,7 +84,7 @@ const formatChargeDTO = (
   console.log("IN - formatChargeDTO");
 
   const chargeDTO = {
-    _id: chargeData.id,
+    memberId: member._id,
     status: chargeData.status,
     statusDetail: chargeData.status_detail,
     transactionAmount: chargeData.transaction_amount,
@@ -91,19 +92,21 @@ const formatChargeDTO = (
     currencyId: chargeData.currency_id,
     dateCreated: chargeData.date_created,
     dateOfExpiration: chargeData.date_of_expiration,
-    dateApproved: new Date().toISOString(),
-    transactionDetails: {
-      netReceivedAmount: chargeData.transaction_amount,
-    },
+    paymentTypeId: chargeData.payment_type_id,
     payer: {
-      memberId: member._id,
       firstName: member.firstName,
       lastName: member.lastName,
       email: member.email,
       identification: {
+        numberType: member.identification.numberType,
         type: member.identification.type,
-        number: member.identification.number,
       },
+    },
+    transactionData: {
+      qrCode: chargeData.point_of_interaction.transaction_data.qr_code,
+      qrCodeBase64:
+        chargeData.point_of_interaction.transaction_data.qr_code_base64,
+      ticketUrl: chargeData.point_of_interaction.transaction_data.ticket_url,
     },
   };
 

@@ -95,6 +95,9 @@ functions:
 
   createCharge:
     handler: src/handlers/charges/createCharge.execute
+    environment:
+      MPAGO_ACCESS_TOKEN: ${self:custom.environment.MPAGO_ACCESS_TOKEN}
+      MPAGO_TRANSACTION_URL: ${self:custom.environment.MPAGO_TRANSACTION_URL}
     events:
       - httpApi:
           method: POST
