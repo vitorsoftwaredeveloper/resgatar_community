@@ -54,9 +54,9 @@ const formatCharge = (member: IMember, payload: ICreateChargePayload): any => {
   console.log("IN - formatCharge");
 
   const charge = {
-    transaction_amount: Number(payload.transactionAmount),
+    transaction_amount: payload.transactionAmount,
     payment_method_id: PAYMENT_METHOD_ID.PIX as "pix",
-    description: payload.description,
+    description: "Contribution to Resgatar Community",
     payer: {
       identification: {
         number: member.identification.numberType.replace(/\D/g, ""),
@@ -83,7 +83,7 @@ const formatChargeDTO = (
     memberId: member._id,
     status: chargeData.status,
     statusDetail: chargeData.status_detail,
-    transactionAmount: chargeData.transaction_amount,
+    transactionAmount: Number(chargeData.transaction_amount.toFixed(2)),
     paymentMethodId: chargeData.payment_method_id,
     currencyId: chargeData.currency_id,
     dateCreated: chargeData.date_created,
