@@ -137,8 +137,10 @@ function getRemainingMonthsFromNow() {
 
   return monthKeys.reduce((acc, month, index) => {
     if (index >= currentMonthIndex) {
-      acc[month] = false;
+      acc[month] = {
+        paid: false,
+      };
     }
     return acc;
-  }, {} as Record<string, boolean>);
+  }, {} as any);
 }

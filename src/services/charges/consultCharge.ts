@@ -67,7 +67,9 @@ const updateCharge = async (
       },
       {
         $set: {
-          [`months.${monthKey}`]: true,
+          [`months.${monthKey}.paid`]: true,
+          [`months.${monthKey}.paidAt`]: new Date(),
+          [`months.${monthKey}.value`]: charge.transactionAmount,
         },
       }
     );

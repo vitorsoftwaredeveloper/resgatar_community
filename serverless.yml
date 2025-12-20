@@ -48,11 +48,11 @@ plugins:
   - serverless-prune-plugin
 
 functions:
-  signup:
-    handler: src/handlers/members/signup.execute
+  createMember:
+    handler: src/handlers/members/createMember.execute
     events:
       - httpApi:
-          path: /signup
+          path: /createMember
           method: POST
           authorizer:
             name: cognitoAuthorizer

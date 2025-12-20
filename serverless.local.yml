@@ -21,12 +21,12 @@ plugins:
   - serverless-offline
 
 functions:
-  signup:
-    handler: src/handlers/members/signup.execute
+  createMember:
+    handler: src/handlers/members/createMember.execute
     events:
       - httpApi:
           method: POST
-          path: /signup
+          path: /createMember
 
   removeMember:
     handler: src/handlers/members/removeMember.execute

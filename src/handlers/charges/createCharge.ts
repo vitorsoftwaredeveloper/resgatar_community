@@ -3,7 +3,6 @@ import { validate } from "../../utils/validate";
 import { ISignUpPayload } from "../../types/members";
 import { CreateChargeValidatorSchema } from "./validation/createChargeSchema";
 import { createChargeService } from "../../services/charges/createCharge";
-import jwt from "jsonwebtoken";
 import { STATUS_CODE } from "../../constants";
 import { sendErrorResponse, sendSuccessResponse } from "../../utils/http";
 import { decodeToken } from "../../utils/helper";
