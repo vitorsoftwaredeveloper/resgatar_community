@@ -13,6 +13,7 @@ export const execute = async (
 ): Promise<APIGatewayProxyResult> => {
   try {
     console.log("IN - createChargeHandler");
+    console.log("Body:", event.body);
 
     const memberCredentials = decodeToken(
       event.headers.authorization as string

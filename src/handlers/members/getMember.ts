@@ -6,7 +6,7 @@ import { decodeToken } from "../../utils/helper";
 export const execute = async (
   event: APIGatewayEvent
 ): Promise<APIGatewayProxyResult> => {
-  console.log("IN - listMembers");
+  console.log("IN - getMember");
 
   const memberCredentials = decodeToken(event.headers.authorization as string);
 
@@ -17,6 +17,6 @@ export const execute = async (
   } catch (error) {
     return sendErrorResponse(error);
   } finally {
-    console.log("OUT - listMembers");
+    console.log("OUT - getMember");
   }
 };

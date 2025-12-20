@@ -4,6 +4,7 @@ import { STATUS_CODE } from "../../constants";
 import { findMemberById } from "../members/helper";
 import { TRANSACTION_STATUS } from "../../constants/charges";
 import { IChargeDTO, IConsultChargeMPagoResponse } from "../../types/charges";
+import { ContributionModel } from "../../models/Contribution";
 
 export const consultChargeService = async (
   memberId: string,
@@ -56,7 +57,40 @@ const updateCharge = async (
         },
       }
     );
+
+    const monthKey = getMonthKeyFromDate(charge.dateCreated);
+
+    await ContributionModel.updateOne(
+      {
+        memberId: charge.memberId,
+        year: new Date(charge.dateCreated).getFullYear(),
+      },
+      {
+        $set: {
+          [`months.${monthKey}`]: true,
+        },
+      }
+    );
   }
 
   console.log("OUT - updateCharge");
 };
+
+function getMonthKeyFromDate(date: string) {
+  const months = [
+    "january",
+    "february",
+    "march",
+    "april",
+    "may",
+    "june",
+    "july",
+    "august",
+    "september",
+    "october",
+    "november",
+    "december",
+  ];
+
+  return months[new Date(date).getMonth()];
+}
