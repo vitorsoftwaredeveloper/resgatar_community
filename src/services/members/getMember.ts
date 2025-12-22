@@ -1,6 +1,6 @@
 import { ContributionModel } from "../../models/Contribution";
 import { IMember } from "../../types/members";
-import { findMemberById } from "./helper";
+import { findMemberById } from "../helper";
 
 export const getMemberService = async (
   memberId: string

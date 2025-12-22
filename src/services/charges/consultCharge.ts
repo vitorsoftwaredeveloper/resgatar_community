@@ -1,7 +1,7 @@
 import { ChargeModel } from "../../models/Charge";
 import { createMercadoPagoClient } from "../../integrations/mercadopago";
 import { STATUS_CODE } from "../../constants";
-import { findMemberById } from "../members/helper";
+import { findMemberById } from "../helper";
 import { TRANSACTION_STATUS } from "../../constants/charges";
 import { IChargeDTO, IConsultChargeMPagoResponse } from "../../types/charges";
 import { ContributionModel } from "../../models/Contribution";

@@ -10,6 +10,7 @@ import { DUPLICATE_KEY_ERROR_CODE, STATUS_CODE } from "../../constants";
 import { createCognitoClient } from "../../utils/cognito";
 import { removeMemberService } from "./removeMember";
 import { ContributionModel } from "../../models/Contribution";
+import { createContributionByYear } from "../helper";
 
 export const signUpService = async (
   adminId: string,
@@ -107,40 +108,12 @@ const createMember = async (payload: ISignUpPayload): Promise<any> => {
     throw error;
   });
 
-  await ContributionModel.insertOne({
-    memberId: payload._id,
-    year: new Date().getFullYear(),
-    months: getRemainingMonthsFromNow(),
-  });
+  await createContributionByYear(
+    payload._id,
+    new Date().getFullYear(),
+    new Date().getMonth()
+  );
 
   console.log("OUT - createMember");
   return memberData._id;
 };
-
-function getRemainingMonthsFromNow() {
-  const monthKeys = [
-    "january",
-    "february",
-    "march",
-    "april",
-    "may",
-    "june",
-    "july",
-    "august",
-    "september",
-    "october",
-    "november",
-    "december",
-  ];
-
-  const currentMonthIndex = new Date().getMonth();
-
-  return monthKeys.reduce((acc, month, index) => {
-    if (index >= currentMonthIndex) {
-      acc[month] = {
-        paid: false,
-      };
-    }
-    return acc;
-  }, {} as any);
-}

@@ -69,3 +69,10 @@ functions:
       - httpApi:
           method: GET
           path: /charges/{transactionId}
+
+  createNewContributionByYear:
+    handler: src/handlers/contributions/createNewContributionByYear.execute
+    events:
+      - httpApi:
+          method: POST
+          path: /contributions

@@ -2,7 +2,7 @@ import { MemberModel } from "../../models/Member";
 import { IMember } from "../../types/members";
 import { updateMemberCognitoEmail } from "../../utils/cognito";
 import { executeMongoTransaction } from "../../utils/mongoose";
-import { findMemberById } from "./helper";
+import { findMemberById } from "../helper";
 
 export const editMemberService = async (
   memberId: string,

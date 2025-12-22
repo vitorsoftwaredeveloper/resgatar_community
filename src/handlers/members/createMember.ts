@@ -1,6 +1,6 @@
 import { APIGatewayEvent, APIGatewayProxyResult } from "aws-lambda";
 import { parseRequestBody, validate } from "../../utils/validate";
-import { SignUpValidatorSchema } from "./validation/signupSchema";
+import { SignUpValidatorSchema } from "./validation/createMemberSchema";
 import { signUpService } from "../../services/members/createMember";
 import { sendErrorResponse, sendSuccessResponse } from "../../utils/http";
 import { STATUS_CODE } from "../../constants";

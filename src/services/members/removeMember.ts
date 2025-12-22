@@ -1,7 +1,6 @@
-import { AdminDeleteUserCommand } from "@aws-sdk/client-cognito-identity-provider";
-import { createCognitoClient, removeMemberCognito } from "../../utils/cognito";
+import { removeMemberCognito } from "../../utils/cognito";
 import { MemberModel } from "../../models/Member";
-import { verifyAdmin } from "./helper";
+import { verifyAdmin } from "../helper";
 import { ContributionModel } from "../../models/Contribution";
 
 export const removeMemberService = async (

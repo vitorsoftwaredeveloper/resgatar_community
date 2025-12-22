@@ -8,6 +8,7 @@ import { createMercadoPagoClient } from "../../integrations/mercadopago";
 import { PAYMENT_METHOD_ID } from "../../constants/charges";
 import { MemberModel } from "../../models/Member";
 import { IMember } from "../../types/members";
+import { findMemberById } from "../helper";
 
 export const createChargeService = async (
   memberId: string,
@@ -35,18 +36,6 @@ export const createChargeService = async (
     throw error;
   } finally {
     console.log("OUT - createChargeService");
-  }
-};
-
-const findMemberById = async (memberId: string) => {
-  console.log("IN - formatCharge");
-
-  try {
-    return await MemberModel.findById(memberId);
-  } catch (error) {
-    throw error;
-  } finally {
-    console.log("OUT - formatCharge");
   }
 };
 
