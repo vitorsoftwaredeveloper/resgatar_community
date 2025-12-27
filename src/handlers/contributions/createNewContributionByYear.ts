@@ -30,10 +30,7 @@ export const execute = async (
 
     await createNewContributionByYearService(memberCredentials.sub, body.year);
 
-    return sendSuccessResponse(
-      "Contributions created successfully!",
-      STATUS_CODE.NO_CONTENT
-    );
+    return sendSuccessResponse("", STATUS_CODE.NO_CONTENT);
   } catch (error) {
     console.log({ error });
     return sendErrorResponse(error);

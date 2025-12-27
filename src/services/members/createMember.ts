@@ -9,14 +9,13 @@ import { ISignUpPayload, IMember } from "../../types/members";
 import { DUPLICATE_KEY_ERROR_CODE, STATUS_CODE } from "../../constants";
 import { createCognitoClient } from "../../utils/cognito";
 import { removeMemberService } from "./removeMember";
-import { ContributionModel } from "../../models/Contribution";
 import { createContributionByYear } from "../helper";
 
-export const signUpService = async (
+export const createMemberService = async (
   adminId: string,
   payload: ISignUpPayload
 ): Promise<any> => {
-  console.log("IN - signUpService");
+  console.log("IN - createMemberService");
 
   try {
     const cognito = createCognitoClient();
@@ -32,7 +31,7 @@ export const signUpService = async (
 
     throw error;
   } finally {
-    console.log("OUT - signUpService");
+    console.log("OUT - createMemberService");
   }
 };
 
@@ -96,6 +95,7 @@ const createMember = async (payload: ISignUpPayload): Promise<any> => {
     paymentInfo: payload.paymentInfo,
     identification: payload.identification,
     role: payload.role || "user",
+    tokenPushNotification: payload.tokenPushNotification,
   };
 
   await MemberModel.insertOne(memberData).catch(async (error) => {

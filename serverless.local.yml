@@ -76,3 +76,17 @@ functions:
       - httpApi:
           method: POST
           path: /contributions
+
+  createNotification:
+    handler: src/handlers/notifications/createNotification.execute
+    events:
+      - httpApi:
+          method: POST
+          path: /notifications
+
+  listNotifications:
+    handler: src/handlers/notifications/listNotification.execute
+    events:
+      - httpApi:
+          method: GET
+          path: /notifications

@@ -23,10 +23,7 @@ export const execute = async (
   try {
     await removeMemberService(admin.sub, memberToRemoveId);
 
-    return sendSuccessResponse(
-      "Member removed successfully",
-      STATUS_CODE.NO_CONTENT
-    );
+    return sendSuccessResponse("", STATUS_CODE.NO_CONTENT);
   } catch (error) {
     return sendErrorResponse(error);
   } finally {

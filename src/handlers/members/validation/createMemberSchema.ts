@@ -1,12 +1,12 @@
-export const SignUpValidatorSchema: any = {
+export const createMemberSchema: any = {
   type: "object",
   properties: {
     email: { type: "string", format: "email" },
     phoneNumber: { type: "string" },
-    firstName: { type: "string", nullable: true },
-    lastName: { type: "string", nullable: true },
+    firstName: { type: "string" },
+    lastName: { type: "string" },
     bio: { type: "string", nullable: true },
-    dateOfBirth: { type: "number", minimum: 0, nullable: true },
+    dateOfBirth: { type: "number", minimum: 0 },
     address: {
       type: "object",
       properties: {
@@ -15,6 +15,7 @@ export const SignUpValidatorSchema: any = {
         city: { type: "string", nullable: true },
         state: { type: "string", nullable: true },
         zip: { type: "string", nullable: true },
+        complement: { type: "string", nullable: true },
       },
       required: [],
       additionalProperties: false,
@@ -40,6 +41,7 @@ export const SignUpValidatorSchema: any = {
       additionalProperties: false,
     },
     password: { type: "string" },
+    tokenPushNotification: { type: "string" },
   },
   required: [
     "email",
@@ -50,6 +52,7 @@ export const SignUpValidatorSchema: any = {
     "password",
     "paymentInfo",
     "identification",
+    "tokenPushNotification",
   ],
   additionalProperties: false,
 };

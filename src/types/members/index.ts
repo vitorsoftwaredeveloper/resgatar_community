@@ -22,7 +22,8 @@ interface ISignUpPayload {
     type: "CPF" | "CNPJ";
     numberType: string;
   };
-  role?: "admin" | "user";
+  role: "admin" | "user";
+  tokenPushNotification: string;
 }
 
 type IMember = Omit<ISignUpPayload, "password"> & {

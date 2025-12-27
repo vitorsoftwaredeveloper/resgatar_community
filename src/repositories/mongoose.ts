@@ -15,9 +15,18 @@ export function createInstanceMongoose<T>(
       const document = new mongooseModel(data);
       return await document.save({ ...options });
     },
+    insertMany: async (data: any, options?: any) => {
+      await db();
+
+      return await mongooseModel.insertMany(data, { ...options });
+    },
     updateOne: async (filter: any, data: any, options?: any) => {
       await db();
       return await mongooseModel.updateOne(filter, data, { ...options });
+    },
+    updateMany: async (filter: any, data: any, options?: any) => {
+      await db();
+      return await mongooseModel.updateMany(filter, data, { ...options });
     },
     findOne: async (filter: any, projection?: any, options?: any) => {
       await db();

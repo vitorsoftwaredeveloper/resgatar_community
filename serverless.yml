@@ -125,3 +125,21 @@ functions:
           path: /contributions
           authorizer:
             name: cognitoAuthorizer
+
+  createNotification:
+    handler: src/handlers/notifications/createNotification.execute
+    events:
+      - httpApi:
+          method: POST
+          path: /notifications
+          authorizer:
+            name: cognitoAuthorizer
+
+  listNotifications:
+    handler: src/handlers/notifications/listNotifications.execute
+    events:
+      - httpApi:
+          method: GET
+          path: /notifications
+          authorizer:
+            name: cognitoAuthorizer
