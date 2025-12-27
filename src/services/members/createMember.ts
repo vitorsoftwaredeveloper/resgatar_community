@@ -95,7 +95,6 @@ const createMember = async (payload: ISignUpPayload): Promise<any> => {
     paymentInfo: payload.paymentInfo,
     identification: payload.identification,
     role: payload.role || "user",
-    tokenPushNotification: payload.tokenPushNotification,
   };
 
   await MemberModel.insertOne(memberData).catch(async (error) => {

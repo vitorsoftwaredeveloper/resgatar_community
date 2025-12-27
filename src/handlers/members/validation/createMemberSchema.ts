@@ -41,7 +41,6 @@ export const createMemberSchema: any = {
       additionalProperties: false,
     },
     password: { type: "string" },
-    tokenPushNotification: { type: "string" },
   },
   required: [
     "email",
@@ -52,7 +51,6 @@ export const createMemberSchema: any = {
     "password",
     "paymentInfo",
     "identification",
-    "tokenPushNotification",
   ],
   additionalProperties: false,
 };

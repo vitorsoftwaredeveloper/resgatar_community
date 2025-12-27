@@ -23,7 +23,6 @@ interface ISignUpPayload {
     numberType: string;
   };
   role: "admin" | "user";
-  tokenPushNotification: string;
 }
 
 type IMember = Omit<ISignUpPayload, "password"> & {
