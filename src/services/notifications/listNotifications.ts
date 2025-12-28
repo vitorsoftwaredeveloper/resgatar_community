@@ -8,7 +8,9 @@ export const listNotificationService = async (): Promise<
 
   try {
     const notifications: Array<INotification> = await NotificationModel.find(
-      {}
+      {},
+      {},
+      { sort: { createdAt: -1 }, lean: true }
     );
 
     const TEN_DAYS_IN_MS = 10 * 24 * 60 * 60 * 1000;

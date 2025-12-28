@@ -6,7 +6,12 @@ const NotiicationSchema = new Schema(
   {
     title: { type: String, required: true },
     description: { type: String, required: true },
-    type: { type: String, trim: true, required: true },
+    type: {
+      type: String,
+      trim: true,
+      required: true,
+      enum: ["info", "alert", "warning"],
+    },
   },
   { timestamps: true }
 );
