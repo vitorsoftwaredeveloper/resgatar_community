@@ -1,4 +1,4 @@
-export const createMemberSchema: any = {
+export const editMemberSchema: any = {
   type: "object",
   properties: {
     email: { type: "string", format: "email" },
@@ -21,7 +21,6 @@ export const createMemberSchema: any = {
       additionalProperties: false,
       nullable: true,
     },
-    role: { type: "string", enum: ["admin", "user"] },
     paymentInfo: {
       type: "object",
       properties: {
@@ -43,17 +42,7 @@ export const createMemberSchema: any = {
       required: ["type", "numberType"],
       additionalProperties: false,
     },
-    password: { type: "string" },
   },
-  required: [
-    "email",
-    "phoneNumber",
-    "firstName",
-    "lastName",
-    "dateOfBirth",
-    "password",
-    "paymentInfo",
-    "identification",
-  ],
+  required: [],
   additionalProperties: false,
 };

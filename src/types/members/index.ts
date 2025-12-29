@@ -16,7 +16,7 @@ interface ISignUpPayload {
   };
   paymentInfo: {
     datePayment: number;
-    amount: number;
+    amount: string;
   };
   identification: {
     type: "CPF" | "CNPJ";

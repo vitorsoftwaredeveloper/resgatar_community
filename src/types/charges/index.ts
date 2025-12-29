@@ -214,7 +214,7 @@ interface IChargeDTO {
   memberId: string;
   status: string;
   statusDetail: string;
-  transactionAmount: number;
+  transactionAmount: string;
   paymentMethodId: string;
   currencyId: string;
   dateCreated: string;

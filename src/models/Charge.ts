@@ -19,7 +19,7 @@ const ChargeSchema = new Schema(
       ],
     },
     statusDetail: { type: String, required: true },
-    transactionAmount: { type: Number, required: true },
+    transactionAmount: { type: String, required: true },
     paymentMethodId: {
       type: String,
       required: true,

@@ -6,7 +6,6 @@ import {
 } from "../../types/charges";
 import { createMercadoPagoClient } from "../../integrations/mercadopago";
 import { PAYMENT_METHOD_ID } from "../../constants/charges";
-import { MemberModel } from "../../models/Member";
 import { IMember } from "../../types/members";
 import { findMemberById } from "../helper";
 
@@ -17,8 +16,6 @@ export const createChargeService = async (
   console.log("IN - createChargeService");
 
   const member: IMember = await findMemberById(memberId);
-
-  console.log("Member found:", member);
 
   try {
     const chargeRequest: any = formatCharge(member, payload);
@@ -43,7 +40,7 @@ const formatCharge = (member: IMember, payload: ICreateChargePayload): any => {
   console.log("IN - formatCharge");
 
   const charge = {
-    transaction_amount: payload.transactionAmount,
+    transaction_amount: Number(payload.transactionAmount.replace(",", ".")),
     payment_method_id: PAYMENT_METHOD_ID.PIX as "pix",
     description: "Contribution to Resgatar Community",
     payer: {
@@ -56,6 +53,8 @@ const formatCharge = (member: IMember, payload: ICreateChargePayload): any => {
       email: member.email,
     },
   };
+
+  console.log("Charge formatted for MercadoPago:", { charge });
 
   console.log("OUT - formatCharge");
   return charge;
@@ -72,7 +71,7 @@ const formatChargeDTO = (
     memberId: member._id,
     status: chargeData.status,
     statusDetail: chargeData.status_detail,
-    transactionAmount: Number(chargeData.transaction_amount.toFixed(2)),
+    transactionAmount: String(chargeData.transaction_amount).replace(".", ","),
     paymentMethodId: chargeData.payment_method_id,
     currencyId: chargeData.currency_id,
     dateCreated: chargeData.date_created,
