@@ -16,13 +16,13 @@ interface ISignUpPayload {
   };
   paymentInfo: {
     datePayment: number;
-    amount: number;
+    amount: string;
   };
   identification: {
     type: "CPF" | "CNPJ";
     numberType: string;
   };
-  role?: "admin" | "user";
+  role: "admin" | "user";
 }
 
 type IMember = Omit<ISignUpPayload, "password"> & {

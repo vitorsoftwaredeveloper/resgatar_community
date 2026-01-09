@@ -1,19 +1,8 @@
-import { MercadoPagoConfig, Payment } from "mercadopago";
-import { PaymentGetData } from "mercadopago/dist/clients/payment/get/types";
-import {
-  ICreateChargeMPagoRequest,
-  ICreateChargeMPagoResponse,
-} from "../types/charges";
+import { ICreateChargeMPagoRequest } from "../types/charges";
 import { randomUUID } from "crypto";
 import axios from "axios";
 
 export const createMercadoPagoClient = async () => {
-  const MP = new MercadoPagoConfig({
-    accessToken: process.env.MP_ACCESS_TOKEN!,
-  });
-
-  const mercadoPagoClient = new Payment(MP);
-
   return {
     createPayment: async (chargeData: ICreateChargeMPagoRequest) => {
       return await axios

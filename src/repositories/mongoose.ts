@@ -15,17 +15,28 @@ export function createInstanceMongoose<T>(
       const document = new mongooseModel(data);
       return await document.save({ ...options });
     },
+    insertMany: async (data: any, options?: any) => {
+      await db();
+
+      return await mongooseModel.insertMany(data, { ...options });
+    },
     updateOne: async (filter: any, data: any, options?: any) => {
       await db();
       return await mongooseModel.updateOne(filter, data, { ...options });
     },
-    findOne: async (filter: any, options?: any) => {
+    updateMany: async (filter: any, data: any, options?: any) => {
       await db();
-      return await mongooseModel.findOne(filter, { ...options }).lean();
+      return await mongooseModel.updateMany(filter, data, { ...options });
     },
-    find: async (filter: any, options?: any) => {
+    findOne: async (filter: any, projection?: any, options?: any) => {
       await db();
-      return await mongooseModel.find(filter, { ...options }).lean();
+      return await mongooseModel
+        .findOne(filter, projection, { ...options })
+        .lean();
+    },
+    find: async (filter: any, projection?: any, options?: any) => {
+      await db();
+      return await mongooseModel.find(filter, projection, options).lean();
     },
     findById: async (id: any, projection?: any, options?: any) => {
       await db();
@@ -36,6 +47,10 @@ export function createInstanceMongoose<T>(
     deleteOne: async (filter: any, options?: any) => {
       await db();
       return await mongooseModel.deleteOne(filter, { ...options });
+    },
+    deleteMany: async (filter: any, options?: any) => {
+      await db();
+      return await mongooseModel.deleteMany(filter, { ...options });
     },
     count: async (filter: any, options?: any) => {
       await db();

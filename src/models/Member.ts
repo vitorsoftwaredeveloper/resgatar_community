@@ -15,7 +15,7 @@ const AddressSchema = new Schema(
 );
 
 const PaymentInfoSchema = new Schema(
-  { datePayment: { type: Number }, amount: { type: Number, min: 1 } },
+  { datePayment: { type: Number }, amount: { type: String, min: 1 } },
   { _id: false }
 );
 

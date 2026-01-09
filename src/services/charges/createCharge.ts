@@ -6,8 +6,8 @@ import {
 } from "../../types/charges";
 import { createMercadoPagoClient } from "../../integrations/mercadopago";
 import { PAYMENT_METHOD_ID } from "../../constants/charges";
-import { MemberModel } from "../../models/Member";
 import { IMember } from "../../types/members";
+import { findMemberById } from "../helper";
 
 export const createChargeService = async (
   memberId: string,
@@ -16,8 +16,6 @@ export const createChargeService = async (
   console.log("IN - createChargeService");
 
   const member: IMember = await findMemberById(memberId);
-
-  console.log("Member found:", member);
 
   try {
     const chargeRequest: any = formatCharge(member, payload);
@@ -38,25 +36,13 @@ export const createChargeService = async (
   }
 };
 
-const findMemberById = async (memberId: string) => {
-  console.log("IN - formatCharge");
-
-  try {
-    return await MemberModel.findById(memberId);
-  } catch (error) {
-    throw error;
-  } finally {
-    console.log("OUT - formatCharge");
-  }
-};
-
 const formatCharge = (member: IMember, payload: ICreateChargePayload): any => {
   console.log("IN - formatCharge");
 
   const charge = {
-    transaction_amount: Number(payload.transactionAmount),
+    transaction_amount: Number(payload.transactionAmount.replace(",", ".")),
     payment_method_id: PAYMENT_METHOD_ID.PIX as "pix",
-    description: payload.description,
+    description: "Contribution to Resgatar Community",
     payer: {
       identification: {
         number: member.identification.numberType.replace(/\D/g, ""),
@@ -67,6 +53,8 @@ const formatCharge = (member: IMember, payload: ICreateChargePayload): any => {
       email: member.email,
     },
   };
+
+  console.log("Charge formatted for MercadoPago:", { charge });
 
   console.log("OUT - formatCharge");
   return charge;
@@ -83,7 +71,7 @@ const formatChargeDTO = (
     memberId: member._id,
     status: chargeData.status,
     statusDetail: chargeData.status_detail,
-    transactionAmount: chargeData.transaction_amount,
+    transactionAmount: member.paymentInfo.amount,
     paymentMethodId: chargeData.payment_method_id,
     currencyId: chargeData.currency_id,
     dateCreated: chargeData.date_created,

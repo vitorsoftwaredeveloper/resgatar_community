@@ -21,12 +21,12 @@ plugins:
   - serverless-offline
 
 functions:
-  signup:
-    handler: src/handlers/members/signup.execute
+  createMember:
+    handler: src/handlers/members/createMember.execute
     events:
       - httpApi:
           method: POST
-          path: /signup
+          path: /createMember
 
   removeMember:
     handler: src/handlers/members/removeMember.execute
@@ -69,3 +69,31 @@ functions:
       - httpApi:
           method: GET
           path: /charges/{transactionId}
+
+  createNewContributionByYear:
+    handler: src/handlers/contributions/createNewContributionByYear.execute
+    events:
+      - httpApi:
+          method: POST
+          path: /contributions
+
+  createNotification:
+    handler: src/handlers/notifications/createNotification.execute
+    events:
+      - httpApi:
+          method: POST
+          path: /notifications
+
+  listNotifications:
+    handler: src/handlers/notifications/listNotification.execute
+    events:
+      - httpApi:
+          method: GET
+          path: /notifications
+
+  updatePassword:
+    handler: src/handlers/members/updatePassword.execute
+    events:
+      - httpApi:
+          method: PUT
+          path: /updatePassword

@@ -48,11 +48,11 @@ plugins:
   - serverless-prune-plugin
 
 functions:
-  signup:
-    handler: src/handlers/members/signup.execute
+  createMember:
+    handler: src/handlers/members/createMember.execute
     events:
       - httpApi:
-          path: /signup
+          path: /members
           method: POST
           authorizer:
             name: cognitoAuthorizer
@@ -61,7 +61,7 @@ functions:
     handler: src/handlers/members/removeMember.execute
     events:
       - httpApi:
-          path: /removeMember/{memberId}
+          path: /members/{memberId}
           method: DELETE
           authorizer:
             name: cognitoAuthorizer
@@ -71,7 +71,7 @@ functions:
     events:
       - httpApi:
           method: GET
-          path: /members
+          path: /members/list
           authorizer:
             name: cognitoAuthorizer
 
@@ -80,7 +80,7 @@ functions:
     events:
       - httpApi:
           method: GET
-          path: /member
+          path: /members
           authorizer:
             name: cognitoAuthorizer
 
@@ -89,7 +89,16 @@ functions:
     events:
       - httpApi:
           method: PUT
-          path: /member
+          path: /members/{memberId}
+          authorizer:
+            name: cognitoAuthorizer
+
+  updatePassword:
+    handler: src/handlers/members/updatePassword.execute
+    events:
+      - httpApi:
+          method: PUT
+          path: /members/password
           authorizer:
             name: cognitoAuthorizer
 
@@ -114,5 +123,32 @@ functions:
       - httpApi:
           method: GET
           path: /charges/{transactionId}
+          authorizer:
+            name: cognitoAuthorizer
+
+  createNewContributionByYear:
+    handler: src/handlers/contributions/createNewContributionByYear.execute
+    events:
+      - httpApi:
+          method: POST
+          path: /contributions
+          authorizer:
+            name: cognitoAuthorizer
+
+  createNotification:
+    handler: src/handlers/notifications/createNotification.execute
+    events:
+      - httpApi:
+          method: POST
+          path: /notifications
+          authorizer:
+            name: cognitoAuthorizer
+
+  listNotifications:
+    handler: src/handlers/notifications/listNotifications.execute
+    events:
+      - httpApi:
+          method: GET
+          path: /notifications
           authorizer:
             name: cognitoAuthorizer

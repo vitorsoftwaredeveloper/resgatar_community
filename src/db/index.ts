@@ -1,8 +1,7 @@
-import mongoose, { mongo } from "mongoose";
+import mongoose from "mongoose";
 
 let connection: any = null;
 export const db = async () => {
-  console.log("IN - db");
   try {
     if (connection) {
       console.log("db connection reused");
@@ -14,7 +13,5 @@ export const db = async () => {
     return connection;
   } catch (err) {
     console.log("connection database error", err);
-  } finally {
-    console.log("OUT - db");
   }
 };

@@ -1,7 +1,8 @@
-import { AdminDeleteUserCommand } from "@aws-sdk/client-cognito-identity-provider";
-import { createCognitoClient, removeMemberCognito } from "../../utils/cognito";
+import { removeMemberCognito } from "../../utils/cognito";
 import { MemberModel } from "../../models/Member";
-import { verifyAdmin } from "./helper";
+import { verifyAdmin } from "../helper";
+import { ContributionModel } from "../../models/Contribution";
+import { ChargeModel } from "../../models/Charge";
 
 export const removeMemberService = async (
   adminId: string,
@@ -14,7 +15,11 @@ export const removeMemberService = async (
   try {
     await removeMemberCognito(idMember);
 
-    await MemberModel.deleteOne({ _id: idMember });
+    await Promise.all([
+      MemberModel.deleteOne({ _id: idMember }),
+      ContributionModel.deleteMany({ memberId: idMember }),
+      ChargeModel.deleteMany({ memberId: idMember }),
+    ]);
   } catch (error) {
     throw error;
   } finally {

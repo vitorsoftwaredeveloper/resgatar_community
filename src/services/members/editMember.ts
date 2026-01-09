@@ -2,7 +2,7 @@ import { MemberModel } from "../../models/Member";
 import { IMember } from "../../types/members";
 import { updateMemberCognitoEmail } from "../../utils/cognito";
 import { executeMongoTransaction } from "../../utils/mongoose";
-import { findMemberById } from "./helper";
+import { findMemberById } from "../helper";
 
 export const editMemberService = async (
   memberId: string,
@@ -12,9 +12,26 @@ export const editMemberService = async (
 
   const member = await findMemberById(memberId);
   try {
-    const updatedMember: Partial<IMember> = {
+    const updatedMember: IMember = {
       ...member,
-      ...payload,
+      ...(payload.email && { email: payload.email }),
+      ...(payload.phoneNumber && { phoneNumber: payload.phoneNumber }),
+      ...(payload.firstName && { firstName: payload.firstName }),
+      ...(payload.lastName && { lastName: payload.lastName }),
+      ...(payload.bio && { bio: payload.bio }),
+      ...(payload.dateOfBirth && { dateOfBirth: payload.dateOfBirth }),
+      ...(payload.address && { address: payload.address }),
+      ...(payload.paymentInfo && {
+        paymentInfo: {
+          datePayment: payload.paymentInfo.datePayment
+            ? payload.paymentInfo.datePayment
+            : member.paymentInfo.datePayment,
+          amount: payload.paymentInfo.amount
+            ? payload.paymentInfo.amount
+            : member.paymentInfo.amount,
+        },
+      }),
+      ...(payload.identification && { identification: payload.identification }),
     };
 
     console.log("Member to be updated:", updatedMember);

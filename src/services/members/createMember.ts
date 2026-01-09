@@ -7,22 +7,18 @@ import {
 import { MemberModel } from "../../models/Member";
 import { ISignUpPayload, IMember } from "../../types/members";
 import { DUPLICATE_KEY_ERROR_CODE, STATUS_CODE } from "../../constants";
-import { createCognitoClient } from "../../utils/cognito";
+import { createCognitoUser } from "../../utils/cognito";
 import { removeMemberService } from "./removeMember";
+import { createContributionByYear } from "../helper";
 
-export const signUpService = async (
+export const createMemberService = async (
   adminId: string,
   payload: ISignUpPayload
 ): Promise<any> => {
-  console.log("IN - signUpService");
+  console.log("IN - createMemberService");
 
   try {
-    const cognito = createCognitoClient();
-    payload["_id"] = await createCognitoUser(
-      cognito,
-      payload.email,
-      payload.password
-    );
+    payload["_id"] = await createCognitoUser(payload.email, payload.password);
 
     return await createMember(payload);
   } catch (error) {
@@ -30,52 +26,8 @@ export const signUpService = async (
 
     throw error;
   } finally {
-    console.log("OUT - signUpService");
+    console.log("OUT - createMemberService");
   }
-};
-
-const createCognitoUser = async (
-  cognito: CognitoIdentityProviderClient,
-  email: string,
-  password: string
-): Promise<string> => {
-  console.log("IN - createCognitoUser");
-
-  let idMember = "";
-  try {
-    await cognito.send(
-      new AdminCreateUserCommand({
-        UserPoolId: process.env.USER_POOL_ID!,
-        Username: email,
-        TemporaryPassword: "Temp123!",
-      })
-    );
-
-    await cognito.send(
-      new AdminSetUserPasswordCommand({
-        UserPoolId: process.env.USER_POOL_ID!,
-        Username: email,
-        Password: password,
-        Permanent: true,
-      })
-    );
-
-    const member = await cognito.send(
-      new AdminGetUserCommand({
-        UserPoolId: process.env.USER_POOL_ID!,
-        Username: email,
-      })
-    );
-
-    idMember = member.UserAttributes?.find((attr) => attr.Name === "sub")
-      ?.Value as string;
-  } catch (error) {
-    console.error("Error creating Cognito user:", error);
-    throw error;
-  }
-
-  console.log("OUT - createCognitoUser");
-  return idMember;
 };
 
 const createMember = async (payload: ISignUpPayload): Promise<any> => {
@@ -105,6 +57,12 @@ const createMember = async (payload: ISignUpPayload): Promise<any> => {
     }
     throw error;
   });
+
+  await createContributionByYear(
+    payload._id,
+    new Date().getFullYear(),
+    new Date().getMonth()
+  );
 
   console.log("OUT - createMember");
   return memberData._id;

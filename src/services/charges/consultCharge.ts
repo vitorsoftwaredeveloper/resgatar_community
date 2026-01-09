@@ -1,9 +1,10 @@
 import { ChargeModel } from "../../models/Charge";
 import { createMercadoPagoClient } from "../../integrations/mercadopago";
 import { STATUS_CODE } from "../../constants";
-import { findMemberById } from "../members/helper";
+import { findMemberById } from "../helper";
 import { TRANSACTION_STATUS } from "../../constants/charges";
 import { IChargeDTO, IConsultChargeMPagoResponse } from "../../types/charges";
+import { ContributionModel } from "../../models/Contribution";
 
 export const consultChargeService = async (
   memberId: string,
@@ -56,7 +57,42 @@ const updateCharge = async (
         },
       }
     );
+
+    const monthKey = getMonthKeyFromDate(charge.dateCreated);
+
+    await ContributionModel.updateOne(
+      {
+        memberId: charge.memberId,
+        year: new Date(charge.dateCreated).getFullYear(),
+      },
+      {
+        $set: {
+          [`months.${monthKey}.paid`]: true,
+          [`months.${monthKey}.paidAt`]: new Date(),
+          [`months.${monthKey}.value`]: charge.transactionAmount,
+        },
+      }
+    );
   }
 
   console.log("OUT - updateCharge");
 };
+
+function getMonthKeyFromDate(date: string) {
+  const months = [
+    "january",
+    "february",
+    "march",
+    "april",
+    "may",
+    "june",
+    "july",
+    "august",
+    "september",
+    "october",
+    "november",
+    "december",
+  ];
+
+  return months[new Date(date).getMonth()];
+}
