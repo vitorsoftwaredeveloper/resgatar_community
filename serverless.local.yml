@@ -90,3 +90,10 @@ functions:
       - httpApi:
           method: GET
           path: /notifications
+
+  updatePassword:
+    handler: src/handlers/members/updatePassword.execute
+    events:
+      - httpApi:
+          method: PUT
+          path: /updatePassword

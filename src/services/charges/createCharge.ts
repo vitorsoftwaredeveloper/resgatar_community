@@ -71,7 +71,7 @@ const formatChargeDTO = (
     memberId: member._id,
     status: chargeData.status,
     statusDetail: chargeData.status_detail,
-    transactionAmount: String(chargeData.transaction_amount).replace(".", ","),
+    transactionAmount: member.paymentInfo.amount,
     paymentMethodId: chargeData.payment_method_id,
     currencyId: chargeData.currency_id,
     dateCreated: chargeData.date_created,

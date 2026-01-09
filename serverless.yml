@@ -93,6 +93,15 @@ functions:
           authorizer:
             name: cognitoAuthorizer
 
+  updatePassword:
+    handler: src/handlers/members/updatePassword.execute
+    events:
+      - httpApi:
+          method: PUT
+          path: /members/password
+          authorizer:
+            name: cognitoAuthorizer
+
   createCharge:
     handler: src/handlers/charges/createCharge.execute
     environment:
