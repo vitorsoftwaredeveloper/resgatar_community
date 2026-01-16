@@ -98,7 +98,7 @@ functions:
     events:
       - httpApi:
           method: PUT
-          path: /members/password
+          path: /members/{memberId}/password
           authorizer:
             name: cognitoAuthorizer
 

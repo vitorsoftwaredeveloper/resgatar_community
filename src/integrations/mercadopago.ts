@@ -5,6 +5,7 @@ import axios from "axios";
 export const createMercadoPagoClient = async () => {
   return {
     createPayment: async (chargeData: ICreateChargeMPagoRequest) => {
+      console.log("IN - createPayment - MPago");
       return await axios
         .post(process.env.MPAGO_TRANSACTION_URL as string, chargeData, {
           headers: {
@@ -20,9 +21,13 @@ export const createMercadoPagoClient = async () => {
         .catch((error) => {
           console.error(error);
           throw error;
+        })
+        .finally(() => {
+          console.log("OUT - createPayment - MPago");
         });
     },
     consultPayment: async (transactionId: string) => {
+      console.log("IN - consultPayment - MPago");
       return await axios
         .get(`${process.env.MPAGO_TRANSACTION_URL}/${transactionId}`, {
           headers: {
@@ -38,6 +43,9 @@ export const createMercadoPagoClient = async () => {
         .catch((error) => {
           console.error(error);
           throw error;
+        })
+        .finally(() => {
+          console.log("OUT - consultPayment - MPago");
         });
     },
   };
