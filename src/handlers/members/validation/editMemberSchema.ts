@@ -1,6 +1,7 @@
 export const editMemberSchema: any = {
   type: "object",
   properties: {
+    _id: { type: "string" },
     email: { type: "string", format: "email" },
     phoneNumber: { type: "string" },
     firstName: { type: "string" },

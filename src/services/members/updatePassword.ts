@@ -1,13 +1,30 @@
+import { STATUS_CODE } from "../../constants";
+import { MEMBER_ROLES } from "../../constants/members";
 import { changeCognitoPassword } from "../../utils/cognito";
+import { sendErrorResponse } from "../../utils/http";
 import { findMemberById } from "../helper";
 
 export const updatePasswordService = async (
+  tokenMemberId: string,
+  password: string,
   memberId: string,
-  password: string
 ) => {
   console.log("IN - updatePasswordService");
+  console.log("token Member Id:", tokenMemberId);
   console.log("Member id:", memberId);
-  await findMemberById(memberId);
+
+  const memberAuthorized = await findMemberById(tokenMemberId);
+  const memberWillBeUpdated = await findMemberById(memberId);
+
+  if (
+    memberAuthorized.role === MEMBER_ROLES.USER &&
+    memberWillBeUpdated._id !== memberAuthorized._id
+  ) {
+    return sendErrorResponse({
+      statusCode: STATUS_CODE.FORBIDDEN,
+      message: "You are not authorized to update this password",
+    });
+  }
 
   try {
     await changeCognitoPassword(memberId, password);

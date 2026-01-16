@@ -4,7 +4,7 @@ import { createInstanceMongoose } from "../repositories/mongoose";
 const MonthSchema = new Schema(
   {
     paid: { type: Boolean, default: false },
-    value: { type: Number },
+    value: { type: String },
     paidAt: { type: Date },
   },
   { _id: false }
