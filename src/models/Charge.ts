@@ -47,7 +47,8 @@ const ChargeSchema = new Schema(
       qrCodeBase64: { type: String },
       ticketUrl: { type: String },
     },
+    referenceMonth: { type: Number, required: true },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 export const ChargeModel = createInstanceMongoose("charges", ChargeSchema);

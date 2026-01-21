@@ -5,10 +5,11 @@ import { findMemberById } from "../helper";
 import { TRANSACTION_STATUS } from "../../constants/charges";
 import { IChargeDTO, IConsultChargeMPagoResponse } from "../../types/charges";
 import { ContributionModel } from "../../models/Contribution";
+import { executeMongoTransaction } from "../../utils/mongoose";
 
 export const consultChargeService = async (
   memberId: string,
-  transactionId: string
+  transactionId: string,
 ): Promise<any> => {
   console.log("IN - consultChargeService");
 
@@ -30,7 +31,9 @@ export const consultChargeService = async (
     if (charge.status === TRANSACTION_STATUS.PENDING) {
       response = await mpClient.consultPayment(transactionId);
 
-      await updateCharge(charge, response);
+      if (charge.status !== response.status) {
+        await updateCharge(charge, response);
+      }
     }
 
     return { ...charge, ...(response && { status: response.status }) };
@@ -43,22 +46,22 @@ export const consultChargeService = async (
 
 const updateCharge = async (
   charge: IChargeDTO,
-  chargeConsulted: IConsultChargeMPagoResponse
+  chargeConsulted: IConsultChargeMPagoResponse,
 ) => {
   console.log("IN - updateCharge");
-
-  if (charge.status !== chargeConsulted.status) {
+  await executeMongoTransaction(async () => {
     await ChargeModel.updateOne(
       { transactionId: charge.transactionId },
       {
         $set: {
+          status: chargeConsulted.status,
           statusDetail: chargeConsulted.status_detail,
           dateApproved: chargeConsulted.date_approved,
         },
-      }
+      },
     );
 
-    const monthKey = getMonthKeyFromDate(charge.dateCreated);
+    const monthKey = getMonthKeyFromDate(charge.referenceMonth);
 
     await ContributionModel.updateOne(
       {
@@ -71,14 +74,14 @@ const updateCharge = async (
           [`months.${monthKey}.paidAt`]: new Date(),
           [`months.${monthKey}.value`]: charge.transactionAmount,
         },
-      }
+      },
     );
-  }
+  });
 
   console.log("OUT - updateCharge");
 };
 
-function getMonthKeyFromDate(date: string) {
+function getMonthKeyFromDate(month: number) {
   const months = [
     "january",
     "february",
@@ -94,5 +97,5 @@ function getMonthKeyFromDate(date: string) {
     "december",
   ];
 
-  return months[new Date(date).getMonth()];
+  return months[month];
 }

@@ -1,6 +1,6 @@
 interface ICreateChargePayload {
   transactionAmount: string;
-  description: string;
+  referenceMonth: number;
 }
 
 interface ICreateChargeMPagoRequest {
@@ -234,6 +234,7 @@ interface IChargeDTO {
     qrCodeBase64?: string;
     ticketUrl?: string;
   };
+  referenceMonth: number;
 }
 
 export {

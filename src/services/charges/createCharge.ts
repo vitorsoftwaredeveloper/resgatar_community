@@ -11,7 +11,7 @@ import { findMemberById } from "../helper";
 
 export const createChargeService = async (
   memberId: string,
-  payload: ICreateChargePayload
+  payload: ICreateChargePayload,
 ): Promise<any> => {
   console.log("IN - createChargeService");
 
@@ -24,7 +24,7 @@ export const createChargeService = async (
 
     const response = await mpClient.createPayment(chargeRequest);
 
-    const chargeDTO = formatChargeDTO(member, response);
+    const chargeDTO = formatChargeDTO(member, payload.referenceMonth, response);
 
     await saveCharge(chargeDTO);
 
@@ -62,7 +62,8 @@ const formatCharge = (member: IMember, payload: ICreateChargePayload): any => {
 
 const formatChargeDTO = (
   member: IMember,
-  chargeData: ICreateChargeMPagoResponse
+  referenceMonth: number,
+  chargeData: ICreateChargeMPagoResponse,
 ): IChargeDTO => {
   console.log("IN - formatChargeDTO");
 
@@ -92,6 +93,7 @@ const formatChargeDTO = (
         chargeData.point_of_interaction.transaction_data.qr_code_base64,
       ticketUrl: chargeData.point_of_interaction.transaction_data.ticket_url,
     },
+    referenceMonth,
   };
 
   console.log("Charge DTO formatted:", { chargeDTO });
