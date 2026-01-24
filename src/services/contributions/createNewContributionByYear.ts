@@ -1,38 +1,26 @@
-import { ChargeModel } from "../../models/Charge";
-import {
-  ICreateChargePayload,
-  ICreateChargeMPagoResponse,
-  IChargeDTO,
-} from "../../types/charges";
-import { createMercadoPagoClient } from "../../integrations/mercadopago";
-import { PAYMENT_METHOD_ID } from "../../constants/charges";
-import { MemberModel } from "../../models/Member";
 import { IMember } from "../../types/members";
 import { MEMBER_ROLES } from "../../constants/members";
 import { STATUS_CODE } from "../../constants";
-import { createContributionByYear, findMemberById } from "../helper";
-import { ContributionModel } from "../../models/Contribution";
+import {
+  createContributionByYear,
+  findMemberById,
+  verifyAdmin,
+} from "../helper";
+import { MemberModel } from "../../models/Member";
 
 export const createNewContributionByYearService = async (
   memberId: string,
-  year: number
+  year: number,
 ): Promise<any> => {
   console.log("IN - createNewContributionByYearService");
 
-  const member: IMember = await findMemberById(memberId);
-
-  if (member.role !== MEMBER_ROLES.ADMIN) {
-    throw {
-      message: "Unauthorized access",
-      statusCode: STATUS_CODE.UNAUTHORIZED,
-    };
-  }
+  await verifyAdmin(memberId);
 
   try {
     const members = await findAllMembers();
 
     const result = await Promise.allSettled(
-      members.map(({ _id }) => createContributionByYear(_id, year, 0))
+      members.map(({ _id }) => createContributionByYear(_id, year, 0)),
     );
 
     if (result.some((res) => res.status === "rejected")) {

@@ -152,3 +152,11 @@ functions:
           path: /notifications
           authorizer:
             name: cognitoAuthorizer
+
+  removeCharges:
+    handler: src/services/agents/removeCharges.execute
+    events:
+      - schedule:
+          rate: cron(0 0 11 * ? *)
+          enabled: true
+          name: removeChargesSchedule

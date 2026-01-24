@@ -1,9 +1,3 @@
-import {
-  AdminCreateUserCommand,
-  AdminGetUserCommand,
-  AdminSetUserPasswordCommand,
-  CognitoIdentityProviderClient,
-} from "@aws-sdk/client-cognito-identity-provider";
 import { MemberModel } from "../../models/Member";
 import { ISignUpPayload, IMember } from "../../types/members";
 import { DUPLICATE_KEY_ERROR_CODE, STATUS_CODE } from "../../constants";
@@ -13,7 +7,7 @@ import { createContributionByYear } from "../helper";
 
 export const createMemberService = async (
   adminId: string,
-  payload: ISignUpPayload
+  payload: ISignUpPayload,
 ): Promise<any> => {
   console.log("IN - createMemberService");
 
@@ -61,7 +55,7 @@ const createMember = async (payload: ISignUpPayload): Promise<any> => {
   await createContributionByYear(
     payload._id,
     new Date().getFullYear(),
-    new Date().getMonth()
+    new Date().getMonth(),
   );
 
   console.log("OUT - createMember");
