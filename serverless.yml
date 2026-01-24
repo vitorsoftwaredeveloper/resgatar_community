@@ -156,6 +156,7 @@ functions:
   removeCharges:
     handler: src/services/agents/removeCharges.execute
     events:
-      - cron:
-          schedule: "0 0 11 * *"
-          timezone: America/Sao_Paulo
+      - schedule:
+          rate: cron(0 0 11 * ? *)
+          enabled: true
+          name: removeChargesSchedule
