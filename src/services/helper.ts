@@ -7,7 +7,7 @@ import { IMember } from "../types/members";
 const findMemberById = async (
   memberId: string,
   projection?: any,
-  options?: any
+  options?: any,
 ): Promise<IMember> => {
   console.log("IN - findMemberById");
 
@@ -27,23 +27,13 @@ const findMemberById = async (
   return member;
 };
 
-const isAdmin = (member: IMember): boolean => {
-  console.log("IN - isAdmin");
-
-  const admin = member.role === MEMBER_ROLES.ADMIN;
-
-  console.log("OUT - isAdmin");
-
-  return admin;
-};
-
 const verifyAdmin = async (memberId: string): Promise<void> => {
   console.log("IN - verifyAdmin");
 
   try {
     const member = await findMemberById(memberId);
 
-    if (!isAdmin(member as IMember)) {
+    if (!(member.role === MEMBER_ROLES.ADMIN)) {
       throw {
         message: "Unauthorized access",
         statusCode: STATUS_CODE.UNAUTHORIZED,
@@ -56,21 +46,16 @@ const verifyAdmin = async (memberId: string): Promise<void> => {
   console.log("OUT - verifyAdmin");
 };
 
-const createContributionByYear = async (
+const createContributionByYear = (
   memberId: string,
   year: number,
-  monthIndex: number
-) => {
-  console.log("IN - createContributionByYear");
-
-  await ContributionModel.insertOne({
+  monthIndex: number,
+) =>
+  ContributionModel.insertOne({
     memberId,
     year,
     months: getRemainingMonthsFromNow(monthIndex),
   });
-
-  console.log("OUT - createContributionByYear");
-};
 
 function getRemainingMonthsFromNow(monthIndex: number) {
   const monthKeys = [

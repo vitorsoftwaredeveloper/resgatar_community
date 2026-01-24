@@ -1,5 +1,4 @@
-import mongoose, { Schema } from "mongoose";
-import { v4 as uuidv4 } from "uuid";
+import { Schema } from "mongoose";
 import { createInstanceMongoose } from "../repositories/mongoose";
 
 const NotiicationSchema = new Schema(
@@ -13,9 +12,15 @@ const NotiicationSchema = new Schema(
       enum: ["info", "alert", "warning"],
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
+
+NotiicationSchema.index(
+  { createdAt: 1 },
+  { expireAfterSeconds: 30 * 24 * 60 * 60 },
+);
+
 export const NotificationModel = createInstanceMongoose(
   "notifications",
-  NotiicationSchema
+  NotiicationSchema,
 );
