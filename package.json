@@ -5,7 +5,9 @@
     "dev": "nodemon",
     "deploy:dev": "serverless deploy --stage dev",
     "deploy:hml": "serverless deploy --stage hml",
-    "deploy:prd": "serverless deploy --stage prd"
+    "deploy:prod": "serverless deploy --stage prod",
+    "remove:hml": "serverless remove --stage hml",
+    "remove:prod": "serverless remove --stage prod"
   },
   "keywords": [],
   "author": "",
