@@ -159,4 +159,3 @@ functions:
       - schedule:
           rate: cron(0 0 11 * ? *)
           enabled: true
-          name: removeChargesSchedule
