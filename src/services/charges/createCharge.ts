@@ -8,6 +8,7 @@ import { createMercadoPagoClient } from "../../integrations/mercadopago";
 import { PAYMENT_METHOD_ID } from "../../constants/charges";
 import { IMember } from "../../types/members";
 import { findMemberById } from "../helper";
+import { decrypt } from "../../utils/crypto";
 
 export const createChargeService = async (
   memberId: string,
@@ -45,7 +46,7 @@ const formatCharge = (member: IMember, payload: ICreateChargePayload): any => {
     description: "Contribution to Resgatar Community",
     payer: {
       identification: {
-        number: member.identification.numberType.replace(/\D/g, ""),
+        number: decrypt(member.identification.numberType),
         type: member.identification.type,
       },
       last_name: member.lastName,
