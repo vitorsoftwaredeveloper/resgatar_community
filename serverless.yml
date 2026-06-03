@@ -160,12 +160,3 @@ functions:
       - schedule:
           rate: cron(0 0 11 * ? *)
           enabled: true
-
-  migrateCpfEncryption:
-    handler: src/handlers/migrations/migrateCpfEncryption.execute
-    events:
-      - httpApi:
-          method: POST
-          path: /migrations/cpf-encryption
-          authorizer:
-            name: cognitoAuthorizer
