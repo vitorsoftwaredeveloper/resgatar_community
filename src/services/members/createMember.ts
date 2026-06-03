@@ -4,6 +4,7 @@ import { DUPLICATE_KEY_ERROR_CODE, STATUS_CODE } from "../../constants";
 import { createCognitoUser } from "../../utils/cognito";
 import { removeMemberService } from "./removeMember";
 import { createContributionByYear } from "../helper";
+import { encrypt } from "../../utils/crypto";
 
 export const createMemberService = async (
   adminId: string,
@@ -38,7 +39,10 @@ const createMember = async (payload: ISignUpPayload): Promise<any> => {
     dateOfBirth: payload.dateOfBirth,
     address: payload.address,
     paymentInfo: payload.paymentInfo,
-    identification: payload.identification,
+    identification: {
+      type: payload.identification.type,
+      numberType: encrypt(payload.identification.numberType),
+    },
     role: payload.role || "user",
   };
 

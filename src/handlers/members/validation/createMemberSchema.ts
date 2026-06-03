@@ -38,7 +38,7 @@ export const createMemberSchema: any = {
       type: "object",
       properties: {
         type: { type: "string", enum: ["CPF", "CNPJ"] },
-        numberType: { type: "string" },
+        numberType: { type: "string", pattern: "^[0-9]+$" },
       },
       required: ["type", "numberType"],
       additionalProperties: false,
