@@ -50,7 +50,7 @@ const formatCharge = (member: IMember, payload: ICreateChargePayload): any => {
       },
       last_name: member.lastName,
       first_name: member.firstName,
-      email: member.email,
+      email: "teste@mail.com",
     },
   };
 
