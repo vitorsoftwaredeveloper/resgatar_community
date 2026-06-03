@@ -3,6 +3,7 @@ import { IMember } from "../../types/members";
 import { updateMemberCognitoEmail } from "../../utils/cognito";
 import { executeMongoTransaction } from "../../utils/mongoose";
 import { findMemberById } from "../helper";
+import { encrypt } from "../../utils/crypto";
 
 export const editMemberService = async (
   memberId: string,
@@ -31,7 +32,12 @@ export const editMemberService = async (
             : member.paymentInfo.amount,
         },
       }),
-      ...(payload.identification && { identification: payload.identification }),
+      ...(payload.identification && {
+        identification: {
+          type: payload.identification.type,
+          numberType: encrypt(payload.identification.numberType),
+        },
+      }),
     };
 
     console.log("Member to be updated:", updatedMember);

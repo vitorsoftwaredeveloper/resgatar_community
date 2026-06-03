@@ -1,6 +1,7 @@
 import { ContributionModel } from "../../models/Contribution";
 import { IMember } from "../../types/members";
 import { findMemberById } from "../helper";
+import { decrypt } from "../../utils/crypto";
 
 export const getMemberService = async (
   memberId: string,
@@ -32,6 +33,10 @@ export const getMemberService = async (
 
   return {
     ...member,
+    identification: {
+      type: member.identification.type,
+      numberType: decrypt(member.identification.numberType),
+    },
     contributions,
   };
 };

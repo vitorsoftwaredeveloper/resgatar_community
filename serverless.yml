@@ -20,6 +20,7 @@ provider:
     USER_POOL_ID: ${self:custom.environment.USER_POOL_ID}
     CLIENT_ID: ${self:custom.environment.CLIENT_ID}
     DB: ${self:custom.environment.DB}
+    ENCRYPTION_KEY: ${self:custom.environment.ENCRYPTION_KEY}
 
   httpApi:
     authorizers:
