@@ -9,7 +9,6 @@ import { STATUS_CODE } from "../../constants";
 export const execute = async (
   event: APIGatewayEvent,
 ): Promise<APIGatewayProxyResult> => {
-  console.log("Event:", event);
   console.log("IN - updatePassword");
 
   const memberCredentials = decodeToken(event.headers.authorization as string);
