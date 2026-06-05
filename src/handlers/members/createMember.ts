@@ -7,14 +7,16 @@ import { STATUS_CODE } from "../../constants";
 import { decodeToken } from "../../utils/helper";
 
 export const execute = async (
-  event: APIGatewayEvent
+  event: APIGatewayEvent,
 ): Promise<APIGatewayProxyResult> => {
   try {
     console.log("IN - createMember");
-    console.log("Body:", event.body);
 
     const admin = decodeToken(event.headers.authorization as string);
     const payload = parseRequestBody(event.body) as any;
+
+    const { identification, ...rest } = payload;
+    console.log("Payload:", JSON.stringify(rest));
 
     const errors = validate(createMemberSchema, payload);
     if (errors.length > 0) {
@@ -30,10 +32,10 @@ export const execute = async (
     return sendSuccessResponse(
       "Member created successfully!",
       STATUS_CODE.CREATED,
-      { _id: memberId }
+      { _id: memberId },
     );
   } catch (error) {
-    console.log({ error });
+    console.log(JSON.stringify(error));
     return sendErrorResponse(error);
   } finally {
     console.log("OUT - createMember");

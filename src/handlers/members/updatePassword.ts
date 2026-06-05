@@ -43,7 +43,7 @@ export const execute = async (
       STATUS_CODE.NO_CONTENT,
     );
   } catch (error) {
-    console.log("Errors:", error);
+    console.log("Errors:", JSON.stringify(error));
     return sendErrorResponse(error);
   } finally {
     console.log("OUT - updatePassword");

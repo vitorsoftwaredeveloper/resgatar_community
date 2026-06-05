@@ -6,16 +6,18 @@ import { editMemberService } from "../../services/members/editMember";
 import { editMemberSchema } from "./validation/editMemberSchema";
 
 export const execute = async (
-  event: APIGatewayEvent
+  event: APIGatewayEvent,
 ): Promise<APIGatewayProxyResult> => {
-  console.log("Event:", event);
   console.log("IN - editMember");
 
   const memberCredentials = decodeToken(event.headers.authorization as string);
   const payload = parseRequestBody(event.body) as any;
 
+  const { identification, ...rest } = payload;
+  console.log("Payload:", JSON.stringify(rest));
+
   const errors = validate(editMemberSchema, payload);
-  console.log("Errors:", errors);
+
   if (errors.length > 0) {
     throw {
       statusCode: 400,
@@ -23,12 +25,13 @@ export const execute = async (
       errors,
     };
   }
+
   try {
     const member = await editMemberService(memberCredentials.sub, payload);
 
     return sendSuccessResponse("Member updated successfully", 204, member);
   } catch (error) {
-    console.log("Errors:", error);
+    console.log("Errors:", JSON.stringify(error));
     return sendErrorResponse(error);
   } finally {
     console.log("OUT - editMember");
