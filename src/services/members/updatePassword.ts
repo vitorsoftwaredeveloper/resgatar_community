@@ -10,8 +10,6 @@ export const updatePasswordService = async (
   memberId: string,
 ) => {
   console.log("IN - updatePasswordService");
-  console.log("token Member Id:", tokenMemberId);
-  console.log("Member id:", memberId);
 
   const memberAuthorized = await findMemberById(tokenMemberId);
   const memberWillBeUpdated = await findMemberById(memberId);

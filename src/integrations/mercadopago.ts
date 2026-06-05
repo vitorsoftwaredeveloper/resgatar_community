@@ -15,15 +15,12 @@ export const createMercadoPagoClient = async () => {
           },
         })
         .then((response) => {
-          console.log(response.data);
+          console.log("OUT - createPayment - MPago - transactionId:", response.data?.id);
           return response.data;
         })
         .catch((error) => {
-          console.error(error);
+          console.error("ERR - createPayment - MPago - status:", error?.response?.status);
           throw error;
-        })
-        .finally(() => {
-          console.log("OUT - createPayment - MPago");
         });
     },
     consultPayment: async (transactionId: string) => {
@@ -37,15 +34,12 @@ export const createMercadoPagoClient = async () => {
           },
         })
         .then((response) => {
-          console.log(response.data);
+          console.log("OUT - consultPayment - MPago - transactionId:", transactionId, "status:", response.data?.status);
           return response.data;
         })
         .catch((error) => {
-          console.error(error);
+          console.error("ERR - consultPayment - MPago - status:", error?.response?.status);
           throw error;
-        })
-        .finally(() => {
-          console.log("OUT - consultPayment - MPago");
         });
     },
   };

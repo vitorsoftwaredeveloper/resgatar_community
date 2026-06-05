@@ -55,8 +55,6 @@ const formatCharge = (member: IMember, payload: ICreateChargePayload): any => {
     },
   };
 
-  console.log("Charge formatted for MercadoPago:", { charge });
-
   console.log("OUT - formatCharge");
   return charge;
 };
@@ -97,8 +95,10 @@ const formatChargeDTO = (
     referenceMonth,
   };
 
-  console.log("Charge DTO formatted:", { chargeDTO });
-
+  console.log({
+    transactionId: chargeDTO.transactionId,
+    memberId: chargeDTO.memberId,
+  });
   console.log("OUT - formatChargeDTO");
   return chargeDTO;
 };

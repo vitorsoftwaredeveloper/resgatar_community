@@ -3,11 +3,10 @@ import { IMember } from "../../types/members";
 import { updateMemberCognitoEmail } from "../../utils/cognito";
 import { executeMongoTransaction } from "../../utils/mongoose";
 import { findMemberById } from "../helper";
-import { encrypt } from "../../utils/crypto";
 
 export const editMemberService = async (
   memberId: string,
-  payload: Partial<IMember>
+  payload: Partial<IMember>,
 ) => {
   console.log("IN - editMemberService");
 
@@ -15,32 +14,28 @@ export const editMemberService = async (
   try {
     const updatedMember: IMember = {
       ...member,
-      ...(payload.email && { email: payload.email }),
-      ...(payload.phoneNumber && { phoneNumber: payload.phoneNumber }),
-      ...(payload.firstName && { firstName: payload.firstName }),
-      ...(payload.lastName && { lastName: payload.lastName }),
-      ...(payload.bio && { bio: payload.bio }),
-      ...(payload.dateOfBirth && { dateOfBirth: payload.dateOfBirth }),
-      ...(payload.address && { address: payload.address }),
-      ...(payload.paymentInfo && {
+      ...(payload.email !== undefined && { email: payload.email }),
+      ...(payload.phoneNumber !== undefined && {
+        phoneNumber: payload.phoneNumber,
+      }),
+      ...(payload.firstName !== undefined && { firstName: payload.firstName }),
+      ...(payload.lastName !== undefined && { lastName: payload.lastName }),
+      ...(payload.bio !== undefined && { bio: payload.bio }),
+      ...(payload.dateOfBirth !== undefined && {
+        dateOfBirth: payload.dateOfBirth,
+      }),
+      ...(payload.address !== undefined && { address: payload.address }),
+      ...(payload.paymentInfo !== undefined && {
         paymentInfo: {
-          datePayment: payload.paymentInfo.datePayment
-            ? payload.paymentInfo.datePayment
-            : member.paymentInfo.datePayment,
-          amount: payload.paymentInfo.amount
-            ? payload.paymentInfo.amount
-            : member.paymentInfo.amount,
+          datePayment:
+            payload.paymentInfo.datePayment ?? member.paymentInfo.datePayment,
+          amount: payload.paymentInfo.amount ?? member.paymentInfo.amount,
         },
       }),
-      ...(payload.identification && {
-        identification: {
-          type: payload.identification.type,
-          numberType: encrypt(payload.identification.numberType),
-        },
+      ...(payload.identification !== undefined && {
+        identification: payload.identification,
       }),
     };
-
-    console.log("Member to be updated:", updatedMember);
 
     await executeMongoTransaction(async (session) => {
       await MemberModel.updateOne({ _id: memberId }, updatedMember, {

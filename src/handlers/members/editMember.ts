@@ -17,7 +17,6 @@ export const execute = async (
   console.log("Payload:", JSON.stringify(rest));
 
   const errors = validate(editMemberSchema, payload);
-
   if (errors.length > 0) {
     throw {
       statusCode: 400,
@@ -25,7 +24,6 @@ export const execute = async (
       errors,
     };
   }
-
   try {
     const member = await editMemberService(memberCredentials.sub, payload);
 

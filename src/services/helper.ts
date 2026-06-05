@@ -21,7 +21,7 @@ const findMemberById = async (
     };
   }
 
-  console.log("Member found:", member);
+  console.log("Member found:", member._id);
 
   console.log("OUT - findMemberById");
   return member;

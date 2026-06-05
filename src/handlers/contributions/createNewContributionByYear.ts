@@ -11,7 +11,6 @@ export const execute = async (
 ): Promise<APIGatewayProxyResult> => {
   try {
     console.log("IN - createNewContributionByYear");
-    console.log("Body:", event.body);
 
     const memberCredentials = decodeToken(
       event.headers.authorization as string
