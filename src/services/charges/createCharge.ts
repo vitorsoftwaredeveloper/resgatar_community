@@ -8,7 +8,7 @@ import { createMercadoPagoClient } from "../../integrations/mercadopago";
 import { PAYMENT_METHOD_ID } from "../../constants/charges";
 import { IMember } from "../../types/members";
 import { findMemberById } from "../helper";
-import { decrypt } from "../../utils/crypto";
+import { decrypt, encrypt } from "../../utils/crypto";
 
 export const createChargeService = async (
   memberId: string,
@@ -82,7 +82,7 @@ const formatChargeDTO = (
       lastName: member.lastName,
       email: member.email,
       identification: {
-        numberType: member.identification.numberType,
+        numberType: encrypt(member.identification.numberType),
         type: member.identification.type,
       },
     },
