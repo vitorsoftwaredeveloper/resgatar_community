@@ -21,6 +21,7 @@ provider:
     CLIENT_ID: ${self:custom.environment.CLIENT_ID}
     DB: ${self:custom.environment.DB}
     ENCRYPTION_KEY: ${self:custom.environment.ENCRYPTION_KEY}
+    FIREBASE_SERVICE_ACCOUNT: ${self:custom.environment.FIREBASE_SERVICE_ACCOUNT}
 
   httpApi:
     authorizers:
@@ -100,6 +101,15 @@ functions:
       - httpApi:
           method: PUT
           path: /members/{memberId}/password
+          authorizer:
+            name: cognitoAuthorizer
+
+  updatePushToken:
+    handler: src/handlers/members/updatePushToken.execute
+    events:
+      - httpApi:
+          method: PATCH
+          path: /members/push-token
           authorizer:
             name: cognitoAuthorizer
 

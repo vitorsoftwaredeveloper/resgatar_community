@@ -1,20 +1,21 @@
 import { verifyAdmin } from "../helper";
 import { INotification } from "../../types/notification";
 import { NotificationModel } from "../../models/Notification";
+import { sendPushNotificationToAll } from "../../integrations/firebase";
 
 export const createNotificationService = async (
   adminId: string,
-  notification: INotification
+  notification: INotification,
 ): Promise<void> => {
   console.log("IN - createNotificationService");
 
   try {
     await verifyAdmin(adminId);
 
-    await NotificationModel.insertOne({
-      ...notification,
-      type: notification.type ? notification.type : "info",
-    });
+    await sendPushNotificationToAll(
+      notification.title,
+      notification.description,
+    );
   } catch (error) {
     throw error;
   } finally {
