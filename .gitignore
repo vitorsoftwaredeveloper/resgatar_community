@@ -2,3 +2,4 @@
 /.serverless
 /.esbuild
 firebase-service-account.json
+.serverless
