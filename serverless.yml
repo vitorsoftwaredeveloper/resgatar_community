@@ -170,3 +170,10 @@ functions:
       - schedule:
           rate: cron(0 0 11 * ? *)
           enabled: true
+
+  dailyLiturgy:
+    handler: src/services/agents/dailyLiturgy.execute
+    events:
+      - schedule:
+          rate: cron(0 10 * * ? *)
+          enabled: true
