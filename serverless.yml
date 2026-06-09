@@ -155,15 +155,6 @@ functions:
           authorizer:
             name: cognitoAuthorizer
 
-  listNotifications:
-    handler: src/handlers/notifications/listNotifications.execute
-    events:
-      - httpApi:
-          method: GET
-          path: /notifications
-          authorizer:
-            name: cognitoAuthorizer
-
   removeCharges:
     handler: src/services/agents/removeCharges.execute
     events:

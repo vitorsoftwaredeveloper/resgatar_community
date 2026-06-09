@@ -84,13 +84,6 @@ functions:
           method: POST
           path: /notifications
 
-  listNotifications:
-    handler: src/handlers/notifications/listNotification.execute
-    events:
-      - httpApi:
-          method: GET
-          path: /notifications
-
   updatePassword:
     handler: src/handlers/members/updatePassword.execute
     events:
