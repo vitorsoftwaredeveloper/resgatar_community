@@ -26,8 +26,7 @@ O Resgatar Community é uma plataforma de gestão comunitária que oferece:
 - Cadastro e gerenciamento de membros com autenticação via AWS Cognito
 - Processamento de pagamentos (PIX, Boleto, Cartão de Crédito) integrado ao MercadoPago
 - Rastreamento de contribuições mensais por membro e por ano
-- Sistema de notificações com expiração automática
-- Push notifications via Firebase Cloud Messaging (FCM) para todos os usuários
+- Envio de push notifications via Firebase Cloud Messaging (FCM) para todos os usuários (notificações manuais e Liturgia Diária automatizada)
 - Criptografia de dados sensíveis com AES-256-GCM
 - Tarefas agendadas diárias: remoção de cobranças expiradas e envio da Liturgia Diária
 
@@ -166,16 +165,16 @@ Todos os endpoints requerem autenticação via token JWT no header `Authorizatio
 
 ### Notificacoes
 
-| Metodo | Rota             | Descricao                                   |
-| ------ | ---------------- | ------------------------------------------- |
-| POST   | `/notifications` | Cria uma notificação (info, alert, warning) |
+| Metodo | Rota             | Descricao                                                                      |
+| ------ | ---------------- | ------------------------------------------------------------------------------ |
+| POST   | `/notifications` | Envia push notification via FCM para todos os usuários (requer perfil `admin`) |
 
 ### Tarefas Agendadas
 
-| Nome            | Cron (UTC)     | Descricao                                          |
-| --------------- | -------------- | -------------------------------------------------- |
-| `removeCharges` | `0 11 * * ? *` | Remove cobranças pendentes expiradas diariamente   |
-| `dailyLiturgy`  | `0 10 * * ? *` | Envia push notification da Liturgia Diária via FCM |
+| Nome            | Cron (UTC)     | Horário (BRT) | Descricao                                                         |
+| --------------- | -------------- | ------------- | ----------------------------------------------------------------- |
+| `removeCharges` | `0 11 * * ? *` | 08:00         | Remove cobranças pendentes expiradas diariamente                  |
+| `dailyLiturgy`  | `0 10 * * ? *` | 07:00         | Envia push notification "A Palavra de Deus para hoje" via FCM     |
 
 ---
 
