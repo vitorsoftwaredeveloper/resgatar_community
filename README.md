@@ -27,7 +27,9 @@ O Resgatar Community é uma plataforma de gestão comunitária que oferece:
 - Processamento de pagamentos (PIX, Boleto, Cartão de Crédito) integrado ao MercadoPago
 - Rastreamento de contribuições mensais por membro e por ano
 - Sistema de notificações com expiração automática
-- Tarefa agendada diária para remoção de cobranças expiradas
+- Push notifications via Firebase Cloud Messaging (FCM) para todos os usuários
+- Criptografia de dados sensíveis com AES-256-GCM
+- Tarefas agendadas diárias: remoção de cobranças expiradas e envio da Liturgia Diária
 
 ---
 
@@ -55,19 +57,21 @@ Todas as funções Lambda são orquestradas pelo Serverless Framework. O ambient
 
 ## Tecnologias
 
-| Categoria            | Tecnologia                  |
-| -------------------- | --------------------------- |
-| Runtime              | Node.js 24.x                |
-| Linguagem            | TypeScript (ES2022)         |
-| Compute              | AWS Lambda                  |
-| API                  | AWS API Gateway (HTTP API)  |
-| Autenticação         | AWS Cognito + JWT           |
-| Banco de Dados       | MongoDB 6.0 com Mongoose 9  |
-| Pagamentos           | MercadoPago SDK v2          |
-| Validação            | AJV 8                       |
-| Empacotamento        | serverless-esbuild          |
-| Infraestrutura Local | Docker Compose + LocalStack |
-| Testes               | Jest 30                     |
+| Categoria            | Tecnologia                     |
+| -------------------- | ------------------------------ |
+| Runtime              | Node.js 24.x                   |
+| Linguagem            | TypeScript (ES2022)            |
+| Compute              | AWS Lambda                     |
+| API                  | AWS API Gateway (HTTP API)     |
+| Autenticação         | AWS Cognito + JWT              |
+| Banco de Dados       | MongoDB 6.0 com Mongoose 9     |
+| Pagamentos           | MercadoPago SDK v2             |
+| Push Notifications   | Firebase Admin SDK (FCM)       |
+| Criptografia         | AES-256-GCM (Node.js `crypto`) |
+| Validação            | AJV 8                          |
+| Empacotamento        | serverless-esbuild             |
+| Infraestrutura Local | Docker Compose + LocalStack    |
+| Testes               | Jest 30                        |
 
 ---
 
@@ -115,17 +119,19 @@ A API ficará disponível em `http://localhost:3000`.
 
 As configurações por ambiente ficam em `config/{stage}.json` e são injetadas nas funções Lambda pelo Serverless Framework. Valores sensíveis são armazenados no AWS SSM Parameter Store.
 
-| Variável                | Descrição                                |
-| ----------------------- | ---------------------------------------- |
-| `STAGE`                 | Ambiente de execução (dev, hml, prod)    |
-| `SERVICE_NAME`          | Identificador do serviço                 |
-| `REGION`                | Região AWS                               |
-| `USER_POOL_ID`          | ID do User Pool do AWS Cognito           |
-| `CLIENT_ID`             | ID do cliente Cognito                    |
-| `COGNITO_URL`           | URL do issuer Cognito para validação JWT |
-| `DB`                    | String de conexão MongoDB                |
-| `MPAGO_ACCESS_TOKEN`    | Token de acesso do MercadoPago           |
-| `MPAGO_TRANSACTION_URL` | Endpoint da API do MercadoPago           |
+| Variável                   | Descrição                                                                  |
+| -------------------------- | -------------------------------------------------------------------------- |
+| `STAGE`                    | Ambiente de execução (dev, hml, prod)                                      |
+| `SERVICE_NAME`             | Identificador do serviço                                                   |
+| `REGION`                   | Região AWS                                                                 |
+| `USER_POOL_ID`             | ID do User Pool do AWS Cognito                                             |
+| `CLIENT_ID`                | ID do cliente Cognito                                                      |
+| `COGNITO_URL`              | URL do issuer Cognito para validação JWT                                   |
+| `DB`                       | String de conexão MongoDB                                                  |
+| `MPAGO_ACCESS_TOKEN`       | Token de acesso do MercadoPago                                             |
+| `MPAGO_TRANSACTION_URL`    | Endpoint da API do MercadoPago                                             |
+| `ENCRYPTION_KEY`           | Chave de criptografia AES-256-GCM (string hex de 64 caracteres / 32 bytes) |
+| `FIREBASE_SERVICE_ACCOUNT` | JSON da conta de serviço do Firebase codificado em Base64                  |
 
 ---
 
@@ -143,6 +149,7 @@ Todos os endpoints requerem autenticação via token JWT no header `Authorizatio
 | PUT    | `/members/{memberId}`          | Atualiza os dados de um membro                    |
 | DELETE | `/members/{memberId}`          | Remove um membro do sistema                       |
 | PUT    | `/members/{memberId}/password` | Atualiza a senha do membro via Cognito            |
+| PATCH  | `/members/push-token`          | Atualiza o push token FCM do membro autenticado   |
 
 ### Cobranças
 
@@ -162,13 +169,13 @@ Todos os endpoints requerem autenticação via token JWT no header `Authorizatio
 | Metodo | Rota             | Descricao                                   |
 | ------ | ---------------- | ------------------------------------------- |
 | POST   | `/notifications` | Cria uma notificação (info, alert, warning) |
-| GET    | `/notifications` | Lista as notificações ativas                |
 
 ### Tarefas Agendadas
 
-| Nome            | Cron (UTC)   | Descricao                                        |
-| --------------- | ------------ | ------------------------------------------------ |
-| `removeCharges` | `0 11 * * *` | Remove cobranças pendentes expiradas diariamente |
+| Nome            | Cron (UTC)     | Descricao                                          |
+| --------------- | -------------- | -------------------------------------------------- |
+| `removeCharges` | `0 11 * * ? *` | Remove cobranças pendentes expiradas diariamente   |
+| `dailyLiturgy`  | `0 10 * * ? *` | Envia push notification da Liturgia Diária via FCM |
 
 ---
 
@@ -189,6 +196,7 @@ identification{ type: CPF | CNPJ, number: String }
 paymentInfo   { datePayment: String, amount: Number }
 role          Enum: admin | user
 status        Enum: active | defaulter
+pushToken     String (token FCM para push notifications, nullable)
 timestamps    createdAt, updatedAt
 ```
 
@@ -224,15 +232,6 @@ months      {
               }
             }
 timestamps  createdAt, updatedAt
-```
-
-### Notification
-
-```
-title        String
-description  String
-type         Enum: info | alert | warning
-timestamps   createdAt, updatedAt (TTL: 30 dias - expiracao automatica)
 ```
 
 ---
