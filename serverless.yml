@@ -168,3 +168,10 @@ functions:
       - schedule:
           rate: cron(0 10 * * ? *)
           enabled: true
+
+  paymentDayReminder:
+    handler: src/services/agents/paymentDayReminder.execute
+    events:
+      - schedule:
+          rate: cron(0 11 * * ? *)
+          enabled: true
