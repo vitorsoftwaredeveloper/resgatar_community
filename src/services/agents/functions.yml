@@ -1,0 +1,27 @@
+removeCharges:
+  handler: src/services/agents/removeCharges.execute
+  environment:
+    DB: ${self:custom.environment.DB}
+  events:
+    - schedule:
+        rate: cron(0 0 11 * ? *)
+        enabled: true
+
+dailyLiturgy:
+  handler: src/services/agents/dailyLiturgy.execute
+  environment:
+    FIREBASE_SERVICE_ACCOUNT: ${self:custom.environment.FIREBASE_SERVICE_ACCOUNT}
+  events:
+    - schedule:
+        rate: cron(0 10 * * ? *)
+        enabled: true
+
+paymentDayReminder:
+  handler: src/services/agents/paymentDayReminder.execute
+  environment:
+    DB: ${self:custom.environment.DB}
+    FIREBASE_SERVICE_ACCOUNT: ${self:custom.environment.FIREBASE_SERVICE_ACCOUNT}
+  events:
+    - schedule:
+        rate: cron(0 11 * * ? *)
+        enabled: true

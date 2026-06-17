@@ -1,0 +1,10 @@
+createNotification:
+  handler: src/handlers/notifications/createNotification.execute
+  environment:
+    FIREBASE_SERVICE_ACCOUNT: ${self:custom.environment.FIREBASE_SERVICE_ACCOUNT}
+  events:
+    - httpApi:
+        method: POST
+        path: /notifications
+        authorizer:
+          name: cognitoAuthorizer

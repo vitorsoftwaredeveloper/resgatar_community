@@ -1,0 +1,8 @@
+createNewContributionByYear:
+  handler: src/handlers/contributions/createNewContributionByYear.execute
+  events:
+    - httpApi:
+        method: POST
+        path: /contributions
+        authorizer:
+          name: cognitoAuthorizer
