@@ -14,6 +14,7 @@ provider:
   runtime: nodejs24.x
   region: ${opt:region, 'us-east-1'}
   stage: ${opt:stage, 'hml'}
+  timeout: 27
   environment:
     STAGE: ${self:provider.stage}
     DB: ${self:custom.environment.DB}
