@@ -3,3 +3,5 @@
 /.esbuild
 firebase-service-account.json
 .serverless
+.claude
+coverage
