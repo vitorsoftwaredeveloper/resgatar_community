@@ -16,6 +16,7 @@ provider:
   stage: ${opt:stage, 'hml'}
   environment:
     STAGE: ${self:provider.stage}
+    DB: ${self:custom.environment.DB}
 
   httpApi:
     authorizers:
