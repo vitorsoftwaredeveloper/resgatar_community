@@ -7,7 +7,8 @@
     "deploy:hml": "serverless deploy --stage hml",
     "deploy:prod": "serverless deploy --stage prod",
     "remove:hml": "serverless remove --stage hml",
-    "remove:prod": "serverless remove --stage prod"
+    "remove:prod": "serverless remove --stage prod",
+    "test": "jest --coverage"
   },
   "keywords": [],
   "author": "",

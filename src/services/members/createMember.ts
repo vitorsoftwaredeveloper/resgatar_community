@@ -1,13 +1,12 @@
 import { MemberModel } from "../../models/Member";
 import { ISignUpPayload, IMember } from "../../types/members";
 import { DUPLICATE_KEY_ERROR_CODE, STATUS_CODE } from "../../constants";
-import { createCognitoUser } from "../../utils/cognito";
+import { createCognitoUser, removeMemberCognito } from "../../utils/cognito";
 import { removeMemberService } from "./removeMember";
 import { createContributionByYear } from "../helper";
 import { encrypt } from "../../utils/crypto";
 
 export const createMemberService = async (
-  adminId: string,
   payload: ISignUpPayload,
 ): Promise<any> => {
   console.log("IN - createMemberService");
@@ -17,7 +16,7 @@ export const createMemberService = async (
 
     return await createMember(payload);
   } catch (error) {
-    await removeMemberService(adminId, payload._id as string);
+    await removeMemberCognito(payload._id as string);
 
     throw error;
   } finally {

@@ -1,6 +1,5 @@
 import { verifyAdmin } from "../helper";
 import { INotification } from "../../types/notification";
-import { NotificationModel } from "../../models/Notification";
 import { sendPushNotificationToAll } from "../../integrations/firebase";
 
 export const createNotificationService = async (

@@ -1,0 +1,76 @@
+createMember:
+  handler: src/handlers/members/createMember.execute
+  environment:
+    USER_POOL_ID: ${self:custom.environment.USER_POOL_ID}
+    CLIENT_ID: ${self:custom.environment.CLIENT_ID}
+    ENCRYPTION_KEY: ${self:custom.environment.ENCRYPTION_KEY}
+  events:
+    - httpApi:
+        path: /members
+        method: POST
+
+removeMember:
+  handler: src/handlers/members/removeMember.execute
+  environment:
+    USER_POOL_ID: ${self:custom.environment.USER_POOL_ID}
+  events:
+    - httpApi:
+        path: /members/{memberId}
+        method: DELETE
+        authorizer:
+          name: cognitoAuthorizer
+
+listMembers:
+  handler: src/handlers/members/listMembers.execute
+  environment:
+    ENCRYPTION_KEY: ${self:custom.environment.ENCRYPTION_KEY}
+  events:
+    - httpApi:
+        method: GET
+        path: /members/list
+        authorizer:
+          name: cognitoAuthorizer
+
+getMember:
+  handler: src/handlers/members/getMember.execute
+  environment:
+    ENCRYPTION_KEY: ${self:custom.environment.ENCRYPTION_KEY}
+  events:
+    - httpApi:
+        method: GET
+        path: /members
+        authorizer:
+          name: cognitoAuthorizer
+
+editMember:
+  handler: src/handlers/members/editMember.execute
+  environment:
+    USER_POOL_ID: ${self:custom.environment.USER_POOL_ID}
+    ENCRYPTION_KEY: ${self:custom.environment.ENCRYPTION_KEY}
+  events:
+    - httpApi:
+        method: PUT
+        path: /members/{memberId}
+        authorizer:
+          name: cognitoAuthorizer
+
+updatePassword:
+  handler: src/handlers/members/updatePassword.execute
+  environment:
+    USER_POOL_ID: ${self:custom.environment.USER_POOL_ID}
+  events:
+    - httpApi:
+        method: PUT
+        path: /members/{memberId}/password
+        authorizer:
+          name: cognitoAuthorizer
+
+updatePushToken:
+  handler: src/handlers/members/updatePushToken.execute
+  environment:
+  events:
+    - httpApi:
+        method: PATCH
+        path: /members/push-token
+        authorizer:
+          name: cognitoAuthorizer

@@ -4,7 +4,7 @@ import { createMemberSchema } from "./validation/createMemberSchema";
 import { createMemberService } from "../../services/members/createMember";
 import { sendErrorResponse, sendSuccessResponse } from "../../utils/http";
 import { STATUS_CODE } from "../../constants";
-import { decodeToken } from "../../utils/helper";
+import { validateDocument, validateEmailDomain } from "../../utils/validators";
 
 export const execute = async (
   event: APIGatewayEvent,
@@ -12,7 +12,6 @@ export const execute = async (
   try {
     console.log("IN - createMember");
 
-    const admin = decodeToken(event.headers.authorization as string);
     const payload = parseRequestBody(event.body) as any;
 
     const { identification, ...rest } = payload;
@@ -27,7 +26,23 @@ export const execute = async (
       };
     }
 
-    const memberId = await createMemberService(admin.sub, payload);
+    if (!validateEmailDomain(payload.email)) {
+      throw {
+        statusCode: 400,
+        message: "Validation Error",
+        errors: [{ field: "email", message: "Domínio de email não permitido" }],
+      };
+    }
+
+    if (!validateDocument(identification.type, identification.numberType)) {
+      throw {
+        statusCode: 400,
+        message: "Validation Error",
+        errors: [{ field: "identification.numberType", message: "Documento inválido" }],
+      };
+    }
+
+    const memberId = await createMemberService(payload);
 
     return sendSuccessResponse(
       "Member created successfully!",

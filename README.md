@@ -13,7 +13,9 @@ Backend serverless para gerenciamento de membros, cobranças e contribuições d
 - [Configuração Local](#configuração-local)
 - [Variáveis de Ambiente](#variáveis-de-ambiente)
 - [Rotas da API](#rotas-da-api)
+- [Validações do Cadastro de Membro](#validações-do-cadastro-de-membro)
 - [Modelos de Dados](#modelos-de-dados)
+- [Testes](#testes)
 - [Scripts](#scripts)
 - [Deploy](#deploy)
 
@@ -23,12 +25,13 @@ Backend serverless para gerenciamento de membros, cobranças e contribuições d
 
 O Resgatar Community é uma plataforma de gestão comunitária que oferece:
 
-- Cadastro e gerenciamento de membros com autenticação via AWS Cognito
+- Cadastro público de membros com validações equivalentes ao app mobile (CPF/CNPJ, senha forte, domínio de email)
+- Gerenciamento de membros com autenticação via AWS Cognito
 - Processamento de pagamentos (PIX, Boleto, Cartão de Crédito) integrado ao MercadoPago
 - Rastreamento de contribuições mensais por membro e por ano
 - Envio de push notifications via Firebase Cloud Messaging (FCM) para todos os usuários (notificações manuais e Liturgia Diária automatizada)
 - Criptografia de dados sensíveis com AES-256-GCM
-- Tarefas agendadas diárias: remoção de cobranças expiradas e envio da Liturgia Diária
+- Tarefas agendadas diárias: remoção de cobranças expiradas, envio da Liturgia Diária e lembrete de dia de pagamento
 
 ---
 
@@ -39,9 +42,11 @@ O projeto segue uma arquitetura serverless em camadas:
 ```
 HTTP Request
     |
-API Gateway (JWT via Cognito)
+API Gateway (HTTP API)
+    |  public: POST /members
+    |  autenticado: demais rotas (JWT via Cognito)
     |
-Lambda Handler  ->  Validation (AJV)
+Lambda Handler  ->  Validation (AJV + validadores customizados)
     |
 Service Layer   ->  Business Logic
     |
@@ -50,7 +55,7 @@ Repository      ->  Mongoose CRUD wrapper
 MongoDB
 ```
 
-Todas as funções Lambda são orquestradas pelo Serverless Framework. O ambiente local é emulado com `serverless-offline`, MongoDB via Docker e LocalStack para serviços AWS.
+As funções Lambda são organizadas por módulo, cada uma com apenas as variáveis de ambiente necessárias, definidas em arquivos `functions.yml` individuais.
 
 ---
 
@@ -60,17 +65,17 @@ Todas as funções Lambda são orquestradas pelo Serverless Framework. O ambient
 | -------------------- | ------------------------------ |
 | Runtime              | Node.js 24.x                   |
 | Linguagem            | TypeScript (ES2022)            |
-| Compute              | AWS Lambda                     |
+| Compute              | AWS Lambda (timeout: 30s)      |
 | API                  | AWS API Gateway (HTTP API)     |
 | Autenticação         | AWS Cognito + JWT              |
 | Banco de Dados       | MongoDB 6.0 com Mongoose 9     |
 | Pagamentos           | MercadoPago SDK v2             |
 | Push Notifications   | Firebase Admin SDK (FCM)       |
 | Criptografia         | AES-256-GCM (Node.js `crypto`) |
-| Validação            | AJV 8                          |
+| Validação            | AJV 8 + validadores customizados |
 | Empacotamento        | serverless-esbuild             |
 | Infraestrutura Local | Docker Compose + LocalStack    |
-| Testes               | Jest 30                        |
+| Testes               | Jest 30 + ts-jest + lcov       |
 
 ---
 
@@ -116,65 +121,84 @@ A API ficará disponível em `http://localhost:3000`.
 
 ## Variáveis de Ambiente
 
-As configurações por ambiente ficam em `config/{stage}.json` e são injetadas nas funções Lambda pelo Serverless Framework. Valores sensíveis são armazenados no AWS SSM Parameter Store.
+As configurações por ambiente ficam em `config/{stage}.json` e são injetadas pelo Serverless Framework individualmente em cada função Lambda (cada módulo recebe apenas as variáveis que utiliza).
 
-| Variável                   | Descrição                                                                  |
-| -------------------------- | -------------------------------------------------------------------------- |
-| `STAGE`                    | Ambiente de execução (dev, hml, prod)                                      |
-| `SERVICE_NAME`             | Identificador do serviço                                                   |
-| `REGION`                   | Região AWS                                                                 |
-| `USER_POOL_ID`             | ID do User Pool do AWS Cognito                                             |
-| `CLIENT_ID`                | ID do cliente Cognito                                                      |
-| `COGNITO_URL`              | URL do issuer Cognito para validação JWT                                   |
-| `DB`                       | String de conexão MongoDB                                                  |
-| `MPAGO_ACCESS_TOKEN`       | Token de acesso do MercadoPago                                             |
-| `MPAGO_TRANSACTION_URL`    | Endpoint da API do MercadoPago                                             |
-| `ENCRYPTION_KEY`           | Chave de criptografia AES-256-GCM (string hex de 64 caracteres / 32 bytes) |
-| `FIREBASE_SERVICE_ACCOUNT` | JSON da conta de serviço do Firebase codificado em Base64                  |
+| Variável                   | Descrição                                                                   | Módulos que utilizam              |
+| -------------------------- | --------------------------------------------------------------------------- | --------------------------------- |
+| `STAGE`                    | Ambiente de execução (dev, hml, prod)                                       | todos (global)                    |
+| `DB`                       | String de conexão MongoDB                                                   | members, agents                   |
+| `USER_POOL_ID`             | ID do User Pool do AWS Cognito                                              | members                           |
+| `CLIENT_ID`                | ID do cliente Cognito                                                       | createMember                      |
+| `COGNITO_URL`              | URL do issuer Cognito para validação JWT                                    | provider (authorizer)             |
+| `ENCRYPTION_KEY`           | Chave de criptografia AES-256-GCM (string hex de 64 caracteres / 32 bytes)  | members, charges                  |
+| `MPAGO_ACCESS_TOKEN`       | Token de acesso do MercadoPago                                              | charges                           |
+| `MPAGO_TRANSACTION_URL`    | Endpoint da API do MercadoPago                                              | charges                           |
+| `FIREBASE_SERVICE_ACCOUNT` | JSON da conta de serviço do Firebase codificado em Base64                   | notifications, agents             |
 
 ---
 
 ## Rotas da API
 
-Todos os endpoints requerem autenticação via token JWT no header `Authorization: Bearer <token>`.
-
 ### Membros
 
-| Metodo | Rota                           | Descricao                                         |
-| ------ | ------------------------------ | ------------------------------------------------- |
-| POST   | `/members`                     | Cria um novo membro e provisiona conta no Cognito |
-| GET    | `/members`                     | Retorna os dados do membro autenticado            |
-| GET    | `/members/list`                | Lista todos os membros cadastrados                |
-| PUT    | `/members/{memberId}`          | Atualiza os dados de um membro                    |
-| DELETE | `/members/{memberId}`          | Remove um membro do sistema                       |
-| PUT    | `/members/{memberId}/password` | Atualiza a senha do membro via Cognito            |
-| PATCH  | `/members/push-token`          | Atualiza o push token FCM do membro autenticado   |
+| Método | Rota                           | Auth | Descrição                                          |
+| ------ | ------------------------------ | ---- | -------------------------------------------------- |
+| POST   | `/members`                     | ❌ pública | Cadastro de novo membro (signup)             |
+| GET    | `/members`                     | ✅ JWT | Retorna os dados do membro autenticado           |
+| GET    | `/members/list`                | ✅ JWT | Lista todos os membros cadastrados               |
+| PUT    | `/members/{memberId}`          | ✅ JWT | Atualiza os dados de um membro                   |
+| DELETE | `/members/{memberId}`          | ✅ JWT | Remove um membro do sistema                      |
+| PUT    | `/members/{memberId}/password` | ✅ JWT | Atualiza a senha do membro via Cognito           |
+| PATCH  | `/members/push-token`          | ✅ JWT | Atualiza o push token FCM do membro autenticado  |
 
 ### Cobranças
 
-| Metodo | Rota                       | Descricao                                               |
-| ------ | -------------------------- | ------------------------------------------------------- |
-| POST   | `/charges`                 | Cria uma cobrança via MercadoPago (PIX, Boleto, Cartão) |
-| GET    | `/charges/{transactionId}` | Consulta o status de uma transação                      |
+| Método | Rota                       | Auth  | Descrição                                               |
+| ------ | -------------------------- | ----- | ------------------------------------------------------- |
+| POST   | `/charges`                 | ✅ JWT | Cria uma cobrança via MercadoPago (PIX, Boleto, Cartão) |
+| GET    | `/charges/{transactionId}` | ✅ JWT | Consulta o status de uma transação                      |
 
-### Contribuicoes
+### Contribuições
 
-| Metodo | Rota             | Descricao                                          |
-| ------ | ---------------- | -------------------------------------------------- |
-| POST   | `/contributions` | Cria o registro de contribuição anual de um membro |
+| Método | Rota             | Auth  | Descrição                                          |
+| ------ | ---------------- | ----- | -------------------------------------------------- |
+| POST   | `/contributions` | ✅ JWT | Cria o registro de contribuição anual de um membro |
 
-### Notificacoes
+### Notificações
 
-| Metodo | Rota             | Descricao                                                                      |
-| ------ | ---------------- | ------------------------------------------------------------------------------ |
-| POST   | `/notifications` | Envia push notification via FCM para todos os usuários (requer perfil `admin`) |
+| Método | Rota             | Auth  | Descrição                                                                      |
+| ------ | ---------------- | ----- | ------------------------------------------------------------------------------ |
+| POST   | `/notifications` | ✅ JWT | Envia push notification via FCM para todos os usuários (requer perfil `admin`) |
 
 ### Tarefas Agendadas
 
-| Nome            | Cron (UTC)     | Horário (BRT) | Descricao                                                         |
-| --------------- | -------------- | ------------- | ----------------------------------------------------------------- |
-| `removeCharges` | `0 11 * * ? *` | 08:00         | Remove cobranças pendentes expiradas diariamente                  |
-| `dailyLiturgy`  | `0 10 * * ? *` | 07:00         | Envia push notification "A Palavra de Deus para hoje" via FCM     |
+| Nome                  | Cron (UTC)      | Horário (BRT) | Descrição                                                       |
+| --------------------- | --------------- | ------------- | --------------------------------------------------------------- |
+| `removeCharges`       | `0 11 * * ? *`  | 08:00         | Remove cobranças pendentes expiradas                            |
+| `dailyLiturgy`        | `0 10 * * ? *`  | 07:00         | Envia push notification "A Palavra de Deus para hoje" via FCM   |
+| `paymentDayReminder`  | `0 12 * * ? *`  | 09:00         | Envia lembrete de dia de pagamento para membros                 |
+
+---
+
+## Validações do Cadastro de Membro
+
+A rota `POST /members` é pública e aplica as mesmas regras de validação do app mobile:
+
+### Campos obrigatórios
+
+`firstName`, `lastName`, `email`, `phoneNumber`, `password`, `dateOfBirth`, `paymentInfo`, `identification`
+
+### Regras por campo
+
+| Campo | Regras |
+| ----- | ------ |
+| `email` | Formato de email válido + domínio não descartável (bloqueia mailinator, tempmail, yopmail e similares) |
+| `phoneNumber` | Somente dígitos, mínimo 10 caracteres |
+| `password` | Mínimo 8 caracteres, deve conter: letra minúscula, letra maiúscula, número e caractere especial (`@$!%*?&#`) |
+| `identification.type` | `"CPF"` ou `"CNPJ"` |
+| `identification.numberType` | Somente dígitos (11 para CPF, 14 para CNPJ) + validação do dígito verificador |
+| `paymentInfo.datePayment` | Número entre 1 e 31 |
+| `paymentInfo.amount` | Formato `"000,00"` |
 
 ---
 
@@ -184,26 +208,26 @@ Todos os endpoints requerem autenticação via token JWT no header `Authorizatio
 
 ```
 _id           String (UUID do Cognito)
-email         String (unico, obrigatorio)
+email         String (único, obrigatório)
 phoneNumber   String
 firstName     String
 lastName      String
 bio           String (opcional)
-dateOfBirth   String
+dateOfBirth   Number (timestamp)
 address       { street, number, city, state, zip, complement }
-identification{ type: CPF | CNPJ, number: String }
-paymentInfo   { datePayment: String, amount: Number }
+identification{ type: CPF | CNPJ, numberType: String (criptografado) }
+paymentInfo   { datePayment: Number, amount: String }
 role          Enum: admin | user
 status        Enum: active | defaulter
-pushToken     String (token FCM para push notifications, nullable)
+pushToken     String (token FCM, nullable)
 timestamps    createdAt, updatedAt
 ```
 
 ### Charge
 
 ```
-transactionId     String (ID da transacao no MercadoPago)
-memberId          String (referencia ao membro)
+transactionId     String (ID da transação no MercadoPago)
+memberId          String (referência ao membro)
 status            Enum: pending | approved | rejected | cancelled | refunded | charged_back
 statusDetail      String
 transactionAmount Number
@@ -222,7 +246,7 @@ timestamps        createdAt, updatedAt
 
 ```
 memberId    String (indexado)
-year        Number (indexado, unico por membro)
+year        Number (indexado, único por membro)
 months      {
               january..december: {
                 paid:   Boolean,
@@ -235,31 +259,56 @@ timestamps  createdAt, updatedAt
 
 ---
 
+## Testes
+
+O projeto possui cobertura de testes unitários e de integração organizados em:
+
+```
+__tests__/
+├── unit/
+│   ├── db/           # Singleton de conexão MongoDB
+│   ├── utils/        # crypto, helper, http, validate, cognito, mongoose
+│   ├── repositories/ # createInstanceMongoose (todos os métodos CRUD)
+│   └── integrations/ # mercadopago, firebase
+└── integration/
+    └── services/     # helper (findMemberById, verifyAdmin, createContributionByYear)
+```
+
+```bash
+# Executar todos os testes com relatório de cobertura
+npm test
+
+# Modo watch (desenvolvimento)
+npm run test:watch
+```
+
+O relatório de cobertura é gerado em `coverage/` nos formatos `lcov`, `html` e `text`.
+
+---
+
 ## Scripts
 
-| Comando               | Descricao                                 |
-| --------------------- | ----------------------------------------- |
-| `npm run dev`         | Inicia o servidor local com hot-reload    |
-| `npm test`            | Executa a suite de testes com Jest        |
-| `npm run deploy:dev`  | Faz deploy no ambiente de desenvolvimento |
-| `npm run deploy:hml`  | Faz deploy no ambiente de homologacao     |
-| `npm run deploy:prod` | Faz deploy no ambiente de producao        |
+| Comando               | Descrição                                  |
+| --------------------- | ------------------------------------------ |
+| `npm run dev`         | Inicia o servidor local com hot-reload     |
+| `npm test`            | Executa a suite de testes com cobertura    |
+| `npm run test:watch`  | Executa testes em modo watch               |
+| `npm run deploy:dev`  | Faz deploy no ambiente de desenvolvimento  |
+| `npm run deploy:hml`  | Faz deploy no ambiente de homologação      |
+| `npm run deploy:prod` | Faz deploy no ambiente de produção         |
 
 ---
 
 ## Deploy
 
-O deploy e realizado pelo Serverless Framework. Certifique-se de que as credenciais AWS e os parametros no SSM Parameter Store estao configurados corretamente para o ambiente alvo.
+O deploy é realizado pelo Serverless Framework com empacotamento automático via `serverless-esbuild` (transpilação TypeScript + minificação).
 
 ```bash
-# Desenvolvimento
-npm run deploy:dev
-
-# Homologacao
+# Homologação
 npm run deploy:hml
 
-# Producao
+# Produção
 npm run deploy:prod
 ```
 
-O framework empacota automaticamente o codigo com `serverless-esbuild`, realizando transpilacao do TypeScript e minificacao antes do upload para o AWS Lambda.
+Todas as funções Lambda têm timeout configurado para **30 segundos** e recebem apenas as variáveis de ambiente do seu módulo.

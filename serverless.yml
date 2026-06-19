@@ -14,14 +14,10 @@ provider:
   runtime: nodejs24.x
   region: ${opt:region, 'us-east-1'}
   stage: ${opt:stage, 'hml'}
+  timeout: 27
   environment:
     STAGE: ${self:provider.stage}
-    SERVICE_NAME: ${self:custom.environment.SERVICE}
-    USER_POOL_ID: ${self:custom.environment.USER_POOL_ID}
-    CLIENT_ID: ${self:custom.environment.CLIENT_ID}
     DB: ${self:custom.environment.DB}
-    ENCRYPTION_KEY: ${self:custom.environment.ENCRYPTION_KEY}
-    FIREBASE_SERVICE_ACCOUNT: ${self:custom.environment.FIREBASE_SERVICE_ACCOUNT}
 
   httpApi:
     authorizers:
@@ -50,121 +46,8 @@ plugins:
   - serverless-prune-plugin
 
 functions:
-  createMember:
-    handler: src/handlers/members/createMember.execute
-    events:
-      - httpApi:
-          path: /members
-          method: POST
-          authorizer:
-            name: cognitoAuthorizer
-
-  removeMember:
-    handler: src/handlers/members/removeMember.execute
-    events:
-      - httpApi:
-          path: /members/{memberId}
-          method: DELETE
-          authorizer:
-            name: cognitoAuthorizer
-
-  listMembers:
-    handler: src/handlers/members/listMembers.execute
-    events:
-      - httpApi:
-          method: GET
-          path: /members/list
-          authorizer:
-            name: cognitoAuthorizer
-
-  getMember:
-    handler: src/handlers/members/getMember.execute
-    events:
-      - httpApi:
-          method: GET
-          path: /members
-          authorizer:
-            name: cognitoAuthorizer
-
-  editMember:
-    handler: src/handlers/members/editMember.execute
-    events:
-      - httpApi:
-          method: PUT
-          path: /members/{memberId}
-          authorizer:
-            name: cognitoAuthorizer
-
-  updatePassword:
-    handler: src/handlers/members/updatePassword.execute
-    events:
-      - httpApi:
-          method: PUT
-          path: /members/{memberId}/password
-          authorizer:
-            name: cognitoAuthorizer
-
-  updatePushToken:
-    handler: src/handlers/members/updatePushToken.execute
-    events:
-      - httpApi:
-          method: PATCH
-          path: /members/push-token
-          authorizer:
-            name: cognitoAuthorizer
-
-  createCharge:
-    handler: src/handlers/charges/createCharge.execute
-    environment:
-      MPAGO_ACCESS_TOKEN: ${self:custom.environment.MPAGO_ACCESS_TOKEN}
-      MPAGO_TRANSACTION_URL: ${self:custom.environment.MPAGO_TRANSACTION_URL}
-    events:
-      - httpApi:
-          method: POST
-          path: /charges
-          authorizer:
-            name: cognitoAuthorizer
-
-  consultCharge:
-    handler: src/handlers/charges/consultCharge.execute
-    environment:
-      MPAGO_ACCESS_TOKEN: ${self:custom.environment.MPAGO_ACCESS_TOKEN}
-      MPAGO_TRANSACTION_URL: ${self:custom.environment.MPAGO_TRANSACTION_URL}
-    events:
-      - httpApi:
-          method: GET
-          path: /charges/{transactionId}
-          authorizer:
-            name: cognitoAuthorizer
-
-  createNewContributionByYear:
-    handler: src/handlers/contributions/createNewContributionByYear.execute
-    events:
-      - httpApi:
-          method: POST
-          path: /contributions
-          authorizer:
-            name: cognitoAuthorizer
-
-  createNotification:
-    handler: src/handlers/notifications/createNotification.execute
-    events:
-      - httpApi:
-          method: POST
-          path: /notifications
-          authorizer:
-            name: cognitoAuthorizer
-
-  removeCharges:
-    handler: src/services/agents/removeCharges.execute
-    events:
-      - schedule:
-          rate: cron(0 0 11 * ? *)
-          enabled: true
-
-  dailyLiturgy:
-    handler: src/services/agents/dailyLiturgy.execute
-    events:
-      - schedule:
-          rate: cron(0 10 * * ? *)
-          enabled: true
+  - ${file(src/handlers/members/functions.yml)}
+  - ${file(src/handlers/charges/functions.yml)}
+  - ${file(src/handlers/contributions/functions.yml)}
+  - ${file(src/handlers/notifications/functions.yml)}
+  - ${file(src/services/agents/functions.yml)}

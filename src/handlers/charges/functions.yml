@@ -1,0 +1,25 @@
+createCharge:
+  handler: src/handlers/charges/createCharge.execute
+  environment:
+    ENCRYPTION_KEY: ${self:custom.environment.ENCRYPTION_KEY}
+    MPAGO_ACCESS_TOKEN: ${self:custom.environment.MPAGO_ACCESS_TOKEN}
+    MPAGO_TRANSACTION_URL: ${self:custom.environment.MPAGO_TRANSACTION_URL}
+  events:
+    - httpApi:
+        method: POST
+        path: /charges
+        authorizer:
+          name: cognitoAuthorizer
+
+consultCharge:
+  handler: src/handlers/charges/consultCharge.execute
+  environment:
+    ENCRYPTION_KEY: ${self:custom.environment.ENCRYPTION_KEY}
+    MPAGO_ACCESS_TOKEN: ${self:custom.environment.MPAGO_ACCESS_TOKEN}
+    MPAGO_TRANSACTION_URL: ${self:custom.environment.MPAGO_TRANSACTION_URL}
+  events:
+    - httpApi:
+        method: GET
+        path: /charges/{transactionId}
+        authorizer:
+          name: cognitoAuthorizer

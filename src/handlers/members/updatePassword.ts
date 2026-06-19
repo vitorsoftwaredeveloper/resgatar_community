@@ -15,13 +15,6 @@ export const execute = async (
   const payload = parseRequestBody(event.body) as any;
   const memberId = event.pathParameters?.memberId;
 
-  if (!memberId) {
-    return sendErrorResponse({
-      statusCode: STATUS_CODE.BAD_REQUEST,
-      message: "Member ID is required in path parameters",
-    });
-  }
-
   const errors = validate(updatePasswordSchema, payload);
   console.log("Errors:", errors);
   if (errors.length > 0) {
@@ -31,6 +24,14 @@ export const execute = async (
       errors,
     };
   }
+
+  if (!memberId) {
+    return sendErrorResponse({
+      statusCode: STATUS_CODE.BAD_REQUEST,
+      message: "Member ID is required in path parameters",
+    });
+  }
+
   try {
     await updatePasswordService(
       memberCredentials.sub,
