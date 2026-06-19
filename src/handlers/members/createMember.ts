@@ -4,6 +4,7 @@ import { createMemberSchema } from "./validation/createMemberSchema";
 import { createMemberService } from "../../services/members/createMember";
 import { sendErrorResponse, sendSuccessResponse } from "../../utils/http";
 import { STATUS_CODE } from "../../constants";
+import { validateDocument, validateEmailDomain } from "../../utils/validators";
 
 export const execute = async (
   event: APIGatewayEvent,
@@ -22,6 +23,22 @@ export const execute = async (
         statusCode: 400,
         message: "Validation Error",
         errors,
+      };
+    }
+
+    if (!validateEmailDomain(payload.email)) {
+      throw {
+        statusCode: 400,
+        message: "Validation Error",
+        errors: [{ field: "email", message: "Domínio de email não permitido" }],
+      };
+    }
+
+    if (!validateDocument(identification.type, identification.numberType)) {
+      throw {
+        statusCode: 400,
+        message: "Validation Error",
+        errors: [{ field: "identification.numberType", message: "Documento inválido" }],
       };
     }
 

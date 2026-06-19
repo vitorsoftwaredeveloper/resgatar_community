@@ -2,9 +2,9 @@ export const createMemberSchema: any = {
   type: "object",
   properties: {
     email: { type: "string", format: "email" },
-    phoneNumber: { type: "string" },
-    firstName: { type: "string" },
-    lastName: { type: "string" },
+    phoneNumber: { type: "string", minLength: 10, pattern: "^[0-9]+$" },
+    firstName: { type: "string", minLength: 1 },
+    lastName: { type: "string", minLength: 1 },
     bio: { type: "string", nullable: true },
     dateOfBirth: { type: "number", minimum: 0 },
     address: {
@@ -25,7 +25,7 @@ export const createMemberSchema: any = {
     paymentInfo: {
       type: "object",
       properties: {
-        datePayment: { type: "number", minimum: 1 },
+        datePayment: { type: "number", minimum: 1, maximum: 31 },
         amount: {
           type: "string",
           pattern: "^[0-9]+,[0-9]{2}$",
@@ -38,12 +38,16 @@ export const createMemberSchema: any = {
       type: "object",
       properties: {
         type: { type: "string", enum: ["CPF", "CNPJ"] },
-        numberType: { type: "string", pattern: "^[0-9]+$" },
+        numberType: { type: "string", minLength: 11, maxLength: 14, pattern: "^[0-9]+$" },
       },
       required: ["type", "numberType"],
       additionalProperties: false,
     },
-    password: { type: "string" },
+    password: {
+      type: "string",
+      minLength: 8,
+      pattern: "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&#]).+$",
+    },
   },
   required: [
     "email",
