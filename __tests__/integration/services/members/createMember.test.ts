@@ -1,14 +1,13 @@
 import * as cognitoUtil from "../../../../src/utils/cognito";
 import * as cryptoUtil from "../../../../src/utils/crypto";
 import * as helperService from "../../../../src/services/helper";
-import * as removeMemberModule from "../../../../src/services/members/removeMember";
 import { MemberModel } from "../../../../src/models/Member";
 import { createMemberService } from "../../../../src/services/members/createMember";
 import { ISignUpPayload } from "../../../../src/types/members";
 
 const basePayload: ISignUpPayload = {
   _id: "",
-  email: "joao@email.com",
+  email: "joao@gmail.com",
   password: "Senha@123",
   phoneNumber: "11999999999",
   firstName: "João",
@@ -16,16 +15,15 @@ const basePayload: ISignUpPayload = {
   dateOfBirth: Date.UTC(1990, 0, 1),
   role: "user",
   paymentInfo: { datePayment: 5, amount: "50,00" },
-  identification: { type: "CPF", numberType: "12345678900" },
+  identification: { type: "CPF", numberType: "52998224725" },
 };
 
 describe("createMemberService (integration)", () => {
   let createCognitoUserSpy: jest.SpyInstance;
+  let removeMemberCognitoSpy: jest.SpyInstance;
   let encryptSpy: jest.SpyInstance;
   let insertOneSpy: jest.SpyInstance;
   let createContributionSpy: jest.SpyInstance;
-  let removeMemberSpy: jest.SpyInstance;
-  let removeMemberServiceSpy: jest.SpyInstance;
 
   beforeEach(() => {
     process.env.ENCRYPTION_KEY = "a".repeat(64);
@@ -33,6 +31,10 @@ describe("createMemberService (integration)", () => {
     createCognitoUserSpy = jest
       .spyOn(cognitoUtil, "createCognitoUser")
       .mockResolvedValue("cognito-user-id-123");
+
+    removeMemberCognitoSpy = jest
+      .spyOn(cognitoUtil, "removeMemberCognito")
+      .mockResolvedValue(undefined);
 
     encryptSpy = jest
       .spyOn(cryptoUtil, "encrypt")
@@ -45,14 +47,6 @@ describe("createMemberService (integration)", () => {
     createContributionSpy = jest
       .spyOn(helperService, "createContributionByYear")
       .mockResolvedValue({} as any);
-
-    removeMemberSpy = jest
-      .spyOn(cognitoUtil, "removeMemberCognito" as any)
-      .mockResolvedValue(undefined);
-
-    removeMemberServiceSpy = jest
-      .spyOn(removeMemberModule, "removeMemberService")
-      .mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -61,47 +55,54 @@ describe("createMemberService (integration)", () => {
   });
 
   it("should create cognito user with correct email and password", async () => {
-    await createMemberService("admin-id", { ...basePayload });
+    await createMemberService({ ...basePayload });
 
     expect(createCognitoUserSpy).toHaveBeenCalledWith(
       basePayload.email,
-      basePayload.password
+      basePayload.password,
     );
   });
 
   it("should encrypt identification.numberType before saving", async () => {
-    await createMemberService("admin-id", { ...basePayload });
+    await createMemberService({ ...basePayload });
 
     expect(encryptSpy).toHaveBeenCalledWith(basePayload.identification.numberType);
   });
 
   it("should call MemberModel.insertOne with encrypted identification", async () => {
-    await createMemberService("admin-id", { ...basePayload });
+    await createMemberService({ ...basePayload });
 
     expect(insertOneSpy).toHaveBeenCalledWith(
       expect.objectContaining({
         identification: expect.objectContaining({ numberType: "ENC:mocked" }),
-      })
+      }),
     );
   });
 
   it("should call createContributionByYear after inserting member", async () => {
-    await createMemberService("admin-id", { ...basePayload });
+    await createMemberService({ ...basePayload });
 
     expect(createContributionSpy).toHaveBeenCalled();
   });
 
   it("should return the cognito user id", async () => {
-    const result = await createMemberService("admin-id", { ...basePayload });
+    const result = await createMemberService({ ...basePayload });
+
     expect(result).toBe("cognito-user-id-123");
+  });
+
+  it("should call removeMemberCognito (rollback) when DB insert fails", async () => {
+    insertOneSpy.mockRejectedValue({ code: 11000 });
+
+    await expect(createMemberService({ ...basePayload })).rejects.toBeDefined();
+
+    expect(removeMemberCognitoSpy).toHaveBeenCalled();
   });
 
   it("should NOT save to DB when cognito creation fails", async () => {
     createCognitoUserSpy.mockRejectedValue(new Error("Cognito error"));
 
-    await expect(
-      createMemberService("admin-id", { ...basePayload })
-    ).rejects.toThrow("Cognito error");
+    await expect(createMemberService({ ...basePayload })).rejects.toThrow("Cognito error");
 
     expect(insertOneSpy).not.toHaveBeenCalled();
   });
@@ -109,27 +110,25 @@ describe("createMemberService (integration)", () => {
   it("should NOT create contribution when DB insert fails", async () => {
     insertOneSpy.mockRejectedValue({ code: 11000 });
 
-    await expect(
-      createMemberService("admin-id", { ...basePayload })
-    ).rejects.toBeDefined();
+    await expect(createMemberService({ ...basePayload })).rejects.toBeDefined();
 
     expect(createContributionSpy).not.toHaveBeenCalled();
   });
 
   it("should set member status as active", async () => {
-    await createMemberService("admin-id", { ...basePayload });
+    await createMemberService({ ...basePayload });
 
     expect(insertOneSpy).toHaveBeenCalledWith(
-      expect.objectContaining({ status: "active" })
+      expect.objectContaining({ status: "active" }),
     );
   });
 
   it("should default role to user when not provided", async () => {
     const payload = { ...basePayload, role: undefined as any };
-    await createMemberService("admin-id", payload);
+    await createMemberService(payload);
 
     expect(insertOneSpy).toHaveBeenCalledWith(
-      expect.objectContaining({ role: "user" })
+      expect.objectContaining({ role: "user" }),
     );
   });
 });
