@@ -14,7 +14,11 @@ export const execute = async (
     const xRequestId = event.headers["x-request-id"] ?? "";
     const body = JSON.parse(event.body ?? "{}");
 
-    if (!validateWebhookSignature(xSignature, xRequestId, body?.data?.id ?? "")) {
+    console.log({ payload: body });
+
+    if (
+      !validateWebhookSignature(xSignature, xRequestId, body?.data?.id ?? "")
+    ) {
       console.warn("Invalid webhook signature from Mercado Pago");
       return sendErrorResponse({
         message: "Invalid signature",
@@ -24,7 +28,10 @@ export const execute = async (
 
     await processMercadoPagoWebhook(body);
 
-    return sendSuccessResponse("Webhook processed successfully", STATUS_CODE.SUCCESS);
+    return sendSuccessResponse(
+      "Webhook processed successfully",
+      STATUS_CODE.SUCCESS,
+    );
   } catch (error) {
     console.error("ERR - mercadoPagoWebhook:", error);
     return sendErrorResponse(error);

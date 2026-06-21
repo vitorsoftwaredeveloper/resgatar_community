@@ -2,12 +2,16 @@ import { ChargeModel } from "../../models/Charge";
 import { ContributionModel } from "../../models/Contribution";
 import { createMercadoPagoClient } from "../../integrations/mercadopago";
 import { executeMongoTransaction } from "../../utils/mongoose";
-import { IChargeDTO, IConsultChargeMPagoResponse, IMercadoPagoWebhookPayload } from "../../types/charges";
+import {
+  IChargeDTO,
+  IConsultChargeMPagoResponse,
+  IMercadoPagoWebhookPayload,
+} from "../../types/charges";
 
 export const processMercadoPagoWebhook = async (
   payload: IMercadoPagoWebhookPayload,
 ): Promise<void> => {
-  console.log("IN - processMercadoPagoWebhook", { action: payload.action, type: payload.type });
+  console.log("IN - processMercadoPagoWebhook");
 
   if (payload.type !== "payment") {
     console.log("Skipping non-payment webhook type:", payload.type);
@@ -16,9 +20,14 @@ export const processMercadoPagoWebhook = async (
 
   const paymentId = payload.data.id;
   const mpClient = await createMercadoPagoClient();
-  const paymentData: IConsultChargeMPagoResponse = await mpClient.consultPayment(paymentId);
+  const paymentData: IConsultChargeMPagoResponse =
+    await mpClient.consultPayment(paymentId);
 
-  const charge = await ChargeModel.findOne({ transactionId: Number(paymentId) });
+  console.log({ consultResponse: paymentData });
+
+  const charge = await ChargeModel.findOne({
+    transactionId: Number(paymentId),
+  });
 
   if (!charge) {
     console.log("Charge not found for transactionId:", paymentId);
@@ -39,7 +48,10 @@ const updateCharge = async (
   charge: IChargeDTO,
   chargeConsulted: IConsultChargeMPagoResponse,
 ) => {
-  console.log("IN - updateCharge", { transactionId: charge.transactionId, newStatus: chargeConsulted.status });
+  console.log("IN - updateCharge", {
+    transactionId: charge.transactionId,
+    newStatus: chargeConsulted.status,
+  });
 
   await executeMongoTransaction(async () => {
     await ChargeModel.updateOne(
@@ -75,9 +87,18 @@ const updateCharge = async (
 
 function getMonthKeyFromDate(month: number): string {
   const months = [
-    "january", "february", "march", "april",
-    "may", "june", "july", "august",
-    "september", "october", "november", "december",
+    "january",
+    "february",
+    "march",
+    "april",
+    "may",
+    "june",
+    "july",
+    "august",
+    "september",
+    "october",
+    "november",
+    "december",
   ];
   return months[month];
 }

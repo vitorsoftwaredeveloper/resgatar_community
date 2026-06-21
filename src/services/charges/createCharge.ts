@@ -44,7 +44,7 @@ const formatCharge = (member: IMember, payload: ICreateChargePayload): any => {
     transaction_amount: Number(payload.transactionAmount.replace(",", ".")),
     payment_method_id: PAYMENT_METHOD_ID.PIX as "pix",
     description: "Contribution to Resgatar Community",
-    notification_url: process.env.MPAGO_NOTIFICATION_URL,
+    notification_url: `${process.env.MPAGO_NOTIFICATION_URL}/webhook/mercadopago`,
     payer: {
       identification: {
         number: decrypt(member.identification.numberType),
