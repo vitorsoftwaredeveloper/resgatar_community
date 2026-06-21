@@ -4,6 +4,7 @@ mercadoPagoWebhook:
     MPAGO_ACCESS_TOKEN: ${self:custom.environment.MPAGO_ACCESS_TOKEN}
     MPAGO_TRANSACTION_URL: ${self:custom.environment.MPAGO_TRANSACTION_URL}
     MPAGO_WEBHOOK_SECRET: ${self:custom.environment.MPAGO_WEBHOOK_SECRET}
+    FIREBASE_SERVICE_ACCOUNT: ${self:custom.environment.FIREBASE_SERVICE_ACCOUNT}
   events:
     - httpApi:
         method: POST

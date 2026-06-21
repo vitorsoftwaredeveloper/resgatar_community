@@ -1,12 +1,15 @@
 import { ChargeModel } from "../../models/Charge";
 import { ContributionModel } from "../../models/Contribution";
+import { MemberModel } from "../../models/Member";
 import { createMercadoPagoClient } from "../../integrations/mercadopago";
+import { sendPushNotificationToTokens } from "../../integrations/firebase";
 import { executeMongoTransaction } from "../../utils/mongoose";
 import {
   IChargeDTO,
   IConsultChargeMPagoResponse,
   IMercadoPagoWebhookPayload,
 } from "../../types/charges";
+import { TRANSACTION_STATUS } from "../../constants/charges";
 
 export const processMercadoPagoWebhook = async (
   payload: IMercadoPagoWebhookPayload,
@@ -40,6 +43,10 @@ export const processMercadoPagoWebhook = async (
   }
 
   await updateCharge(charge, paymentData);
+
+  if (paymentData.status === TRANSACTION_STATUS.APPROVED) {
+    await notifyMember(charge.memberId);
+  }
 
   console.log("OUT - processMercadoPagoWebhook");
 };
@@ -83,6 +90,25 @@ const updateCharge = async (
   });
 
   console.log("OUT - updateCharge");
+};
+
+const notifyMember = async (memberId: string): Promise<void> => {
+  console.log("IN - notifyMember", { memberId });
+
+  const member = await MemberModel.findById(memberId);
+
+  if (!member?.pushToken) {
+    console.log("No pushToken found for member:", memberId);
+    return;
+  }
+
+  await sendPushNotificationToTokens(
+    [member.pushToken],
+    "Pagamento confirmado!",
+    "Seu pagamento foi processado com sucesso.",
+  );
+
+  console.log("OUT - notifyMember");
 };
 
 function getMonthKeyFromDate(month: number): string {
