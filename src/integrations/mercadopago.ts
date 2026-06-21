@@ -1,6 +1,36 @@
 import { ICreateChargeMPagoRequest } from "../types/charges";
-import { randomUUID } from "crypto";
+import { randomUUID, createHmac, timingSafeEqual } from "crypto";
 import axios from "axios";
+
+// Validates the x-signature header sent by Mercado Pago on every webhook call.
+// See: https://www.mercadopago.com.br/developers/en/docs/your-integrations/notifications/webhooks
+export const validateWebhookSignature = (
+  xSignature: string,
+  xRequestId: string,
+  dataId: string,
+): boolean => {
+  const secret = process.env.MPAGO_WEBHOOK_SECRET as string;
+  if (!secret) return false;
+
+  // x-signature format: "ts=<timestamp>,v1=<hmac-sha256>"
+  const parts = xSignature.split(",");
+  const tsPart = parts.find((p) => p.startsWith("ts="));
+  const v1Part = parts.find((p) => p.startsWith("v1="));
+
+  if (!tsPart || !v1Part) return false;
+
+  const ts = tsPart.split("=")[1];
+  const receivedHash = v1Part.split("=")[1];
+
+  const signedMessage = `id:${dataId};request-id:${xRequestId};ts:${ts};`;
+  const expectedHash = createHmac("sha256", secret).update(signedMessage).digest("hex");
+
+  try {
+    return timingSafeEqual(Buffer.from(expectedHash, "hex"), Buffer.from(receivedHash, "hex"));
+  } catch {
+    return false;
+  }
+};
 
 export const createMercadoPagoClient = async () => {
   return {

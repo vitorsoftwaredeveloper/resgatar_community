@@ -7,6 +7,7 @@ interface ICreateChargeMPagoRequest {
   transaction_amount: number;
   payment_method_id: string;
   description: string;
+  notification_url?: string;
   payer: {
     identification: {
       number: string;
@@ -16,6 +17,19 @@ interface ICreateChargeMPagoRequest {
     first_name: string;
     email: string;
   };
+}
+
+interface IMercadoPagoWebhookPayload {
+  action: string;
+  api_version: string;
+  data: {
+    id: string;
+  };
+  date_created: string;
+  id: string;
+  live_mode: boolean;
+  type: string;
+  user_id: string;
 }
 interface ICreateChargeMPagoResponse {
   id: number;
@@ -243,4 +257,5 @@ export {
   IConsultChargeMPagoResponse,
   ICreateChargeMPagoResponse,
   IChargeDTO,
+  IMercadoPagoWebhookPayload,
 };

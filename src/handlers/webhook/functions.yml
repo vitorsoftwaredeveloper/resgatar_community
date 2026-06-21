@@ -1,0 +1,10 @@
+mercadoPagoWebhook:
+  handler: src/handlers/webhook/mercadopago.execute
+  environment:
+    MPAGO_ACCESS_TOKEN: ${self:custom.environment.MPAGO_ACCESS_TOKEN}
+    MPAGO_TRANSACTION_URL: ${self:custom.environment.MPAGO_TRANSACTION_URL}
+    MPAGO_WEBHOOK_SECRET: ${self:custom.environment.MPAGO_WEBHOOK_SECRET}
+  events:
+    - httpApi:
+        method: POST
+        path: /webhook/mercadopago
