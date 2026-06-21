@@ -29,7 +29,7 @@ interface IMercadoPagoWebhookPayload {
   id: string;
   live_mode: boolean;
   type: string;
-  user_id: string;
+  user_id: number;
 }
 interface ICreateChargeMPagoResponse {
   id: number;
