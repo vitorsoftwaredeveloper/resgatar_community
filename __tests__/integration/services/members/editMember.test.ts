@@ -15,6 +15,7 @@ const existingMember: IMember = {
   dateOfBirth: 946684800000,
   role: "user",
   status: "active",
+  profileImage: "data:image/png;base64,OLD",
   paymentInfo: { datePayment: 5, amount: "50,00" },
   identification: { type: "CPF", numberType: "ENC:encrypted-cpf" },
 };
@@ -120,6 +121,24 @@ describe("editMemberService (integration)", () => {
     await editMemberService("member-id-123", { firstName: "Novo" });
 
     expect(encryptSpy).not.toHaveBeenCalled();
+  });
+
+  it("should update profileImage when provided", async () => {
+    const profileImage = "data:image/png;base64,AAAA";
+    const result = await editMemberService("member-id-123", { profileImage });
+
+    expect(result.profileImage).toBe(profileImage);
+    expect(updateOneSpy).toHaveBeenCalledWith(
+      { _id: "member-id-123" },
+      expect.objectContaining({ profileImage }),
+      expect.any(Object)
+    );
+  });
+
+  it("should NOT change profileImage when not in payload", async () => {
+    const result = await editMemberService("member-id-123", { firstName: "Novo" });
+
+    expect(result.profileImage).toBe(existingMember.profileImage);
   });
 
   it("should throw when member is not found", async () => {

@@ -47,6 +47,7 @@ const MemberSchema = new Schema(
     paymentInfo: { type: PaymentInfoSchema, required: true },
     identification: { type: IdentificationSchema, required: true },
     status: { type: String, enum: ["active", "defaulter"], default: "active" },
+    profileImage: { type: String, default: null },
     pushToken: { type: String, default: null },
   },
   { timestamps: true }

@@ -22,6 +22,9 @@ export const editMemberService = async (
       ...(payload.firstName !== undefined && { firstName: payload.firstName }),
       ...(payload.lastName !== undefined && { lastName: payload.lastName }),
       ...(payload.bio !== undefined && { bio: payload.bio }),
+      ...(payload.profileImage !== undefined && {
+        profileImage: payload.profileImage,
+      }),
       ...(payload.dateOfBirth !== undefined && {
         dateOfBirth: payload.dateOfBirth,
       }),

@@ -13,6 +13,7 @@ const findMemberById = async (
 
   const member = await MemberModel.findById(memberId, projection, {
     ...options,
+    lean: true,
   });
   if (!member) {
     throw {
@@ -27,11 +28,28 @@ const findMemberById = async (
   return member;
 };
 
+const findMemberByEmail = async (
+  email: string,
+  projection?: any,
+): Promise<IMember | null> => {
+  console.log("IN - findMemberByEmail");
+
+  const normalizedEmail = email.trim().toLowerCase();
+  const member = await MemberModel.findOne(
+    { email: normalizedEmail },
+    projection,
+    { lean: true },
+  );
+
+  console.log("OUT - findMemberByEmail");
+  return member;
+};
+
 const verifyAdmin = async (memberId: string): Promise<void> => {
   console.log("IN - verifyAdmin");
 
   try {
-    const member = await findMemberById(memberId);
+    const member = await findMemberById(memberId, {}, { lean: true });
 
     if (!(member.role === MEMBER_ROLES.ADMIN)) {
       throw {
@@ -83,4 +101,9 @@ function getRemainingMonthsFromNow(monthIndex: number) {
   }, {} as any);
 }
 
-export { verifyAdmin, findMemberById, createContributionByYear };
+export {
+  verifyAdmin,
+  findMemberById,
+  findMemberByEmail,
+  createContributionByYear,
+};

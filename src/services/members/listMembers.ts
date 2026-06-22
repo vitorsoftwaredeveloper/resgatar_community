@@ -4,13 +4,13 @@ import { verifyAdmin } from "../helper";
 import { decrypt } from "../../utils/crypto";
 
 export const listMembersService = async (
-  memberId: string
+  memberId: string,
 ): Promise<Array<IMember>> => {
   console.log("IN - listMembersService");
 
   await verifyAdmin(memberId);
 
-  const members = await MemberModel.find({});
+  const members = await MemberModel.find({}, {}, { lean: true });
 
   console.log("OUT - listMembersService");
 

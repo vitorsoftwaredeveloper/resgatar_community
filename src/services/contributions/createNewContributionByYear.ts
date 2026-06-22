@@ -1,11 +1,5 @@
 import { IMember } from "../../types/members";
-import { MEMBER_ROLES } from "../../constants/members";
-import { STATUS_CODE } from "../../constants";
-import {
-  createContributionByYear,
-  findMemberById,
-  verifyAdmin,
-} from "../helper";
+import { createContributionByYear, verifyAdmin } from "../helper";
 import { MemberModel } from "../../models/Member";
 
 export const createNewContributionByYearService = async (
@@ -40,7 +34,7 @@ export const createNewContributionByYearService = async (
 const findAllMembers = async (): Promise<IMember[]> => {
   console.log("IN - findAllMembers");
 
-  const members = await MemberModel.find({}, { _id: 1 });
+  const members = await MemberModel.find({}, { _id: 1 }, { lean: true });
 
   console.log("OUT - findAllMembers");
   return members;

@@ -58,6 +58,15 @@ describe("getMemberService (integration)", () => {
     );
   });
 
+  it("should request profileImage in the projection", async () => {
+    await getMemberService("member-id-123");
+
+    expect(findMemberByIdSpy).toHaveBeenCalledWith(
+      "member-id-123",
+      expect.objectContaining({ profileImage: 1 })
+    );
+  });
+
   it("should decrypt identification.numberType before returning", async () => {
     const result = await getMemberService("member-id-123");
 

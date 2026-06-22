@@ -23,6 +23,7 @@ export const getMemberService = async (
     firstName: 1,
     lastName: 1,
     bio: 1,
+    profileImage: 1,
     dateOfBirth: 1,
     address: 1,
   });
@@ -47,6 +48,7 @@ async function getContributions(memberId: string) {
   const contributions = await ContributionModel.findOne(
     { memberId, year: new Date().getFullYear() },
     { _id: 0, memberId: 1, year: 1, months: 1 },
+    { lean: true },
   );
 
   console.log("OUT - getContributions");

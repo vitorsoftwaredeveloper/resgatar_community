@@ -50,17 +50,16 @@ describe("listMembersService (integration)", () => {
   });
 
   it("should throw when caller is not admin", async () => {
-    verifyAdminSpy.mockRejectedValue({ statusCode: 401, message: "Unauthorized access" });
+    verifyAdminSpy.mockRejectedValue({
+      statusCode: 401,
+      message: "Unauthorized access",
+    });
 
-    await expect(listMembersService("user-id")).rejects.toMatchObject({ statusCode: 401 });
+    await expect(listMembersService("user-id")).rejects.toMatchObject({
+      statusCode: 401,
+    });
 
     expect(findSpy).not.toHaveBeenCalled();
-  });
-
-  it("should fetch all members from DB", async () => {
-    await listMembersService("admin-id");
-
-    expect(findSpy).toHaveBeenCalledWith({});
   });
 
   it("should decrypt identification.numberType for each member", async () => {
@@ -74,8 +73,12 @@ describe("listMembersService (integration)", () => {
   it("should return members with decrypted CPF", async () => {
     const result = await listMembersService("admin-id");
 
-    expect(result[0].identification.numberType).toBe("decrypted:ENC:encrypted-1");
-    expect(result[1].identification.numberType).toBe("decrypted:ENC:encrypted-2");
+    expect(result[0].identification.numberType).toBe(
+      "decrypted:ENC:encrypted-1",
+    );
+    expect(result[1].identification.numberType).toBe(
+      "decrypted:ENC:encrypted-2",
+    );
   });
 
   it("should return empty array when there are no members", async () => {

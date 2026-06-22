@@ -24,9 +24,14 @@ describe("createMemberService (integration)", () => {
   let encryptSpy: jest.SpyInstance;
   let insertOneSpy: jest.SpyInstance;
   let createContributionSpy: jest.SpyInstance;
+  let findMemberByEmailSpy: jest.SpyInstance;
 
   beforeEach(() => {
     process.env.ENCRYPTION_KEY = "a".repeat(64);
+
+    findMemberByEmailSpy = jest
+      .spyOn(helperService, "findMemberByEmail")
+      .mockResolvedValue(null);
 
     createCognitoUserSpy = jest
       .spyOn(cognitoUtil, "createCognitoUser")
@@ -107,6 +112,32 @@ describe("createMemberService (integration)", () => {
     expect(insertOneSpy).not.toHaveBeenCalled();
   });
 
+  it("should map Cognito UsernameExistsException to a generic 409", async () => {
+    createCognitoUserSpy.mockRejectedValue({ name: "UsernameExistsException" });
+
+    await expect(createMemberService({ ...basePayload })).rejects.toMatchObject({
+      statusCode: 409,
+      message: "Não foi possível concluir o cadastro com este email.",
+    });
+  });
+
+  it("should NOT call removeMemberCognito when Cognito rejects (no user created)", async () => {
+    createCognitoUserSpy.mockRejectedValue({ name: "UsernameExistsException" });
+
+    await expect(createMemberService({ ...basePayload })).rejects.toBeDefined();
+
+    expect(removeMemberCognitoSpy).not.toHaveBeenCalled();
+  });
+
+  it("should still throw the original error if Cognito rollback fails", async () => {
+    insertOneSpy.mockRejectedValue({ code: 11000 });
+    removeMemberCognitoSpy.mockRejectedValue(new Error("rollback failed"));
+
+    await expect(createMemberService({ ...basePayload })).rejects.toMatchObject({
+      statusCode: 409,
+    });
+  });
+
   it("should NOT create contribution when DB insert fails", async () => {
     insertOneSpy.mockRejectedValue({ code: 11000 });
 
@@ -121,6 +152,46 @@ describe("createMemberService (integration)", () => {
     expect(insertOneSpy).toHaveBeenCalledWith(
       expect.objectContaining({ status: "active" }),
     );
+  });
+
+  it("should check email availability before creating cognito user", async () => {
+    await createMemberService({ ...basePayload });
+
+    expect(findMemberByEmailSpy).toHaveBeenCalledWith(
+      basePayload.email,
+      expect.any(Object),
+    );
+    expect(findMemberByEmailSpy.mock.invocationCallOrder[0]).toBeLessThan(
+      createCognitoUserSpy.mock.invocationCallOrder[0],
+    );
+  });
+
+  it("should throw 409 with a generic message when email already exists", async () => {
+    findMemberByEmailSpy.mockResolvedValue({ _id: "existing-id" } as any);
+
+    await expect(createMemberService({ ...basePayload })).rejects.toMatchObject({
+      statusCode: 409,
+      message: "Não foi possível concluir o cadastro com este email.",
+    });
+  });
+
+  it("should NOT create cognito user or insert when email already exists", async () => {
+    findMemberByEmailSpy.mockResolvedValue({ _id: "existing-id" } as any);
+
+    await expect(createMemberService({ ...basePayload })).rejects.toBeDefined();
+
+    expect(createCognitoUserSpy).not.toHaveBeenCalled();
+    expect(insertOneSpy).not.toHaveBeenCalled();
+    expect(removeMemberCognitoSpy).not.toHaveBeenCalled();
+  });
+
+  it("should throw 409 generic message when DB insert hits the unique index", async () => {
+    insertOneSpy.mockRejectedValue({ code: 11000 });
+
+    await expect(createMemberService({ ...basePayload })).rejects.toMatchObject({
+      statusCode: 409,
+      message: "Não foi possível concluir o cadastro com este email.",
+    });
   });
 
   it("should default role to user when not provided", async () => {

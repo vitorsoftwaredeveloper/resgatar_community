@@ -11,7 +11,11 @@ export const consultChargeService = async (
   await findMemberById(memberId);
 
   try {
-    const charge = await ChargeModel.findOne({ transactionId });
+    const charge = await ChargeModel.findOne(
+      { transactionId },
+      {},
+      { lean: true },
+    );
 
     if (!charge) {
       throw {

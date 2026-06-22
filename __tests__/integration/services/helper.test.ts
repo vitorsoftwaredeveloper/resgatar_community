@@ -68,6 +68,50 @@ describe("services/helper", () => {
     });
   });
 
+  describe("findMemberByEmail", () => {
+    let findOneSpy: jest.SpyInstance;
+
+    beforeEach(() => {
+      findOneSpy = jest
+        .spyOn(MemberModel, "findOne")
+        .mockResolvedValue(mockMember as any);
+    });
+
+    afterEach(() => jest.restoreAllMocks());
+
+    it("should query by normalized (trimmed, lowercased) email", async () => {
+      await helperModule.findMemberByEmail("  JOAO@Email.com  ");
+
+      expect(findOneSpy).toHaveBeenCalledWith(
+        { email: "joao@email.com" },
+        undefined,
+      );
+    });
+
+    it("should forward projection to findOne", async () => {
+      await helperModule.findMemberByEmail("joao@email.com", { _id: 1 });
+
+      expect(findOneSpy).toHaveBeenCalledWith(
+        { email: "joao@email.com" },
+        { _id: 1 },
+      );
+    });
+
+    it("should return the found member", async () => {
+      const result = await helperModule.findMemberByEmail("joao@email.com");
+
+      expect(result).toEqual(mockMember);
+    });
+
+    it("should return null when no member matches", async () => {
+      findOneSpy.mockResolvedValue(null);
+
+      const result = await helperModule.findMemberByEmail("ghost@email.com");
+
+      expect(result).toBeNull();
+    });
+  });
+
   describe("verifyAdmin", () => {
     let findByIdSpy: jest.SpyInstance;
 

@@ -2,8 +2,7 @@ import { MemberModel } from "../../models/Member";
 import { ISignUpPayload, IMember } from "../../types/members";
 import { DUPLICATE_KEY_ERROR_CODE, STATUS_CODE } from "../../constants";
 import { createCognitoUser, removeMemberCognito } from "../../utils/cognito";
-import { removeMemberService } from "./removeMember";
-import { createContributionByYear } from "../helper";
+import { createContributionByYear, findMemberByEmail } from "../helper";
 import { encrypt } from "../../utils/crypto";
 
 export const createMemberService = async (
@@ -12,16 +11,44 @@ export const createMemberService = async (
   console.log("IN - createMemberService");
 
   try {
+    await ensureEmailIsAvailable(payload.email);
+
     payload["_id"] = await createCognitoUser(payload.email, payload.password);
 
     return await createMember(payload);
   } catch (error) {
-    await removeMemberCognito(payload._id as string);
+    if (payload._id) {
+      await removeMemberCognito(payload._id).catch((rollbackError) => {
+        console.error("Failed to rollback Cognito user:", rollbackError);
+      });
+    }
 
-    throw error;
+    throw normalizeSignUpError(error);
   } finally {
     console.log("OUT - createMemberService");
   }
+};
+
+const ensureEmailIsAvailable = async (email: string): Promise<void> => {
+  const existingMember = await findMemberByEmail(email, { _id: 1 });
+
+  if (existingMember) {
+    throw {
+      statusCode: STATUS_CODE.CONFLICT,
+      message: "Não foi possível concluir o cadastro com este email.",
+    };
+  }
+};
+
+const normalizeSignUpError = (error: any) => {
+  if (error?.name === "UsernameExistsException") {
+    return {
+      statusCode: STATUS_CODE.CONFLICT,
+      message: "Não foi possível concluir o cadastro com este email.",
+    };
+  }
+
+  return error;
 };
 
 const createMember = async (payload: ISignUpPayload): Promise<any> => {
@@ -35,6 +62,7 @@ const createMember = async (payload: ISignUpPayload): Promise<any> => {
     firstName: payload.firstName,
     lastName: payload.lastName,
     bio: payload.bio,
+    profileImage: payload.profileImage,
     dateOfBirth: payload.dateOfBirth,
     address: payload.address,
     paymentInfo: payload.paymentInfo,
@@ -48,8 +76,8 @@ const createMember = async (payload: ISignUpPayload): Promise<any> => {
   await MemberModel.insertOne(memberData).catch(async (error) => {
     if (error.code === DUPLICATE_KEY_ERROR_CODE) {
       throw {
-        statusCode: STATUS_CODE.BAD_REQUEST,
-        message: "Member with this email already exists.",
+        statusCode: STATUS_CODE.CONFLICT,
+        message: "Não foi possível concluir o cadastro com este email.",
       };
     }
     throw error;

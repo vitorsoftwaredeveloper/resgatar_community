@@ -2,6 +2,7 @@ import { APIGatewayEvent } from "aws-lambda";
 import * as helperUtil from "../../../../src/utils/helper";
 import * as editMemberServiceModule from "../../../../src/services/members/editMember";
 import { execute } from "../../../../src/handlers/members/editMember";
+import { MAX_PROFILE_IMAGE_LENGTH } from "../../../../src/constants/members";
 
 const validPayload = {
   email: "novo@email.com",
@@ -90,6 +91,27 @@ describe("editMember handler (integration)", () => {
       "member-id-123",
       expect.objectContaining({ firstName: "Novo" })
     );
+  });
+
+  it("should accept a profileImage update and forward it to the service", async () => {
+    const profileImage = "data:image/png;base64,AAAA";
+    const result = await execute(buildEvent({ profileImage }));
+
+    expect(result.statusCode).toBe(204);
+    expect(editMemberServiceSpy).toHaveBeenCalledWith(
+      "member-id-123",
+      expect.objectContaining({ profileImage })
+    );
+  });
+
+  it("should throw 400 when profileImage exceeds the max length", async () => {
+    const tooLong = "a".repeat(MAX_PROFILE_IMAGE_LENGTH + 1);
+
+    await expect(
+      execute(buildEvent({ profileImage: tooLong }))
+    ).rejects.toMatchObject({ statusCode: 400 });
+
+    expect(editMemberServiceSpy).not.toHaveBeenCalled();
   });
 
   it("should return 404 when member is not found", async () => {

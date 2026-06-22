@@ -1,3 +1,5 @@
+import { MAX_PROFILE_IMAGE_LENGTH } from "../../../constants/members";
+
 export const editMemberSchema: any = {
   type: "object",
   properties: {
@@ -7,6 +9,12 @@ export const editMemberSchema: any = {
     firstName: { type: "string" },
     lastName: { type: "string" },
     bio: { type: "string", nullable: true, minLength: 0 },
+    profileImage: {
+      type: "string",
+      nullable: true,
+      minLength: 0,
+      maxLength: MAX_PROFILE_IMAGE_LENGTH,
+    },
     dateOfBirth: { type: "number", minimum: 0 },
     address: {
       type: "object",

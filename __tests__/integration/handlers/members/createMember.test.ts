@@ -1,6 +1,7 @@
 import { APIGatewayEvent } from "aws-lambda";
 import * as createMemberServiceModule from "../../../../src/services/members/createMember";
 import { execute } from "../../../../src/handlers/members/createMember";
+import { MAX_PROFILE_IMAGE_LENGTH } from "../../../../src/constants/members";
 
 // CPF válido (dígito verificador correto) e domínio não descartável
 const validPayload = {
@@ -100,6 +101,23 @@ describe("createMember handler (integration)", () => {
     const result = await execute(buildEvent(withoutEmail));
 
     expect(result.statusCode).toBe(400);
+  });
+
+  it("should accept a profileImage and forward it to the service", async () => {
+    const profileImage = "data:image/png;base64,AAAA";
+    await execute(buildEvent({ ...validPayload, profileImage }));
+
+    expect(createMemberServiceSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ profileImage }),
+    );
+  });
+
+  it("should return 400 when profileImage exceeds the max length", async () => {
+    const tooLong = "a".repeat(MAX_PROFILE_IMAGE_LENGTH + 1);
+    const result = await execute(buildEvent({ ...validPayload, profileImage: tooLong }));
+
+    expect(result.statusCode).toBe(400);
+    expect(createMemberServiceSpy).not.toHaveBeenCalled();
   });
 
   it("should return 500 when service throws unexpected error", async () => {

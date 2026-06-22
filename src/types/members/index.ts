@@ -6,6 +6,7 @@ interface ISignUpPayload {
   firstName: string;
   lastName: string;
   bio?: string;
+  profileImage?: string;
   dateOfBirth: number;
   address?: {
     street?: string;

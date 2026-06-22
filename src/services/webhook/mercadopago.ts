@@ -28,9 +28,13 @@ export const processMercadoPagoWebhook = async (
 
   console.log({ consultResponse: paymentData });
 
-  const charge = await ChargeModel.findOne({
-    transactionId: Number(paymentId),
-  });
+  const charge = await ChargeModel.findOne(
+    {
+      transactionId: Number(paymentId),
+    },
+    {},
+    { lean: true },
+  );
 
   if (!charge) {
     console.log("Charge not found for transactionId:", paymentId);
@@ -95,7 +99,7 @@ const updateCharge = async (
 const notifyMember = async (memberId: string): Promise<void> => {
   console.log("IN - notifyMember", { memberId });
 
-  const member = await MemberModel.findById(memberId);
+  const member = await MemberModel.findById(memberId, {}, { lean: true });
 
   if (!member?.pushToken) {
     console.log("No pushToken found for member:", memberId);
