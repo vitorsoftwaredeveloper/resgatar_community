@@ -37,7 +37,7 @@ describe("services/helper", () => {
     it("should call MemberModel.findById with the given id", async () => {
       await helperModule.findMemberById("member-id-123");
 
-      expect(findByIdSpy).toHaveBeenCalledWith("member-id-123", undefined, {});
+      expect(findByIdSpy).toHaveBeenCalledWith("member-id-123", undefined, { lean: true });
     });
 
     it("should forward projection to findById", async () => {
@@ -46,7 +46,7 @@ describe("services/helper", () => {
       expect(findByIdSpy).toHaveBeenCalledWith(
         "member-id-123",
         { _id: 1, email: 1 },
-        {},
+        { lean: true },
       );
     });
 
@@ -85,6 +85,7 @@ describe("services/helper", () => {
       expect(findOneSpy).toHaveBeenCalledWith(
         { email: "joao@email.com" },
         undefined,
+        { lean: true },
       );
     });
 
@@ -94,6 +95,7 @@ describe("services/helper", () => {
       expect(findOneSpy).toHaveBeenCalledWith(
         { email: "joao@email.com" },
         { _id: 1 },
+        { lean: true },
       );
     });
 

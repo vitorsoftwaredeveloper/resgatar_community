@@ -62,7 +62,7 @@ describe("consultChargeService (integration)", () => {
   it("should find charge by transactionId", async () => {
     await consultChargeService("member-id-123", "123456");
 
-    expect(findOneChargeSpy).toHaveBeenCalledWith({ transactionId: "123456" });
+    expect(findOneChargeSpy).toHaveBeenCalledWith({ transactionId: "123456" }, {}, { lean: true });
   });
 
   it("should return charge data from DB", async () => {

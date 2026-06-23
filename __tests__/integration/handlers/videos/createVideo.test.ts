@@ -35,10 +35,16 @@ describe("createVideo handler (integration)", () => {
     expect(body.data.thumbnail).toBeDefined();
   });
 
-  it("should call createVideoService with member sub and url", async () => {
+  it("should call createVideoService with member sub, url and title", async () => {
     await execute(buildEvent(validPayload));
 
-    expect(createVideoServiceSpy).toHaveBeenCalledWith("member-id-123", validPayload.url);
+    expect(createVideoServiceSpy).toHaveBeenCalledWith("member-id-123", validPayload.url, undefined);
+  });
+
+  it("should pass title to createVideoService when provided", async () => {
+    await execute(buildEvent({ ...validPayload, title: "My Video Title" }));
+
+    expect(createVideoServiceSpy).toHaveBeenCalledWith("member-id-123", validPayload.url, "My Video Title");
   });
 
   it("should return 400 when url is missing", async () => {

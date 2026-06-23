@@ -82,7 +82,8 @@ describe("getMemberService (integration)", () => {
         memberId: "member-id-123",
         year: new Date().getFullYear(),
       }),
-      expect.any(Object)
+      expect.any(Object),
+      { lean: true },
     );
   });
 

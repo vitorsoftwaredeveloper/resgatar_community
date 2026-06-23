@@ -55,7 +55,7 @@ describe("createNewContributionByYearService (integration)", () => {
   it("should fetch all members with only _id projection", async () => {
     await createNewContributionByYearService("admin-id", 2025);
 
-    expect(findSpy).toHaveBeenCalledWith({}, { _id: 1 });
+    expect(findSpy).toHaveBeenCalledWith({}, { _id: 1 }, { lean: true });
   });
 
   it("should create contribution for each member starting from january (monthIndex 0)", async () => {
