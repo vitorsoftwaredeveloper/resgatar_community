@@ -1,6 +1,6 @@
 # Resgatar Community
 
-Backend serverless para gerenciamento de membros, cobranças e contribuições de uma comunidade. Construído com Node.js e TypeScript sobre AWS Lambda e API Gateway, com integração ao MercadoPago para processamento de pagamentos.
+Backend serverless para gerenciamento de membros, cobranças, contribuições e vídeos de uma comunidade. Construído com Node.js e TypeScript sobre AWS Lambda e API Gateway, com integração ao MercadoPago para processamento de pagamentos e YouTube para gerenciamento de vídeos.
 
 ---
 
@@ -18,6 +18,7 @@ Backend serverless para gerenciamento de membros, cobranças e contribuições d
 - [Testes](#testes)
 - [Scripts](#scripts)
 - [Deploy](#deploy)
+- [Webhook MercadoPago](#webhook-mercadopago)
 
 ---
 
@@ -26,9 +27,11 @@ Backend serverless para gerenciamento de membros, cobranças e contribuições d
 O Resgatar Community é uma plataforma de gestão comunitária que oferece:
 
 - Cadastro público de membros com validações equivalentes ao app mobile (CPF/CNPJ, senha forte, domínio de email)
-- Gerenciamento de membros com autenticação via AWS Cognito
+- Gerenciamento de membros com autenticação via AWS Cognito, incluindo suporte a foto de perfil (`profileImage`)
 - Processamento de pagamentos (PIX, Boleto, Cartão de Crédito) integrado ao MercadoPago
+- Webhook do MercadoPago para atualização automática de status de pagamento e envio de push notification ao membro na aprovação
 - Rastreamento de contribuições mensais por membro e por ano
+- Gerenciamento de vídeos do YouTube: cadastro, listagem enriquecida (thumbnail, dados do membro) e remoção
 - Envio de push notifications via Firebase Cloud Messaging (FCM) para todos os usuários (notificações manuais e Liturgia Diária automatizada)
 - Criptografia de dados sensíveis com AES-256-GCM
 - Tarefas agendadas diárias: remoção de cobranças expiradas, envio da Liturgia Diária e lembrete de dia de pagamento
@@ -73,6 +76,7 @@ As funções Lambda são organizadas por módulo, cada uma com apenas as variáv
 | Push Notifications   | Firebase Admin SDK (FCM)       |
 | Criptografia         | AES-256-GCM (Node.js `crypto`) |
 | Validação            | AJV 8 + validadores customizados |
+| YouTube              | API pública de thumbnails        |
 | Empacotamento        | serverless-esbuild             |
 | Infraestrutura Local | Docker Compose + LocalStack    |
 | Testes               | Jest 30 + ts-jest + lcov       |
@@ -134,6 +138,7 @@ As configurações por ambiente ficam em `config/{stage}.json` e são injetadas 
 | `MPAGO_ACCESS_TOKEN`       | Token de acesso do MercadoPago                                              | charges                           |
 | `MPAGO_TRANSACTION_URL`    | Endpoint da API do MercadoPago                                              | charges                           |
 | `FIREBASE_SERVICE_ACCOUNT` | JSON da conta de serviço do Firebase codificado em Base64                   | notifications, agents             |
+| `MPAGO_WEBHOOK_SECRET`     | Segredo para validação de assinatura do webhook do MercadoPago              | webhook                           |
 
 ---
 
@@ -150,6 +155,14 @@ As configurações por ambiente ficam em `config/{stage}.json` e são injetadas 
 | DELETE | `/members/{memberId}`          | ✅ JWT | Remove um membro do sistema                      |
 | PUT    | `/members/{memberId}/password` | ✅ JWT | Atualiza a senha do membro via Cognito           |
 | PATCH  | `/members/push-token`          | ✅ JWT | Atualiza o push token FCM do membro autenticado  |
+
+### Vídeos
+
+| Método | Rota                   | Auth      | Descrição                                                              |
+| ------ | ---------------------- | --------- | ---------------------------------------------------------------------- |
+| GET    | `/videos`              | ✅ JWT    | Lista todos os vídeos com thumbnail, dados do autor e foto de perfil   |
+| POST   | `/videos`              | ✅ JWT    | Cadastra um vídeo do YouTube (extrai `videoId` e gera thumbnail)       |
+| DELETE | `/videos/{videoId}`    | ✅ JWT    | Remove um vídeo cadastrado                                             |
 
 ### Cobranças
 
@@ -169,6 +182,12 @@ As configurações por ambiente ficam em `config/{stage}.json` e são injetadas 
 | Método | Rota             | Auth  | Descrição                                                                      |
 | ------ | ---------------- | ----- | ------------------------------------------------------------------------------ |
 | POST   | `/notifications` | ✅ JWT | Envia push notification via FCM para todos os usuários (requer perfil `admin`) |
+
+### Webhook
+
+| Método | Rota                | Auth      | Descrição                                                                         |
+| ------ | ------------------- | --------- | --------------------------------------------------------------------------------- |
+| POST   | `/webhook/mercadopago` | ❌ pública | Recebe eventos do MercadoPago, atualiza status da cobrança no banco e envia push notification ao membro quando o pagamento é aprovado |
 
 ### Tarefas Agendadas
 
@@ -220,6 +239,7 @@ paymentInfo   { datePayment: Number, amount: String }
 role          Enum: admin | user
 status        Enum: active | defaulter
 pushToken     String (token FCM, nullable)
+profileImage  String (URL da foto de perfil, nullable)
 timestamps    createdAt, updatedAt
 ```
 
@@ -257,6 +277,29 @@ months      {
 timestamps  createdAt, updatedAt
 ```
 
+### Video
+
+```
+_id       String (UUID)
+memberId  String (indexado, referência ao membro)
+url       String (URL original do YouTube)
+videoId   String (ID extraído da URL do YouTube)
+title     String (opcional)
+timestamps createdAt, updatedAt
+```
+
+> A listagem de vídeos (`GET /videos`) enriquece cada item com `thumbnail` (gerado via `https://img.youtube.com/vi/{videoId}/hqdefault.jpg`), `firstName`, `lastName` e `profileImage` do membro autor.
+
+---
+
+## Webhook MercadoPago
+
+O endpoint `POST /webhook/mercadopago` recebe notificações de pagamento do MercadoPago e executa automaticamente:
+
+1. Busca os dados atualizados da transação diretamente na API do MercadoPago
+2. Atualiza o status da cobrança (`Charge`) no banco de dados
+3. Se o status for `approved`, envia uma push notification ao membro via FCM informando a confirmação do pagamento
+
 ---
 
 ## Testes
@@ -267,11 +310,14 @@ O projeto possui cobertura de testes unitários e de integração organizados em
 __tests__/
 ├── unit/
 │   ├── db/           # Singleton de conexão MongoDB
-│   ├── utils/        # crypto, helper, http, validate, cognito, mongoose
+│   ├── utils/        # crypto, helper, http, validate, cognito, mongoose, youtube
 │   ├── repositories/ # createInstanceMongoose (todos os métodos CRUD)
 │   └── integrations/ # mercadopago, firebase
 └── integration/
-    └── services/     # helper (findMemberById, verifyAdmin, createContributionByYear)
+    └── services/
+        ├── members/  # createMember, editMember, getMember, listMembers
+        ├── videos/   # createVideo, removeVideo
+        └── helper.ts # findMemberById, verifyAdmin, createContributionByYear
 ```
 
 ```bash
