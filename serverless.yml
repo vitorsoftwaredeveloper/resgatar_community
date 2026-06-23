@@ -50,5 +50,6 @@ functions:
   - ${file(src/handlers/charges/functions.yml)}
   - ${file(src/handlers/contributions/functions.yml)}
   - ${file(src/handlers/notifications/functions.yml)}
+  - ${file(src/handlers/videos/functions.yml)}
   - ${file(src/handlers/webhook/functions.yml)}
   - ${file(src/services/agents/functions.yml)}

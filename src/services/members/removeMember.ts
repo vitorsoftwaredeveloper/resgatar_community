@@ -3,6 +3,7 @@ import { MemberModel } from "../../models/Member";
 import { verifyAdmin } from "../helper";
 import { ContributionModel } from "../../models/Contribution";
 import { ChargeModel } from "../../models/Charge";
+import { VideoModel } from "../../models/Video";
 
 export const removeMemberService = async (
   adminId: string,
@@ -19,6 +20,7 @@ export const removeMemberService = async (
       MemberModel.deleteOne({ _id: idMember }),
       ContributionModel.deleteMany({ memberId: idMember }),
       ChargeModel.deleteMany({ memberId: idMember }),
+      VideoModel.deleteMany({ memberId: idMember }),
     ]);
   } catch (error) {
     throw error;

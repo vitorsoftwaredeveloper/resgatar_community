@@ -3,6 +3,7 @@ import * as cognitoUtil from "../../../../src/utils/cognito";
 import { MemberModel } from "../../../../src/models/Member";
 import { ContributionModel } from "../../../../src/models/Contribution";
 import { ChargeModel } from "../../../../src/models/Charge";
+import { VideoModel } from "../../../../src/models/Video";
 import { removeMemberService } from "../../../../src/services/members/removeMember";
 
 describe("removeMemberService (integration)", () => {
@@ -11,6 +12,7 @@ describe("removeMemberService (integration)", () => {
   let deleteOneMemberSpy: jest.SpyInstance;
   let deleteManyContributionSpy: jest.SpyInstance;
   let deleteManyChargeSpy: jest.SpyInstance;
+  let deleteManyVideoSpy: jest.SpyInstance;
 
   beforeEach(() => {
     verifyAdminSpy = jest
@@ -31,6 +33,10 @@ describe("removeMemberService (integration)", () => {
 
     deleteManyChargeSpy = jest
       .spyOn(ChargeModel, "deleteMany")
+      .mockResolvedValue({} as any);
+
+    deleteManyVideoSpy = jest
+      .spyOn(VideoModel, "deleteMany")
       .mockResolvedValue({} as any);
   });
 
@@ -78,17 +84,24 @@ describe("removeMemberService (integration)", () => {
     expect(deleteManyChargeSpy).toHaveBeenCalledWith({ memberId: "member-id" });
   });
 
-  it("should delete member, contributions and charges in parallel", async () => {
+  it("should delete all videos of the member", async () => {
+    await removeMemberService("admin-id", "member-id");
+
+    expect(deleteManyVideoSpy).toHaveBeenCalledWith({ memberId: "member-id" });
+  });
+
+  it("should delete member, contributions, charges and videos in parallel", async () => {
     const order: string[] = [];
 
     deleteOneMemberSpy.mockImplementation(async () => { order.push("member"); return {}; });
     deleteManyContributionSpy.mockImplementation(async () => { order.push("contribution"); return {}; });
     deleteManyChargeSpy.mockImplementation(async () => { order.push("charge"); return {}; });
+    deleteManyVideoSpy.mockImplementation(async () => { order.push("video"); return {}; });
 
     await removeMemberService("admin-id", "member-id");
 
-    expect(order).toHaveLength(3);
-    expect(order).toEqual(expect.arrayContaining(["member", "contribution", "charge"]));
+    expect(order).toHaveLength(4);
+    expect(order).toEqual(expect.arrayContaining(["member", "contribution", "charge", "video"]));
   });
 
   it("should throw when Cognito removal fails", async () => {

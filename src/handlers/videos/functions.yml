@@ -1,0 +1,27 @@
+listAllVideos:
+  handler: src/handlers/videos/listAllVideos.execute
+  events:
+    - httpApi:
+        method: GET
+        path: /videos
+        authorizer:
+          name: cognitoAuthorizer
+
+createVideo:
+  handler: src/handlers/videos/createVideo.execute
+  events:
+    - httpApi:
+        method: POST
+        path: /videos
+        authorizer:
+          name: cognitoAuthorizer
+
+
+removeVideo:
+  handler: src/handlers/videos/removeVideo.execute
+  events:
+    - httpApi:
+        method: DELETE
+        path: /videos/{videoId}
+        authorizer:
+          name: cognitoAuthorizer
