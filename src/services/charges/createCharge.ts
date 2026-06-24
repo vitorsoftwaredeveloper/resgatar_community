@@ -19,7 +19,7 @@ export const createChargeService = async (
   const member: IMember = await findMemberById(memberId);
 
   try {
-    const chargeRequest: any = formatCharge(member, payload);
+    const chargeRequest: any = formatCharge(member);
 
     const mpClient = await createMercadoPagoClient();
 
@@ -37,11 +37,11 @@ export const createChargeService = async (
   }
 };
 
-const formatCharge = (member: IMember, payload: ICreateChargePayload): any => {
+const formatCharge = (member: IMember): any => {
   console.log("IN - formatCharge");
 
   const charge = {
-    transaction_amount: Number(payload.transactionAmount.replace(",", ".")),
+    transaction_amount: Number(member.paymentInfo.amount.replace(",", ".")),
     payment_method_id: PAYMENT_METHOD_ID.PIX as "pix",
     description: "Contribution to Resgatar Community",
     notification_url: `${process.env.MPAGO_NOTIFICATION_URL}/webhook/mercadopago`,

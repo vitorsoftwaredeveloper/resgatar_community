@@ -1,4 +1,4 @@
-import { Schema, Types } from "mongoose";
+import { Schema } from "mongoose";
 import { createInstanceMongoose } from "../repositories/mongoose";
 
 const MonthSchema = new Schema(
@@ -6,6 +6,7 @@ const MonthSchema = new Schema(
     paid: { type: Boolean, default: false },
     value: { type: String },
     paidAt: { type: Date },
+    paymentMethod: { type: String, enum: ["pix", "cash"] },
   },
   { _id: false }
 );

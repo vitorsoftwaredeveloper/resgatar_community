@@ -12,6 +12,17 @@ createCharge:
         authorizer:
           name: cognitoAuthorizer
 
+registerCashPayment:
+  handler: src/handlers/charges/registerCashPayment.execute
+  environment:
+    FIREBASE_SERVICE_ACCOUNT: ${self:custom.environment.FIREBASE_SERVICE_ACCOUNT}
+  events:
+    - httpApi:
+        method: POST
+        path: /charges/cash
+        authorizer:
+          name: cognitoAuthorizer
+
 consultCharge:
   handler: src/handlers/charges/consultCharge.execute
   environment:

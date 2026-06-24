@@ -4,7 +4,6 @@ import * as createChargeServiceModule from "../../../../src/services/charges/cre
 import { execute } from "../../../../src/handlers/charges/createCharge";
 
 const validPayload = {
-  transactionAmount: "50,00",
   referenceMonth: 5,
 };
 
@@ -70,15 +69,8 @@ describe("createCharge handler (integration)", () => {
 
     expect(createChargeServiceSpy).toHaveBeenCalledWith(
       "member-id-123",
-      expect.objectContaining({ transactionAmount: "50,00", referenceMonth: 5 })
+      expect.objectContaining({ referenceMonth: 5 })
     );
-  });
-
-  it("should return 400 when transactionAmount has invalid format", async () => {
-    const result = await execute(buildEvent({ ...validPayload, transactionAmount: "50.00" }));
-
-    expect(result.statusCode).toBe(400);
-    expect(createChargeServiceSpy).not.toHaveBeenCalled();
   });
 
   it("should return 400 when referenceMonth is out of range", async () => {
@@ -89,9 +81,19 @@ describe("createCharge handler (integration)", () => {
   });
 
   it("should return 400 when required fields are missing", async () => {
-    const result = await execute(buildEvent({ transactionAmount: "50,00" }));
+    const result = await execute(buildEvent({}));
 
     expect(result.statusCode).toBe(400);
+    expect(createChargeServiceSpy).not.toHaveBeenCalled();
+  });
+
+  it("should return 400 when transactionAmount is sent (no longer accepted)", async () => {
+    const result = await execute(
+      buildEvent({ ...validPayload, transactionAmount: "50,00" })
+    );
+
+    expect(result.statusCode).toBe(400);
+    expect(createChargeServiceSpy).not.toHaveBeenCalled();
   });
 
   it("should return 400 when additional properties are sent", async () => {

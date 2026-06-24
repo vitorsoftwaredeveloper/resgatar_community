@@ -138,6 +138,7 @@ describe("processMercadoPagoWebhook (integration)", () => {
       ["token-abc"],
       "Pagamento confirmado!",
       expect.any(String),
+      expect.objectContaining({ type: "PAYMENT_CONFIRMED", paymentMethod: "pix" }),
     );
   });
 

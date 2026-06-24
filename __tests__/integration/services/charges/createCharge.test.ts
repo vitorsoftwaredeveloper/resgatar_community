@@ -78,13 +78,13 @@ describe("createChargeService (integration)", () => {
   });
 
   it("should find member before creating charge", async () => {
-    await createChargeService("member-id-123", { transactionAmount: "50,00", referenceMonth: 5 });
+    await createChargeService("member-id-123", { referenceMonth: 5 });
 
     expect(findMemberByIdSpy).toHaveBeenCalledWith("member-id-123");
   });
 
   it("should call MercadoPago createPayment with correct payer data", async () => {
-    await createChargeService("member-id-123", { transactionAmount: "50,00", referenceMonth: 5 });
+    await createChargeService("member-id-123", { referenceMonth: 5 });
 
     expect(createPaymentMock).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -103,13 +103,13 @@ describe("createChargeService (integration)", () => {
   });
 
   it("should decrypt CPF before sending to MercadoPago", async () => {
-    await createChargeService("member-id-123", { transactionAmount: "50,00", referenceMonth: 5 });
+    await createChargeService("member-id-123", { referenceMonth: 5 });
 
     expect(decryptSpy).toHaveBeenCalledWith(mockMember.identification.numberType);
   });
 
   it("should encrypt CPF before saving charge to DB", async () => {
-    await createChargeService("member-id-123", { transactionAmount: "50,00", referenceMonth: 5 });
+    await createChargeService("member-id-123", { referenceMonth: 5 });
 
     expect(encryptSpy).toHaveBeenCalled();
     expect(insertOneSpy).toHaveBeenCalledWith(
@@ -122,7 +122,7 @@ describe("createChargeService (integration)", () => {
   });
 
   it("should save charge with correct transactionId from MercadoPago", async () => {
-    await createChargeService("member-id-123", { transactionAmount: "50,00", referenceMonth: 5 });
+    await createChargeService("member-id-123", { referenceMonth: 5 });
 
     expect(insertOneSpy).toHaveBeenCalledWith(
       expect.objectContaining({ transactionId: mockMPagoResponse.id })
@@ -130,7 +130,7 @@ describe("createChargeService (integration)", () => {
   });
 
   it("should save charge with correct referenceMonth", async () => {
-    await createChargeService("member-id-123", { transactionAmount: "50,00", referenceMonth: 3 });
+    await createChargeService("member-id-123", { referenceMonth: 3 });
 
     expect(insertOneSpy).toHaveBeenCalledWith(
       expect.objectContaining({ referenceMonth: 3 })
@@ -138,7 +138,7 @@ describe("createChargeService (integration)", () => {
   });
 
   it("should return the chargeDTO", async () => {
-    const result = await createChargeService("member-id-123", { transactionAmount: "50,00", referenceMonth: 5 });
+    const result = await createChargeService("member-id-123", { referenceMonth: 5 });
 
     expect(result).toEqual(
       expect.objectContaining({
@@ -153,7 +153,7 @@ describe("createChargeService (integration)", () => {
     createPaymentMock.mockRejectedValue(new Error("MPago error"));
 
     await expect(
-      createChargeService("member-id-123", { transactionAmount: "50,00", referenceMonth: 5 })
+      createChargeService("member-id-123", { referenceMonth: 5 })
     ).rejects.toThrow("MPago error");
 
     expect(insertOneSpy).not.toHaveBeenCalled();
@@ -163,17 +163,32 @@ describe("createChargeService (integration)", () => {
     findMemberByIdSpy.mockRejectedValue({ statusCode: 404, message: "Member not found" });
 
     await expect(
-      createChargeService("unknown-id", { transactionAmount: "50,00", referenceMonth: 5 })
+      createChargeService("unknown-id", { referenceMonth: 5 })
     ).rejects.toMatchObject({ statusCode: 404 });
 
     expect(createPaymentMock).not.toHaveBeenCalled();
   });
 
-  it("should convert transactionAmount string to float correctly", async () => {
-    await createChargeService("member-id-123", { transactionAmount: "123,45", referenceMonth: 0 });
+  it("should charge the member's fixed paymentInfo amount, converted to float", async () => {
+    findMemberByIdSpy.mockResolvedValue({
+      ...mockMember,
+      paymentInfo: { datePayment: 5, amount: "123,45" },
+    });
+
+    await createChargeService("member-id-123", { referenceMonth: 0 });
 
     expect(createPaymentMock).toHaveBeenCalledWith(
       expect.objectContaining({ transaction_amount: 123.45 })
+    );
+  });
+
+  it("should ignore any client-provided amount and always use paymentInfo amount", async () => {
+    await createChargeService("member-id-123", {
+      referenceMonth: 5,
+    } as any);
+
+    expect(createPaymentMock).toHaveBeenCalledWith(
+      expect.objectContaining({ transaction_amount: 50.0 })
     );
   });
 });

@@ -40,6 +40,7 @@ export const sendPushNotificationToTokens = async (
   tokens: string[],
   title: string,
   body: string,
+  data?: Record<string, string>,
 ): Promise<string[]> => {
   console.log("IN - sendPushNotificationToTokens", { count: tokens.length });
 
@@ -50,6 +51,7 @@ export const sendPushNotificationToTokens = async (
   const response = await app.messaging().sendEachForMulticast({
     tokens,
     notification: { title, body },
+    ...(data && { data }),
   });
 
   console.log("sendPushNotificationToTokens", {

@@ -85,6 +85,26 @@ describe("sendPushNotificationToTokens", () => {
     });
   });
 
+  it("should include the data payload when provided", async () => {
+    await sendPushNotificationToTokens(tokens, "Título", "Mensagem", {
+      type: "PAYMENT_CONFIRMED",
+      paymentMethod: "cash",
+    });
+
+    expect(sendEachForMulticastMock).toHaveBeenCalledWith({
+      tokens,
+      notification: { title: "Título", body: "Mensagem" },
+      data: { type: "PAYMENT_CONFIRMED", paymentMethod: "cash" },
+    });
+  });
+
+  it("should omit the data key when no data is provided", async () => {
+    await sendPushNotificationToTokens(tokens, "Título", "Mensagem");
+
+    const callArg = sendEachForMulticastMock.mock.calls[0][0];
+    expect(callArg).not.toHaveProperty("data");
+  });
+
   it("should return empty array when all tokens succeed", async () => {
     sendEachForMulticastMock.mockResolvedValue({
       successCount: 3,

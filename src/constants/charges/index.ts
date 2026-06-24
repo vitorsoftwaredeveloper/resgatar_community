@@ -25,4 +25,31 @@ const TRANSACTION_STATUS = {
   CHARGED_BACK: "charged_back",
 };
 
-export { PAYMENT_METHOD_ID, PAYMENT_TYPE_ID, CURRENCY_ID, TRANSACTION_STATUS };
+const CONTRIBUTION_PAYMENT_METHOD = {
+  PIX: "pix",
+  CASH: "cash",
+};
+
+const MONTH_KEYS = [
+  "january",
+  "february",
+  "march",
+  "april",
+  "may",
+  "june",
+  "july",
+  "august",
+  "september",
+  "october",
+  "november",
+  "december",
+];
+
+export {
+  PAYMENT_METHOD_ID,
+  PAYMENT_TYPE_ID,
+  CURRENCY_ID,
+  TRANSACTION_STATUS,
+  CONTRIBUTION_PAYMENT_METHOD,
+  MONTH_KEYS,
+};

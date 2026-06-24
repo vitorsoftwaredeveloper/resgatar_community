@@ -2,14 +2,18 @@ import { ChargeModel } from "../../models/Charge";
 import { ContributionModel } from "../../models/Contribution";
 import { MemberModel } from "../../models/Member";
 import { createMercadoPagoClient } from "../../integrations/mercadopago";
-import { sendPushNotificationToTokens } from "../../integrations/firebase";
+import { notifyPaymentConfirmed } from "../notifications/notifyPaymentConfirmed";
 import { executeMongoTransaction } from "../../utils/mongoose";
 import {
   IChargeDTO,
   IConsultChargeMPagoResponse,
   IMercadoPagoWebhookPayload,
 } from "../../types/charges";
-import { TRANSACTION_STATUS } from "../../constants/charges";
+import {
+  CONTRIBUTION_PAYMENT_METHOD,
+  MONTH_KEYS,
+  TRANSACTION_STATUS,
+} from "../../constants/charges";
 
 export const processMercadoPagoWebhook = async (
   payload: IMercadoPagoWebhookPayload,
@@ -88,6 +92,8 @@ const updateCharge = async (
           [`months.${monthKey}.paid`]: true,
           [`months.${monthKey}.paidAt`]: new Date(),
           [`months.${monthKey}.value`]: charge.transactionAmount,
+          [`months.${monthKey}.paymentMethod`]:
+            CONTRIBUTION_PAYMENT_METHOD.PIX,
         },
       },
     );
@@ -101,34 +107,14 @@ const notifyMember = async (memberId: string): Promise<void> => {
 
   const member = await MemberModel.findById(memberId, {}, { lean: true });
 
-  if (!member?.pushToken) {
-    console.log("No pushToken found for member:", memberId);
-    return;
-  }
-
-  await sendPushNotificationToTokens(
-    [member.pushToken],
-    "Pagamento confirmado!",
-    "Seu pagamento foi processado com sucesso.",
+  await notifyPaymentConfirmed(
+    member?.pushToken,
+    CONTRIBUTION_PAYMENT_METHOD.PIX,
   );
 
   console.log("OUT - notifyMember");
 };
 
 function getMonthKeyFromDate(month: number): string {
-  const months = [
-    "january",
-    "february",
-    "march",
-    "april",
-    "may",
-    "june",
-    "july",
-    "august",
-    "september",
-    "october",
-    "november",
-    "december",
-  ];
-  return months[month];
+  return MONTH_KEYS[month];
 }

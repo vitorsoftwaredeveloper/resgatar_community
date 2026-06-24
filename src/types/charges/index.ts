@@ -1,5 +1,9 @@
 interface ICreateChargePayload {
-  transactionAmount: string;
+  referenceMonth: number;
+}
+
+interface IRegisterCashPaymentPayload {
+  memberId: string;
   referenceMonth: number;
 }
 
@@ -253,6 +257,7 @@ interface IChargeDTO {
 
 export {
   ICreateChargePayload,
+  IRegisterCashPaymentPayload,
   ICreateChargeMPagoRequest,
   IConsultChargeMPagoResponse,
   ICreateChargeMPagoResponse,

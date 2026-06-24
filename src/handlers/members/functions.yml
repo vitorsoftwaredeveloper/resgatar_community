@@ -42,6 +42,17 @@ getMember:
         authorizer:
           name: cognitoAuthorizer
 
+getMemberById:
+  handler: src/handlers/members/getMemberById.execute
+  environment:
+    ENCRYPTION_KEY: ${self:custom.environment.ENCRYPTION_KEY}
+  events:
+    - httpApi:
+        method: GET
+        path: /members/{memberId}
+        authorizer:
+          name: cognitoAuthorizer
+
 editMember:
   handler: src/handlers/members/editMember.execute
   environment:
