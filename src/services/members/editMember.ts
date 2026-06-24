@@ -12,6 +12,10 @@ export const editMemberService = async (
 ) => {
   console.log("IN - editMemberService");
 
+  if (requesterId !== memberId) {
+    await verifyAdmin(requesterId);
+  }
+
   if (payload.role !== undefined) {
     await verifyAdmin(requesterId);
   }

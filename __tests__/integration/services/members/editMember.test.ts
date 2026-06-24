@@ -175,10 +175,42 @@ describe("editMemberService (integration)", () => {
     expect(verifyAdminSpy).toHaveBeenCalledWith("admin-id");
   });
 
-  it("should NOT call verifyAdmin when role is not in payload", async () => {
-    await editMemberService("requester-id", "member-id-123", { firstName: "Novo" });
+  it("should NOT call verifyAdmin when requester edits their own profile without role", async () => {
+    await editMemberService("member-id-123", "member-id-123", { firstName: "Novo" });
 
     expect(verifyAdminSpy).not.toHaveBeenCalled();
+  });
+
+  // --- ownership / IDOR protection ---
+
+  it("should throw 401 when non-admin tries to edit another member's profile", async () => {
+    verifyAdminSpy.mockRejectedValue({ statusCode: 401, message: "Unauthorized access" });
+
+    await expect(
+      editMemberService("user-id", "other-member-id", { firstName: "Hacked" }),
+    ).rejects.toMatchObject({ statusCode: 401 });
+
+    expect(updateOneSpy).not.toHaveBeenCalled();
+  });
+
+  it("should call verifyAdmin when requesterId differs from memberId", async () => {
+    await editMemberService("admin-id", "other-member-id", { firstName: "Novo" });
+
+    expect(verifyAdminSpy).toHaveBeenCalledWith("admin-id");
+  });
+
+  it("should allow admin to edit another member's profile", async () => {
+    const result = await editMemberService("admin-id", "other-member-id", { firstName: "Editado" });
+
+    expect(result.firstName).toBe("Editado");
+    expect(updateOneSpy).toHaveBeenCalled();
+  });
+
+  it("should allow user to edit their own profile without admin check", async () => {
+    const result = await editMemberService("member-id-123", "member-id-123", { firstName: "Proprio" });
+
+    expect(verifyAdminSpy).not.toHaveBeenCalled();
+    expect(result.firstName).toBe("Proprio");
   });
 
   it("should update role when requester is admin", async () => {
