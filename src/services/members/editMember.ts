@@ -2,20 +2,26 @@ import { MemberModel } from "../../models/Member";
 import { IMember } from "../../types/members";
 import { updateMemberCognitoEmail } from "../../utils/cognito";
 import { executeMongoTransaction } from "../../utils/mongoose";
-import { findMemberById } from "../helper";
+import { findMemberById, verifyAdmin } from "../helper";
 import { encrypt } from "../../utils/crypto";
 
 export const editMemberService = async (
+  requesterId: string,
   memberId: string,
   payload: Partial<IMember>,
 ) => {
   console.log("IN - editMemberService");
+
+  if (payload.role !== undefined) {
+    await verifyAdmin(requesterId);
+  }
 
   const member = await findMemberById(memberId);
   try {
     const updatedMember: IMember = {
       ...member,
       ...(payload.email !== undefined && { email: payload.email }),
+      ...(payload.role !== undefined && { role: payload.role }),
       ...(payload.phoneNumber !== undefined && {
         phoneNumber: payload.phoneNumber,
       }),

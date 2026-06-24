@@ -13,10 +13,15 @@ const validPayload = {
 
 const mockUpdatedMember = { _id: "member-id-123", ...validPayload };
 
-function buildEvent(body: any, token = "Bearer valid.token.here"): APIGatewayEvent {
+function buildEvent(
+  body: any,
+  token = "Bearer valid.token.here",
+  pathParameters: Record<string, string> | null = null,
+): APIGatewayEvent {
   return {
     body: JSON.stringify(body),
     headers: { authorization: token },
+    pathParameters,
   } as any;
 }
 
@@ -27,7 +32,7 @@ describe("editMember handler (integration)", () => {
   beforeEach(() => {
     decodeTokenSpy = jest
       .spyOn(helperUtil, "decodeToken")
-      .mockReturnValue({ sub: "member-id-123" } as any);
+      .mockReturnValue({ sub: "requester-id" } as any);
 
     editMemberServiceSpy = jest
       .spyOn(editMemberServiceModule, "editMemberService")
@@ -39,19 +44,30 @@ describe("editMember handler (integration)", () => {
   });
 
   it("should return 204 and updated member on success", async () => {
-    const result = await execute(buildEvent(validPayload));
+    const result = await execute(buildEvent(validPayload, "Bearer token", { memberId: "member-id-123" }));
 
     expect(result.statusCode).toBe(204);
     const body = JSON.parse(result.body);
     expect(body.data._id).toBe("member-id-123");
   });
 
-  it("should call editMemberService with member sub and payload", async () => {
+  it("should pass requesterId from token and memberId from path to service", async () => {
+    await execute(buildEvent(validPayload, "Bearer token", { memberId: "target-member-id" }));
+
+    expect(editMemberServiceSpy).toHaveBeenCalledWith(
+      "requester-id",
+      "target-member-id",
+      expect.objectContaining({ email: validPayload.email })
+    );
+  });
+
+  it("should fall back to requesterId as memberId when pathParameters is absent", async () => {
     await execute(buildEvent(validPayload));
 
     expect(editMemberServiceSpy).toHaveBeenCalledWith(
-      "member-id-123",
-      expect.objectContaining({ email: validPayload.email })
+      "requester-id",
+      "requester-id",
+      expect.any(Object)
     );
   });
 
@@ -88,7 +104,8 @@ describe("editMember handler (integration)", () => {
 
     expect(result.statusCode).toBe(204);
     expect(editMemberServiceSpy).toHaveBeenCalledWith(
-      "member-id-123",
+      "requester-id",
+      "requester-id",
       expect.objectContaining({ firstName: "Novo" })
     );
   });
@@ -99,7 +116,8 @@ describe("editMember handler (integration)", () => {
 
     expect(result.statusCode).toBe(204);
     expect(editMemberServiceSpy).toHaveBeenCalledWith(
-      "member-id-123",
+      "requester-id",
+      "requester-id",
       expect.objectContaining({ profileImage })
     );
   });
@@ -112,6 +130,35 @@ describe("editMember handler (integration)", () => {
     ).rejects.toMatchObject({ statusCode: 400 });
 
     expect(editMemberServiceSpy).not.toHaveBeenCalled();
+  });
+
+  it("should accept role update and forward it to the service", async () => {
+    const result = await execute(
+      buildEvent({ role: "admin" }, "Bearer token", { memberId: "target-id" })
+    );
+
+    expect(result.statusCode).toBe(204);
+    expect(editMemberServiceSpy).toHaveBeenCalledWith(
+      "requester-id",
+      "target-id",
+      expect.objectContaining({ role: "admin" })
+    );
+  });
+
+  it("should throw 400 when role has an invalid value", async () => {
+    await expect(
+      execute(buildEvent({ role: "superuser" }))
+    ).rejects.toMatchObject({ statusCode: 400 });
+
+    expect(editMemberServiceSpy).not.toHaveBeenCalled();
+  });
+
+  it("should return 401 when non-admin tries to update role", async () => {
+    editMemberServiceSpy.mockRejectedValue({ statusCode: 401, message: "Unauthorized access" });
+
+    const result = await execute(buildEvent({ role: "admin" }));
+
+    expect(result.statusCode).toBe(401);
   });
 
   it("should return 404 when member is not found", async () => {

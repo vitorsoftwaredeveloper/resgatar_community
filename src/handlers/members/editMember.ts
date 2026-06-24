@@ -25,7 +25,12 @@ export const execute = async (
     };
   }
   try {
-    const member = await editMemberService(memberCredentials.sub, payload);
+    const memberId = event.pathParameters?.memberId as string;
+    const member = await editMemberService(
+      memberCredentials.sub,
+      memberId || memberCredentials.sub,
+      payload,
+    );
 
     return sendSuccessResponse("Member updated successfully", 204, member);
   } catch (error) {
