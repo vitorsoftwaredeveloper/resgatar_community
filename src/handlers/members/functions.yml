@@ -74,3 +74,13 @@ updatePushToken:
         path: /members/push-token
         authorizer:
           name: cognitoAuthorizer
+
+listBirthdayMembers:
+  handler: src/handlers/members/listBirthdayMembers.execute
+  environment:
+  events:
+    - httpApi:
+        method: GET
+        path: /members/birthdays
+        authorizer:
+          name: cognitoAuthorizer
