@@ -75,29 +75,29 @@ export const getChargesSummaryService = async (
       if (!member) continue;
 
       const monthData: any = contribution.months[monthKey];
-      const amount = parseAmount(member.paymentInfo?.amount);
-      goal += amount;
-
-      const entry: IChargesSummaryMember = {
-        id: member._id,
-        name: `${member.firstName} ${member.lastName}`.trim(),
-        photo: member.profileImage ?? null,
-        status: member.status,
-        paid: !!monthData.paid,
-        amount,
-      };
+      const memberAmount = parseAmount(member.paymentInfo?.amount);
 
       if (monthData.paid) {
-        // Prefer the value actually recorded at payment time; fall back to the
-        // member's current monthly amount.
+        // For paid months, use the value recorded at payment time so that
+        // later edits to paymentInfo.amount don't distort historical totals.
         const paidValue = monthData.value
           ? parseAmount(monthData.value)
-          : amount;
+          : memberAmount;
 
+        goal += paidValue;
         collected += paidValue;
         paidCount += 1;
-        entry.method = monthData.paymentMethod;
-        entry.paidAt = monthData.paidAt;
+
+        summaryMembers.push({
+          id: member._id,
+          name: `${member.firstName} ${member.lastName}`.trim(),
+          photo: member.profileImage ?? null,
+          status: member.status,
+          paid: true,
+          amount: paidValue,
+          method: monthData.paymentMethod,
+          paidAt: monthData.paidAt,
+        });
 
         if (monthData.paymentMethod === CONTRIBUTION_PAYMENT_METHOD.PIX) {
           pix += paidValue;
@@ -106,9 +106,19 @@ export const getChargesSummaryService = async (
         ) {
           cash += paidValue;
         }
+      } else {
+        goal += memberAmount;
+
+        summaryMembers.push({
+          id: member._id,
+          name: `${member.firstName} ${member.lastName}`.trim(),
+          photo: member.profileImage ?? null,
+          status: member.status,
+          paid: false,
+          amount: memberAmount,
+        });
       }
 
-      summaryMembers.push(entry);
     }
 
     summaryMembers.sort((a, b) => a.name.localeCompare(b.name));

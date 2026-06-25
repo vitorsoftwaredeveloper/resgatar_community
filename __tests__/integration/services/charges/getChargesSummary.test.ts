@@ -145,4 +145,160 @@ describe("getChargesSummaryService (integration)", () => {
     expect(result.collected).toBe(100);
     expect(result.byMethod.cash).toBe(100);
   });
+
+  it("should use paid value for goal and member amount when member later changes their amount", async () => {
+    // Member paid R$100 in June, then changed paymentInfo.amount to R$10.
+    // Both goal contribution and the member's displayed amount must be R$100.
+    contributionFindSpy.mockResolvedValue([
+      { memberId: "member-1", months: { june: { paid: true, value: "100,00", paymentMethod: "pix", paidAt: new Date() } } },
+    ] as any);
+
+    memberFindSpy.mockResolvedValue([
+      buildMember({ _id: "member-1", paymentInfo: { amount: "10,00" } }),
+    ] as any);
+
+    const result = await getChargesSummaryService(ADMIN_ID, YEAR, MONTH);
+
+    expect(result.goal).toBe(100);
+    expect(result.collected).toBe(100);
+    expect(result.remaining).toBe(0);
+    expect(result.counts).toMatchObject({ paid: 1, pending: 0 });
+    expect(result.members[0].amount).toBe(100);
+  });
+
+  it("should use current amount for goal when member has not yet paid", async () => {
+    contributionFindSpy.mockResolvedValue([
+      { memberId: "member-1", months: { june: { paid: false } } },
+    ] as any);
+
+    memberFindSpy.mockResolvedValue([
+      buildMember({ _id: "member-1", paymentInfo: { amount: "10,00" } }),
+    ] as any);
+
+    const result = await getChargesSummaryService(ADMIN_ID, YEAR, MONTH);
+
+    expect(result.goal).toBe(10);
+    expect(result.collected).toBe(0);
+    expect(result.remaining).toBe(10);
+  });
+
+  it("should treat member with null amount as zero contribution to goal", async () => {
+    contributionFindSpy.mockResolvedValue([
+      { memberId: "member-1", months: { june: { paid: false } } },
+    ] as any);
+
+    memberFindSpy.mockResolvedValue([
+      buildMember({ _id: "member-1", paymentInfo: { amount: null } }),
+    ] as any);
+
+    const result = await getChargesSummaryService(ADMIN_ID, YEAR, MONTH);
+
+    expect(result.goal).toBe(0);
+    expect(result.counts.total).toBe(1);
+  });
+
+  it("should treat member with non-numeric amount as zero contribution to goal", async () => {
+    contributionFindSpy.mockResolvedValue([
+      { memberId: "member-1", months: { june: { paid: false } } },
+    ] as any);
+
+    memberFindSpy.mockResolvedValue([
+      buildMember({ _id: "member-1", paymentInfo: { amount: "invalid" } }),
+    ] as any);
+
+    const result = await getChargesSummaryService(ADMIN_ID, YEAR, MONTH);
+
+    expect(result.goal).toBe(0);
+    expect(result.counts.total).toBe(1);
+  });
+
+  it("should not add to byMethod when payment method is unknown", async () => {
+    contributionFindSpy.mockResolvedValue([
+      {
+        memberId: "member-1",
+        months: { june: { paid: true, value: "100,00", paymentMethod: "boleto", paidAt: new Date() } },
+      },
+    ] as any);
+
+    memberFindSpy.mockResolvedValue([
+      buildMember({ _id: "member-1", paymentInfo: { amount: "100,00" } }),
+    ] as any);
+
+    const result = await getChargesSummaryService(ADMIN_ID, YEAR, MONTH);
+
+    expect(result.collected).toBe(100);
+    expect(result.byMethod.pix).toBe(0);
+    expect(result.byMethod.cash).toBe(0);
+  });
+
+  it("should return members sorted alphabetically by name", async () => {
+    contributionFindSpy.mockResolvedValue([
+      { memberId: "m1", months: { june: { paid: false } } },
+      { memberId: "m2", months: { june: { paid: false } } },
+      { memberId: "m3", months: { june: { paid: false } } },
+    ] as any);
+
+    memberFindSpy.mockResolvedValue([
+      buildMember({ _id: "m1", firstName: "Carlos", lastName: "Lima" }),
+      buildMember({ _id: "m2", firstName: "Ana", lastName: "Souza" }),
+      buildMember({ _id: "m3", firstName: "Bruno", lastName: "Costa" }),
+    ] as any);
+
+    const result = await getChargesSummaryService(ADMIN_ID, YEAR, MONTH);
+
+    expect(result.members.map((m) => m.name)).toEqual([
+      "Ana Souza",
+      "Bruno Costa",
+      "Carlos Lima",
+    ]);
+  });
+
+  it("should include paidAt and method on paid members", async () => {
+    const paidAt = new Date("2026-06-05T10:00:00.000Z");
+
+    contributionFindSpy.mockResolvedValue([
+      { memberId: "member-1", months: { june: { paid: true, value: "100,00", paymentMethod: "pix", paidAt } } },
+    ] as any);
+
+    memberFindSpy.mockResolvedValue([
+      buildMember({ _id: "member-1", paymentInfo: { amount: "100,00" } }),
+    ] as any);
+
+    const result = await getChargesSummaryService(ADMIN_ID, YEAR, MONTH);
+    const member = result.members[0];
+
+    expect(member.paid).toBe(true);
+    expect(member.method).toBe("pix");
+    expect(member.paidAt).toEqual(paidAt);
+  });
+
+  it("should not include method or paidAt on unpaid members", async () => {
+    contributionFindSpy.mockResolvedValue([
+      { memberId: "member-1", months: { june: { paid: false } } },
+    ] as any);
+
+    memberFindSpy.mockResolvedValue([
+      buildMember({ _id: "member-1" }),
+    ] as any);
+
+    const result = await getChargesSummaryService(ADMIN_ID, YEAR, MONTH);
+    const member = result.members[0];
+
+    expect(member.paid).toBe(false);
+    expect(member.method).toBeUndefined();
+    expect(member.paidAt).toBeUndefined();
+  });
+
+  it("should return zeroed summary when no contributions exist for the month", async () => {
+    const result = await getChargesSummaryService(ADMIN_ID, YEAR, MONTH);
+
+    expect(result).toMatchObject({
+      goal: 0,
+      collected: 0,
+      remaining: 0,
+      byMethod: { pix: 0, cash: 0 },
+      counts: { paid: 0, pending: 0, total: 0 },
+      members: [],
+    });
+  });
 });

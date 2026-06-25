@@ -5,6 +5,7 @@ const PAYMENT_CONFIRMED_NOTIFICATION_TYPE = "PAYMENT_CONFIRMED";
 export const notifyPaymentConfirmed = async (
   pushToken?: string | null,
   paymentMethod?: string,
+  transactionId?: string | number,
 ): Promise<void> => {
   console.log("IN - notifyPaymentConfirmed");
 
@@ -20,6 +21,9 @@ export const notifyPaymentConfirmed = async (
     {
       type: PAYMENT_CONFIRMED_NOTIFICATION_TYPE,
       ...(paymentMethod && { paymentMethod }),
+      // transactionId allows the app to identify which PIX screen to close.
+      // FCM data values must be strings.
+      ...(transactionId != null && { transactionId: String(transactionId) }),
     },
   );
 

@@ -53,7 +53,7 @@ export const processMercadoPagoWebhook = async (
   await updateCharge(charge, paymentData);
 
   if (paymentData.status === TRANSACTION_STATUS.APPROVED) {
-    await notifyMember(charge.memberId);
+    await notifyMember(charge.memberId, charge.transactionId);
   }
 
   console.log("OUT - processMercadoPagoWebhook");
@@ -102,7 +102,10 @@ const updateCharge = async (
   console.log("OUT - updateCharge");
 };
 
-const notifyMember = async (memberId: string): Promise<void> => {
+const notifyMember = async (
+  memberId: string,
+  transactionId: string | number,
+): Promise<void> => {
   console.log("IN - notifyMember", { memberId });
 
   const member = await MemberModel.findById(memberId, {}, { lean: true });
@@ -110,6 +113,7 @@ const notifyMember = async (memberId: string): Promise<void> => {
   await notifyPaymentConfirmed(
     member?.pushToken,
     CONTRIBUTION_PAYMENT_METHOD.PIX,
+    transactionId,
   );
 
   console.log("OUT - notifyMember");

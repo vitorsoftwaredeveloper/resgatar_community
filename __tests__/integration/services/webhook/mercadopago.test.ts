@@ -138,7 +138,25 @@ describe("processMercadoPagoWebhook (integration)", () => {
       ["token-abc"],
       "Pagamento confirmado!",
       expect.any(String),
-      expect.objectContaining({ type: "PAYMENT_CONFIRMED", paymentMethod: "pix" }),
+      expect.objectContaining({
+        type: "PAYMENT_CONFIRMED",
+        paymentMethod: "pix",
+        transactionId: String(mockCharge.transactionId),
+      }),
+    );
+  });
+
+  it("should include transactionId in notification so the app can close the correct PIX screen", async () => {
+    const customCharge = { ...mockCharge, transactionId: 99999 };
+    chargeModelFindOneSpy.mockResolvedValue(customCharge as any);
+
+    await processMercadoPagoWebhook(makePayload());
+
+    expect(sendPushSpy).toHaveBeenCalledWith(
+      expect.any(Array),
+      expect.any(String),
+      expect.any(String),
+      expect.objectContaining({ transactionId: "99999" }),
     );
   });
 
