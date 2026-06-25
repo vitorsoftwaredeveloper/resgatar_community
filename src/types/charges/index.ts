@@ -7,6 +7,28 @@ interface IRegisterCashPaymentPayload {
   referenceMonth: number;
 }
 
+interface IChargesSummaryMember {
+  id: string;
+  name: string;
+  photo: string | null;
+  status: "active" | "defaulter";
+  paid: boolean;
+  amount: number;
+  method?: "pix" | "cash";
+  paidAt?: Date;
+}
+
+interface IChargesSummary {
+  year: number;
+  month: number;
+  goal: number;
+  collected: number;
+  remaining: number;
+  byMethod: { pix: number; cash: number };
+  counts: { paid: number; pending: number; total: number };
+  members: IChargesSummaryMember[];
+}
+
 interface ICreateChargeMPagoRequest {
   transaction_amount: number;
   payment_method_id: string;
@@ -258,6 +280,8 @@ interface IChargeDTO {
 export {
   ICreateChargePayload,
   IRegisterCashPaymentPayload,
+  IChargesSummary,
+  IChargesSummaryMember,
   ICreateChargeMPagoRequest,
   IConsultChargeMPagoResponse,
   ICreateChargeMPagoResponse,

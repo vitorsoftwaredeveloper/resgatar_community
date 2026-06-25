@@ -23,6 +23,15 @@ registerCashPayment:
         authorizer:
           name: cognitoAuthorizer
 
+getChargesSummary:
+  handler: src/handlers/charges/getChargesSummary.execute
+  events:
+    - httpApi:
+        method: GET
+        path: /charges/summary
+        authorizer:
+          name: cognitoAuthorizer
+
 consultCharge:
   handler: src/handlers/charges/consultCharge.execute
   environment:
