@@ -41,6 +41,15 @@ getChargesSummary:
         authorizer:
           name: cognitoAuthorizer
 
+getAnnualChargesSummary:
+  handler: src/handlers/charges/getAnnualChargesSummary.execute
+  events:
+    - httpApi:
+        method: GET
+        path: /charges/annual-summary
+        authorizer:
+          name: cognitoAuthorizer
+
 consultCharge:
   handler: src/handlers/charges/consultCharge.execute
   environment:

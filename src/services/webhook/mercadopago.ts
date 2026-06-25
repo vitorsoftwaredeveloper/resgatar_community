@@ -68,6 +68,12 @@ const updateCharge = async (
     newStatus: chargeConsulted.status,
   });
 
+  // Once a charge leaves PENDING the payment artifacts (QR image, copy-paste
+  // code, ticket URL) are dead weight - nobody scans the QR of a settled
+  // charge. Dropping them here keeps the heaviest field (qrCodeBase64) from
+  // accumulating in the free-tier database.
+  const isTerminal = chargeConsulted.status !== TRANSACTION_STATUS.PENDING;
+
   await executeMongoTransaction(async () => {
     await ChargeModel.updateOne(
       { transactionId: charge.transactionId },
@@ -77,6 +83,13 @@ const updateCharge = async (
           statusDetail: chargeConsulted.status_detail,
           dateApproved: chargeConsulted.date_approved,
         },
+        ...(isTerminal && {
+          $unset: {
+            "transactionData.qrCodeBase64": "",
+            "transactionData.qrCode": "",
+            "transactionData.ticketUrl": "",
+          },
+        }),
       },
     );
 

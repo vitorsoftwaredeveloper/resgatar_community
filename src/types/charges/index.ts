@@ -29,6 +29,43 @@ interface IChargesSummary {
   members: IChargesSummaryMember[];
 }
 
+interface IAnnualByMonth {
+  month: number;
+  goal: number;
+  collected: number;
+  remaining: number;
+  percent: number;
+  counts: { paid: number; pending: number; total: number };
+  byMethod: { pix: number; cash: number };
+}
+
+interface IAnnualByMember {
+  id: string;
+  name: string;
+  photo: string | null;
+  status: "active" | "defaulter";
+  monthsPaid: number;
+  monthsPending: number;
+  totalPaid: number;
+  totalDue: number;
+  byMethod: { pix: number; cash: number };
+}
+
+interface IChargesAnnualSummary {
+  year: number;
+  asOfMonth: number;
+  totals: {
+    goal: number;
+    collected: number;
+    remaining: number;
+    percent: number;
+    byMethod: { pix: number; cash: number };
+    counts: { paid: number; pending: number };
+  };
+  byMonth: IAnnualByMonth[];
+  byMember: IAnnualByMember[];
+}
+
 interface ICreateChargeMPagoRequest {
   transaction_amount: number;
   payment_method_id: string;
@@ -282,6 +319,9 @@ export {
   IRegisterCashPaymentPayload,
   IChargesSummary,
   IChargesSummaryMember,
+  IChargesAnnualSummary,
+  IAnnualByMonth,
+  IAnnualByMember,
   ICreateChargeMPagoRequest,
   IConsultChargeMPagoResponse,
   ICreateChargeMPagoResponse,
