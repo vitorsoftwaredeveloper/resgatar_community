@@ -10,7 +10,7 @@ export const execute = async (
 ): Promise<APIGatewayProxyResult> => {
   console.log("IN - removeMember");
 
-  const admin = decodeToken(event.headers.authorization as string);
+  const requester = decodeToken(event.headers.authorization as string);
 
   const memberToRemoveId = event.pathParameters?.memberId as string;
   if (!memberToRemoveId) {
@@ -21,7 +21,7 @@ export const execute = async (
   }
 
   try {
-    await removeMemberService(admin.sub, memberToRemoveId);
+    await removeMemberService(requester.sub, memberToRemoveId);
 
     return sendSuccessResponse("", STATUS_CODE.NO_CONTENT);
   } catch (error) {

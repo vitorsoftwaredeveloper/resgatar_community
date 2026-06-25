@@ -44,13 +44,26 @@ describe("removeMemberService (integration)", () => {
     jest.restoreAllMocks();
   });
 
-  it("should verify admin before removing", async () => {
+  it("should verify admin when requester removes another member", async () => {
     await removeMemberService("admin-id", "member-id");
 
     expect(verifyAdminSpy).toHaveBeenCalledWith("admin-id");
   });
 
-  it("should throw when caller is not admin", async () => {
+  it("should NOT call verifyAdmin when member closes their own account", async () => {
+    await removeMemberService("member-id", "member-id");
+
+    expect(verifyAdminSpy).not.toHaveBeenCalled();
+  });
+
+  it("should allow member to close their own account", async () => {
+    await removeMemberService("member-id", "member-id");
+
+    expect(removeMemberCognitoSpy).toHaveBeenCalledWith("member-id");
+    expect(deleteOneMemberSpy).toHaveBeenCalledWith({ _id: "member-id" });
+  });
+
+  it("should throw 401 when non-admin tries to remove another member", async () => {
     verifyAdminSpy.mockRejectedValue({ statusCode: 401, message: "Unauthorized access" });
 
     await expect(removeMemberService("user-id", "member-id")).rejects.toMatchObject({

@@ -6,12 +6,14 @@ import { ChargeModel } from "../../models/Charge";
 import { VideoModel } from "../../models/Video";
 
 export const removeMemberService = async (
-  adminId: string,
+  requesterId: string,
   idMember: string
 ): Promise<void> => {
   console.log("IN - removeMemberService");
 
-  await verifyAdmin(adminId);
+  if (requesterId !== idMember) {
+    await verifyAdmin(requesterId);
+  }
 
   try {
     await removeMemberCognito(idMember);
