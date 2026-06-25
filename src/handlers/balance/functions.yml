@@ -1,0 +1,8 @@
+getAnnualBalance:
+  handler: src/handlers/balance/getAnnualBalance.execute
+  events:
+    - httpApi:
+        method: GET
+        path: /balance/annual
+        authorizer:
+          name: cognitoAuthorizer

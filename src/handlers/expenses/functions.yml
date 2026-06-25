@@ -1,0 +1,44 @@
+createExpense:
+  handler: src/handlers/expenses/createExpense.execute
+  events:
+    - httpApi:
+        method: POST
+        path: /expenses
+        authorizer:
+          name: cognitoAuthorizer
+
+listExpenses:
+  handler: src/handlers/expenses/listExpenses.execute
+  events:
+    - httpApi:
+        method: GET
+        path: /expenses
+        authorizer:
+          name: cognitoAuthorizer
+
+getExpensesSummary:
+  handler: src/handlers/expenses/getExpensesSummary.execute
+  events:
+    - httpApi:
+        method: GET
+        path: /expenses/summary
+        authorizer:
+          name: cognitoAuthorizer
+
+editExpense:
+  handler: src/handlers/expenses/editExpense.execute
+  events:
+    - httpApi:
+        method: PUT
+        path: /expenses/{expenseId}
+        authorizer:
+          name: cognitoAuthorizer
+
+removeExpense:
+  handler: src/handlers/expenses/removeExpense.execute
+  events:
+    - httpApi:
+        method: DELETE
+        path: /expenses/{expenseId}
+        authorizer:
+          name: cognitoAuthorizer

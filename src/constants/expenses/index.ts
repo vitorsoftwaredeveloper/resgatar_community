@@ -1,0 +1,22 @@
+const EXPENSE_CATEGORIES = {
+  MAINTENANCE: "maintenance",
+  EVENT: "event",
+  MATERIAL: "material",
+  FOOD: "food",
+  DONATION: "donation",
+  UTILITIES: "utilities",
+  TRANSPORT: "transport",
+  OTHER: "other",
+} as const;
+
+const EXPENSE_CATEGORY_VALUES = Object.values(EXPENSE_CATEGORIES);
+
+const MAX_EXPENSE_DESCRIPTION_LENGTH = 200;
+const MAX_EXPENSE_NOTE_LENGTH = 500;
+
+export {
+  EXPENSE_CATEGORIES,
+  EXPENSE_CATEGORY_VALUES,
+  MAX_EXPENSE_DESCRIPTION_LENGTH,
+  MAX_EXPENSE_NOTE_LENGTH,
+};
