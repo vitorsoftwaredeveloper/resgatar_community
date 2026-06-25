@@ -202,4 +202,13 @@ describe("createMemberService (integration)", () => {
       expect.objectContaining({ role: "user" }),
     );
   });
+
+  it("should force role to user even if an admin role is provided (privilege escalation)", async () => {
+    const payload = { ...basePayload, role: "admin" as any };
+    await createMemberService(payload);
+
+    expect(insertOneSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ role: "user" }),
+    );
+  });
 });

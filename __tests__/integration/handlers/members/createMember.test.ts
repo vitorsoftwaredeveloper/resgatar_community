@@ -11,7 +11,6 @@ const validPayload = {
   firstName: "João",
   lastName: "Silva",
   dateOfBirth: 946684800000,
-  role: "user",
   paymentInfo: { datePayment: 5, amount: "50,00" },
   identification: { type: "CPF", numberType: "52998224725" },
 };
@@ -91,6 +90,15 @@ describe("createMember handler (integration)", () => {
 
   it("should return 400 when phoneNumber has fewer than 10 digits", async () => {
     const result = await execute(buildEvent({ ...validPayload, phoneNumber: "123456789" }));
+
+    expect(result.statusCode).toBe(400);
+    expect(createMemberServiceSpy).not.toHaveBeenCalled();
+  });
+
+  it("should reject self-registration that tries to set a role (privilege escalation)", async () => {
+    const result = await execute(
+      buildEvent({ ...validPayload, role: "admin" }),
+    );
 
     expect(result.statusCode).toBe(400);
     expect(createMemberServiceSpy).not.toHaveBeenCalled();

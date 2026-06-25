@@ -70,7 +70,7 @@ const createMember = async (payload: ISignUpPayload): Promise<any> => {
       type: payload.identification.type,
       numberType: encrypt(payload.identification.numberType),
     },
-    role: payload.role || "user",
+    role: "user",
   };
 
   await MemberModel.insertOne(memberData).catch(async (error) => {

@@ -28,7 +28,6 @@ export const createMemberSchema: any = {
       additionalProperties: false,
       nullable: true,
     },
-    role: { type: "string", enum: ["admin", "user"] },
     paymentInfo: {
       type: "object",
       properties: {
