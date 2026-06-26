@@ -1,5 +1,8 @@
 createExpense:
   handler: src/handlers/expenses/createExpense.execute
+  environment:
+    RECEIPTS_BUCKET_NAME: ${self:custom.environment.RECEIPTS_BUCKET_NAME}
+    REGION: ${self:custom.environment.REGION}
   events:
     - httpApi:
         method: POST
@@ -25,8 +28,23 @@ getExpensesSummary:
         authorizer:
           name: cognitoAuthorizer
 
+getReceiptUploadUrl:
+  handler: src/handlers/expenses/getReceiptUploadUrl.execute
+  environment:
+    RECEIPTS_BUCKET_NAME: ${self:custom.environment.RECEIPTS_BUCKET_NAME}
+    REGION: ${self:custom.environment.REGION}
+  events:
+    - httpApi:
+        method: GET
+        path: /expenses/receipt-upload-url
+        authorizer:
+          name: cognitoAuthorizer
+
 editExpense:
   handler: src/handlers/expenses/editExpense.execute
+  environment:
+    RECEIPTS_BUCKET_NAME: ${self:custom.environment.RECEIPTS_BUCKET_NAME}
+    REGION: ${self:custom.environment.REGION}
   events:
     - httpApi:
         method: PUT
@@ -36,9 +54,24 @@ editExpense:
 
 removeExpense:
   handler: src/handlers/expenses/removeExpense.execute
+  environment:
+    RECEIPTS_BUCKET_NAME: ${self:custom.environment.RECEIPTS_BUCKET_NAME}
+    REGION: ${self:custom.environment.REGION}
   events:
     - httpApi:
         method: DELETE
         path: /expenses/{expenseId}
+        authorizer:
+          name: cognitoAuthorizer
+
+getReceiptViewUrl:
+  handler: src/handlers/expenses/getReceiptViewUrl.execute
+  environment:
+    RECEIPTS_BUCKET_NAME: ${self:custom.environment.RECEIPTS_BUCKET_NAME}
+    REGION: ${self:custom.environment.REGION}
+  events:
+    - httpApi:
+        method: GET
+        path: /expenses/{expenseId}/receipt
         authorizer:
           name: cognitoAuthorizer

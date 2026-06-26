@@ -24,6 +24,7 @@ export const editExpenseSchema: any = {
       maxLength: MAX_EXPENSE_NOTE_LENGTH,
       nullable: true,
     },
+    receiptKey: { type: "string", nullable: true },
   },
   required: [],
   additionalProperties: false,

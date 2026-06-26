@@ -11,6 +11,7 @@ const toDTO = (expense: any): IExpenseDTO => ({
   referenceYear: expense.referenceYear,
   date: expense.date,
   note: expense.note ?? undefined,
+  receiptKey: expense.receiptKey ?? undefined,
   adminId: expense.adminId,
 });
 

@@ -22,6 +22,7 @@ export const createExpenseSchema: any = {
       maxLength: MAX_EXPENSE_NOTE_LENGTH,
       nullable: true,
     },
+    receiptKey: { type: "string", minLength: 1, nullable: true },
   },
   required: [
     "description",

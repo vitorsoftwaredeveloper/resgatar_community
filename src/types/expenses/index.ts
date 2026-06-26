@@ -6,6 +6,7 @@ interface ICreateExpensePayload {
   referenceYear: number;
   date: number;
   note?: string;
+  receiptKey?: string;
 }
 
 interface IExpense extends ICreateExpensePayload {
@@ -24,6 +25,7 @@ interface IExpenseDTO {
   referenceYear: number;
   date: number;
   note?: string;
+  receiptKey?: string;
   adminId: string;
 }
 

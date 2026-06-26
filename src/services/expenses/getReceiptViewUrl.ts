@@ -1,13 +1,13 @@
 import { ExpenseModel } from "../../models/Expense";
 import { STATUS_CODE } from "../../constants";
-import { deleteReceipt } from "../../utils/s3";
+import { generateReceiptViewUrl } from "../../utils/s3";
 import { verifyAdmin } from "../helper";
 
-export const removeExpenseService = async (
+export const getReceiptViewUrlService = async (
   adminId: string,
   expenseId: string,
-): Promise<void> => {
-  console.log("IN - removeExpenseService");
+): Promise<string> => {
+  console.log("IN - getReceiptViewUrlService");
 
   try {
     await verifyAdmin(adminId);
@@ -20,14 +20,17 @@ export const removeExpenseService = async (
       };
     }
 
-    await ExpenseModel.deleteOne({ _id: expenseId });
-
-    if (expense.receiptKey) {
-      await deleteReceipt(expense.receiptKey);
+    if (!expense.receiptKey) {
+      throw {
+        statusCode: STATUS_CODE.NOT_FOUND,
+        message: "Despesa não possui recibo.",
+      };
     }
+
+    return await generateReceiptViewUrl(expense.receiptKey);
   } catch (error) {
     throw error;
   } finally {
-    console.log("OUT - removeExpenseService");
+    console.log("OUT - getReceiptViewUrlService");
   }
 };

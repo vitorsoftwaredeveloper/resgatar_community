@@ -15,6 +15,7 @@ const ExpenseSchema = new Schema(
     referenceYear: { type: Number, required: true },
     date: { type: Number, required: true },
     note: { type: String },
+    receiptKey: { type: String },
     adminId: { type: String, required: true },
   },
   { timestamps: true },

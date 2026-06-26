@@ -12,6 +12,7 @@
     "MPAGO_WEBHOOK_SECRET": "${ssm:/resgatar_community/mercado_pago_webhook_secret}",
     "MPAGO_NOTIFICATION_URL": "${ssm:/resgatar_community/mercado_pago_notification_url}",
     "ENCRYPTION_KEY": "${ssm:/resgatar_community/encryption_key}",
-    "FIREBASE_SERVICE_ACCOUNT": "${ssm:/resgatar_community/firebase_service_account}"
+    "FIREBASE_SERVICE_ACCOUNT": "${ssm:/resgatar_community/firebase_service_account}",
+    "RECEIPTS_BUCKET_NAME": "resgatar-community-receipts-hml"
   }
 }

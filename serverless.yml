@@ -40,6 +40,13 @@ provider:
         - cognito-idp:ListUsers
       Resource:
         - ${self:custom.environment.COGNITO_USER_POOL_ARN}
+    - Effect: Allow
+      Action:
+        - s3:PutObject
+        - s3:GetObject
+        - s3:DeleteObject
+      Resource:
+        - arn:aws:s3:::${self:custom.environment.RECEIPTS_BUCKET_NAME}/*
 
 plugins:
   - serverless-esbuild
@@ -55,3 +62,25 @@ functions:
   - ${file(src/handlers/videos/functions.yml)}
   - ${file(src/handlers/webhook/functions.yml)}
   - ${file(src/services/agents/functions.yml)}
+
+resources:
+  Resources:
+    ReceiptsBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:custom.environment.RECEIPTS_BUCKET_NAME}
+        PublicAccessBlockConfiguration:
+          BlockPublicAcls: true
+          BlockPublicPolicy: true
+          IgnorePublicAcls: true
+          RestrictPublicBuckets: true
+        CorsConfiguration:
+          CorsRules:
+            - AllowedMethods:
+                - PUT
+                - GET
+              AllowedOrigins:
+                - "*"
+              AllowedHeaders:
+                - "*"
+              MaxAge: 3000

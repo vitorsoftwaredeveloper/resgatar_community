@@ -7,7 +7,8 @@
     "USER_POOL_ID": "${ssm:/resgatar_community/user_pool_id}",
     "REGION": "us-east-1",
     "COGNITO_USER_POOL_ARN": "${ssm:/resgatar_community/cognito_user_pool_arn}",
-    "ENCRYPTION_KEY": "${ssm:/resgatar_community/encryption_key}"
+    "ENCRYPTION_KEY": "${ssm:/resgatar_community/encryption_key}",
+    "RECEIPTS_BUCKET_NAME": "resgatar-community-receipts-dev"
   }
 }
 
