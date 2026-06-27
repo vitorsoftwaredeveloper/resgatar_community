@@ -71,6 +71,7 @@ interface ICreateChargeMPagoRequest {
   payment_method_id: string;
   description: string;
   notification_url?: string;
+  external_reference?: string;
   payer: {
     identification: {
       number: string;

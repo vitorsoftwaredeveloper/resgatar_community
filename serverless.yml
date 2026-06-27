@@ -58,6 +58,7 @@ functions:
   - ${file(src/handlers/contributions/functions.yml)}
   - ${file(src/handlers/expenses/functions.yml)}
   - ${file(src/handlers/balance/functions.yml)}
+  - ${file(src/handlers/donations/functions.yml)}
   - ${file(src/handlers/notifications/functions.yml)}
   - ${file(src/handlers/videos/functions.yml)}
   - ${file(src/handlers/webhook/functions.yml)}

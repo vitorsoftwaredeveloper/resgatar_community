@@ -1,0 +1,40 @@
+createDonationPix:
+  handler: src/handlers/donations/createDonationPix.execute
+  environment:
+    ENCRYPTION_KEY: ${self:custom.environment.ENCRYPTION_KEY}
+    MPAGO_ACCESS_TOKEN: ${self:custom.environment.MPAGO_ACCESS_TOKEN}
+    MPAGO_TRANSACTION_URL: ${self:custom.environment.MPAGO_TRANSACTION_URL}
+    MPAGO_NOTIFICATION_URL: ${self:custom.environment.MPAGO_NOTIFICATION_URL}
+  events:
+    - httpApi:
+        method: POST
+        path: /donations
+        authorizer:
+          name: cognitoAuthorizer
+
+registerCashDonation:
+  handler: src/handlers/donations/registerCashDonation.execute
+  events:
+    - httpApi:
+        method: POST
+        path: /donations/cash
+        authorizer:
+          name: cognitoAuthorizer
+
+listDonations:
+  handler: src/handlers/donations/listDonations.execute
+  events:
+    - httpApi:
+        method: GET
+        path: /donations
+        authorizer:
+          name: cognitoAuthorizer
+
+consultDonation:
+  handler: src/handlers/donations/consultDonation.execute
+  events:
+    - httpApi:
+        method: GET
+        path: /donations/{transactionId}
+        authorizer:
+          name: cognitoAuthorizer

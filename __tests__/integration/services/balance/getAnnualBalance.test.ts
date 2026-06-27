@@ -1,6 +1,7 @@
 import * as helperService from "../../../../src/services/helper";
 import * as annualChargesModule from "../../../../src/services/charges/getAnnualChargesSummary";
 import { ExpenseModel } from "../../../../src/models/Expense";
+import { DonationModel } from "../../../../src/models/Donation";
 import { getAnnualBalanceService } from "../../../../src/services/balance/getAnnualBalance";
 
 // Annual charges summary com 3 meses (jan, fev, mar) de entradas.
@@ -19,6 +20,7 @@ const chargesAnnual: any = {
 describe("getAnnualBalanceService (integration)", () => {
   let verifyAdminSpy: jest.SpyInstance;
   let annualChargesSpy: jest.SpyInstance;
+  let donationFindSpy: jest.SpyInstance;
   let findSpy: jest.SpyInstance;
 
   beforeEach(() => {
@@ -29,6 +31,13 @@ describe("getAnnualBalanceService (integration)", () => {
     annualChargesSpy = jest
       .spyOn(annualChargesModule, "getAnnualChargesSummaryService")
       .mockResolvedValue(chargesAnnual);
+
+    // Doações entram no balanço como linha separada; sem mock a query real
+    // tentaria abrir conexão e o teste pendura. Default vazio: cada teste que
+    // exercita doações sobrescreve este spy.
+    donationFindSpy = jest
+      .spyOn(DonationModel, "find")
+      .mockResolvedValue([] as any);
   });
 
   afterEach(() => {
@@ -54,13 +63,14 @@ describe("getAnnualBalanceService (integration)", () => {
     const balance = await getAnnualBalanceService("admin-id", 2026);
 
     expect(balance.byMonth).toEqual([
-      { month: 1, entradas: 300, saidas: 0, resultado: 300, saldoAcumulado: 300 },
-      { month: 2, entradas: 300, saidas: 100, resultado: 200, saldoAcumulado: 500 },
-      { month: 3, entradas: 300, saidas: 100, resultado: 200, saldoAcumulado: 700 },
+      { month: 1, entradas: 300, doacoes: 0, saidas: 0, resultado: 300, saldoAcumulado: 300 },
+      { month: 2, entradas: 300, doacoes: 0, saidas: 100, resultado: 200, saldoAcumulado: 500 },
+      { month: 3, entradas: 300, doacoes: 0, saidas: 100, resultado: 200, saldoAcumulado: 700 },
     ]);
 
     expect(balance.totals).toEqual({
       entradas: 900,
+      doacoes: 0,
       saidas: 200,
       resultado: 700,
       saldoFinal: 700,
@@ -79,11 +89,34 @@ describe("getAnnualBalanceService (integration)", () => {
     expect(balance.byMonth[1]).toEqual({
       month: 2,
       entradas: 300,
+      doacoes: 0,
       saidas: 500,
       resultado: -200,
       saldoAcumulado: 100, // 300 (jan) + (-200) (fev)
     });
     expect(balance.totals.saldoFinal).toBe(400); // 100 + 300 (mar)
+  });
+
+  it("should only count approved donations, leaving returned (refunded/charged_back) out of the balance", async () => {
+    findSpy = jest.spyOn(ExpenseModel, "find").mockResolvedValue([] as any);
+    // Doações aprovadas: fev (referenceMonth 1) e mar (referenceMonth 2).
+    donationFindSpy.mockResolvedValue([
+      { referenceMonth: 1, amount: "40,00" },
+      { referenceMonth: 2, amount: "10,00" },
+    ] as any);
+
+    const balance = await getAnnualBalanceService("admin-id", 2026);
+
+    // A query do ledger de doações filtra status=approved na origem, então
+    // refunded/charged_back nunca chegam à soma.
+    expect(donationFindSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ referenceYear: 2026, status: "approved" }),
+      expect.anything(),
+      expect.anything(),
+    );
+    expect(balance.byMonth[1].doacoes).toBe(40);
+    expect(balance.byMonth[2].doacoes).toBe(10);
+    expect(balance.totals.doacoes).toBe(50);
   });
 
   it("should ignore expenses beyond the year-to-date cutoff (asOfMonth)", async () => {

@@ -1,5 +1,7 @@
 import { ExpenseModel } from "../../models/Expense";
+import { DonationModel } from "../../models/Donation";
 import { IAnnualBalance, IAnnualBalanceMonth } from "../../types/balance";
+import { TRANSACTION_STATUS } from "../../constants/charges";
 import { getAnnualChargesSummaryService } from "../charges/getAnnualChargesSummary";
 import { verifyAdmin } from "../helper";
 
@@ -48,22 +50,44 @@ export const getAnnualBalanceService = async (
       );
     }
 
+    // Entradas extras: doações avulsas APROVADAS (PIX + dinheiro), agrupadas por
+    // referenceMonth (0-indexado), com o mesmo corte YTD. Linha separada das
+    // contribuições para o admin auditar obrigação vs generosidade.
+    const donations = await DonationModel.find(
+      { referenceYear: year, status: TRANSACTION_STATUS.APPROVED },
+      { referenceMonth: 1, amount: 1 },
+      { lean: true },
+    );
+
+    const doacoesByMonth = new Array(12).fill(0);
+
+    for (const donation of donations) {
+      const monthIndex = donation.referenceMonth; // 0-11
+      if (monthIndex < 0 || monthIndex > 11) continue;
+      if (monthIndex + 1 > asOfMonth) continue;
+      doacoesByMonth[monthIndex] += parseAmount(donation.amount);
+    }
+
     let running = 0;
     let totalEntradas = 0;
+    let totalDoacoes = 0;
     let totalSaidas = 0;
 
     const byMonth: IAnnualBalanceMonth[] = chargesAnnual.byMonth.map((slot) => {
       const entradas = round2(slot.collected);
+      const doacoes = round2(doacoesByMonth[slot.month - 1]);
       const saidas = round2(saidasByMonth[slot.month - 1]);
-      const resultado = round2(entradas - saidas);
+      const resultado = round2(entradas + doacoes - saidas);
       running = round2(running + resultado);
 
       totalEntradas += entradas;
+      totalDoacoes += doacoes;
       totalSaidas += saidas;
 
       return {
         month: slot.month,
         entradas,
+        doacoes,
         saidas,
         resultado,
         saldoAcumulado: running,
@@ -71,6 +95,7 @@ export const getAnnualBalanceService = async (
     });
 
     totalEntradas = round2(totalEntradas);
+    totalDoacoes = round2(totalDoacoes);
     totalSaidas = round2(totalSaidas);
 
     return {
@@ -78,8 +103,9 @@ export const getAnnualBalanceService = async (
       asOfMonth,
       totals: {
         entradas: totalEntradas,
+        doacoes: totalDoacoes,
         saidas: totalSaidas,
-        resultado: round2(totalEntradas - totalSaidas),
+        resultado: round2(totalEntradas + totalDoacoes - totalSaidas),
         saldoFinal: running,
       },
       byMonth,

@@ -25,6 +25,17 @@ const TRANSACTION_STATUS = {
   CHARGED_BACK: "charged_back",
 };
 
+// "Devolvido": o dinheiro voltou para quem pagou. Vale tanto para PIX
+// (refunded) quanto para cartão (charged_back). Transações nesse estado NÃO
+// podem contar como arrecadação em nenhuma agregação.
+const RETURNED_TRANSACTION_STATUSES = [
+  TRANSACTION_STATUS.REFUNDED,
+  TRANSACTION_STATUS.CHARGED_BACK,
+];
+
+const isReturnedTransaction = (status?: string | null): boolean =>
+  !!status && RETURNED_TRANSACTION_STATUSES.includes(status);
+
 const CONTRIBUTION_PAYMENT_METHOD = {
   PIX: "pix",
   CASH: "cash",
@@ -50,6 +61,8 @@ export {
   PAYMENT_TYPE_ID,
   CURRENCY_ID,
   TRANSACTION_STATUS,
+  RETURNED_TRANSACTION_STATUSES,
+  isReturnedTransaction,
   CONTRIBUTION_PAYMENT_METHOD,
   MONTH_KEYS,
 };
