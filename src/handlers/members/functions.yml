@@ -95,3 +95,13 @@ listBirthdayMembers:
         path: /members/birthdays
         authorizer:
           name: cognitoAuthorizer
+
+markDailyReading:
+  handler: src/handlers/members/markDailyReading.execute
+  environment:
+  events:
+    - httpApi:
+        method: PATCH
+        path: /members/reading-streak
+        authorizer:
+          name: cognitoAuthorizer

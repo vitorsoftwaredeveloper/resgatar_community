@@ -49,6 +49,17 @@ const MemberSchema = new Schema(
     status: { type: String, enum: ["active", "defaulter"], default: "active" },
     profileImage: { type: String, default: null },
     pushToken: { type: String, default: null },
+    readingStreak: {
+      type: new Schema(
+        {
+          currentStreak: { type: Number, default: 0 },
+          longestStreak: { type: Number, default: 0 },
+          lastReadAt: { type: String, default: null },
+        },
+        { _id: false }
+      ),
+      default: () => ({ currentStreak: 0, longestStreak: 0, lastReadAt: null }),
+    },
   },
   { timestamps: true }
 );

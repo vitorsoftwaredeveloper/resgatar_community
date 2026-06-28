@@ -26,6 +26,7 @@ export const getMemberService = async (
     profileImage: 1,
     dateOfBirth: 1,
     address: 1,
+    readingStreak: 1,
   });
 
   const contributions = await getContributions(memberId);
