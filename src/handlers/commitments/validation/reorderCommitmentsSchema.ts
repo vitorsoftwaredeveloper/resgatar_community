@@ -1,0 +1,12 @@
+export const reorderCommitmentsSchema: any = {
+  type: "object",
+  properties: {
+    ids: {
+      type: "array",
+      items: { type: "string", minLength: 1 },
+      minItems: 1,
+    },
+  },
+  required: ["ids"],
+  additionalProperties: false,
+};

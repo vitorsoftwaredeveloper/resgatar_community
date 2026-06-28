@@ -1,0 +1,44 @@
+listCommitments:
+  handler: src/handlers/commitments/listCommitments.execute
+  events:
+    - httpApi:
+        method: GET
+        path: /commitments
+        authorizer:
+          name: cognitoAuthorizer
+
+createCommitment:
+  handler: src/handlers/commitments/createCommitment.execute
+  events:
+    - httpApi:
+        method: POST
+        path: /commitments
+        authorizer:
+          name: cognitoAuthorizer
+
+reorderCommitments:
+  handler: src/handlers/commitments/reorderCommitments.execute
+  events:
+    - httpApi:
+        method: PUT
+        path: /commitments/order
+        authorizer:
+          name: cognitoAuthorizer
+
+editCommitment:
+  handler: src/handlers/commitments/editCommitment.execute
+  events:
+    - httpApi:
+        method: PUT
+        path: /commitments/{commitmentId}
+        authorizer:
+          name: cognitoAuthorizer
+
+removeCommitment:
+  handler: src/handlers/commitments/removeCommitment.execute
+  events:
+    - httpApi:
+        method: DELETE
+        path: /commitments/{commitmentId}
+        authorizer:
+          name: cognitoAuthorizer
