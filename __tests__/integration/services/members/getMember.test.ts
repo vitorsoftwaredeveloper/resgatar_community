@@ -1,6 +1,7 @@
 import * as helperService from "../../../../src/services/helper";
 import * as cryptoUtil from "../../../../src/utils/crypto";
 import { ContributionModel } from "../../../../src/models/Contribution";
+import { MemberModel } from "../../../../src/models/Member";
 import { getMemberService } from "../../../../src/services/members/getMember";
 import { IMember } from "../../../../src/types/members";
 
@@ -42,6 +43,8 @@ describe("getMemberService (integration)", () => {
     decryptSpy = jest
       .spyOn(cryptoUtil, "decrypt")
       .mockReturnValue("12345678900");
+
+    jest.spyOn(MemberModel, "updateOne").mockResolvedValue({} as any);
   });
 
   afterEach(() => {

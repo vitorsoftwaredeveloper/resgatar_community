@@ -7,9 +7,11 @@ export const updatePushTokenService = async (
   console.log("IN - updatePushTokenService");
 
   try {
+    // Registrar o push token (app aberto) é também um sinal de atividade,
+    // então carimbamos lastActiveAt no mesmo write — sem custo extra.
     const result = await MemberModel.updateOne(
       { _id: memberId },
-      { $set: { pushToken } }
+      { $set: { pushToken, lastActiveAt: new Date(), deletionWarnedAt: null } }
     );
 
     if (result.matchedCount === 0) {

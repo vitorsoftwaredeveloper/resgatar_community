@@ -2,6 +2,7 @@ import { ContributionModel } from "../../models/Contribution";
 import { IMember } from "../../types/members";
 import { findMemberById } from "../helper";
 import { decrypt } from "../../utils/crypto";
+import { touchLastActive } from "./helper";
 
 export const getMemberService = async (
   memberId: string,
@@ -30,6 +31,8 @@ export const getMemberService = async (
   });
 
   const contributions = await getContributions(memberId);
+
+  await touchLastActive(memberId);
 
   console.log("OUT - getMembersService");
 

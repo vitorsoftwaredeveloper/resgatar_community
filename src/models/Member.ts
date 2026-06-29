@@ -49,6 +49,8 @@ const MemberSchema = new Schema(
     status: { type: String, enum: ["active", "defaulter"], default: "active" },
     profileImage: { type: String, default: null },
     pushToken: { type: String, default: null },
+    lastActiveAt: { type: Date, default: () => new Date() },
+    deletionWarnedAt: { type: Date, default: null },
     readingStreak: {
       type: new Schema(
         {

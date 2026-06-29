@@ -29,6 +29,8 @@ interface ISignUpPayload {
 type IMember = Omit<ISignUpPayload, "password"> & {
   status: "active" | "defaulter";
   pushToken?: string | null;
+  lastActiveAt?: Date;
+  deletionWarnedAt?: Date | null;
 };
 
 interface IMemberCredentials {

@@ -1,13 +1,9 @@
-import { removeMemberCognito } from "../../utils/cognito";
-import { MemberModel } from "../../models/Member";
 import { verifyAdmin } from "../helper";
-import { ContributionModel } from "../../models/Contribution";
-import { ChargeModel } from "../../models/Charge";
-import { VideoModel } from "../../models/Video";
+import { purgeMember } from "./helper";
 
 export const removeMemberService = async (
   requesterId: string,
-  idMember: string
+  idMember: string,
 ): Promise<void> => {
   console.log("IN - removeMemberService");
 
@@ -16,14 +12,7 @@ export const removeMemberService = async (
   }
 
   try {
-    await removeMemberCognito(idMember);
-
-    await Promise.all([
-      MemberModel.deleteOne({ _id: idMember }),
-      ContributionModel.deleteMany({ memberId: idMember }),
-      ChargeModel.deleteMany({ memberId: idMember }),
-      VideoModel.deleteMany({ memberId: idMember }),
-    ]);
+    await purgeMember(idMember);
   } catch (error) {
     throw error;
   } finally {

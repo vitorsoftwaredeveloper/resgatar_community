@@ -19,7 +19,13 @@ describe("updatePushTokenService (integration)", () => {
 
     expect(updateOneSpy).toHaveBeenCalledWith(
       { _id: "member-id-123" },
-      { $set: { pushToken: "new-push-token" } }
+      {
+        $set: {
+          pushToken: "new-push-token",
+          lastActiveAt: expect.any(Date),
+          deletionWarnedAt: null,
+        },
+      }
     );
   });
 
@@ -44,7 +50,13 @@ describe("updatePushTokenService (integration)", () => {
 
     expect(updateOneSpy).toHaveBeenCalledWith(
       expect.any(Object),
-      { $set: { pushToken: "token-abc" } }
+      {
+        $set: {
+          pushToken: "token-abc",
+          lastActiveAt: expect.any(Date),
+          deletionWarnedAt: null,
+        },
+      }
     );
   });
 });
