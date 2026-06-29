@@ -1,8 +1,9 @@
 import { CommitmentModel } from "../../models/Commitment";
 import { ICommitmentResponse } from "../../types/commitments";
 
-// Qualquer membro autenticado lê o mural. Os semanais (sem data) vêm primeiro,
-// na ordem curada; os datados (monthly/once) seguem em ordem cronológica.
+// Qualquer membro autenticado lê o mural na ordem curada pelo admin. O campo
+// `order` é a única fonte de verdade da sequência — o arraste no app define a
+// posição de todos os compromissos (semanais e datados), sem auto-cronologia.
 export const listCommitmentsService = async (): Promise<
   ICommitmentResponse[]
 > => {
@@ -21,7 +22,7 @@ export const listCommitmentsService = async (): Promise<
       ordinal: 1,
       date: 1,
     },
-    { sort: { date: 1, order: 1 }, lean: true },
+    { sort: { order: 1 }, lean: true },
   );
 
   console.log("OUT - listCommitmentsService");

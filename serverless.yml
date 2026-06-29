@@ -62,6 +62,7 @@ functions:
   - ${file(src/handlers/notifications/functions.yml)}
   - ${file(src/handlers/videos/functions.yml)}
   - ${file(src/handlers/commitments/functions.yml)}
+  - ${file(src/handlers/campaigns/functions.yml)}
   - ${file(src/handlers/webhook/functions.yml)}
   - ${file(src/services/agents/functions.yml)}
 

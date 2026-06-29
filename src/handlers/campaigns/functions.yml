@@ -1,0 +1,44 @@
+listCampaigns:
+  handler: src/handlers/campaigns/listCampaigns.execute
+  events:
+    - httpApi:
+        method: GET
+        path: /campaigns
+        authorizer:
+          name: cognitoAuthorizer
+
+createCampaign:
+  handler: src/handlers/campaigns/createCampaign.execute
+  events:
+    - httpApi:
+        method: POST
+        path: /campaigns
+        authorizer:
+          name: cognitoAuthorizer
+
+reorderCampaigns:
+  handler: src/handlers/campaigns/reorderCampaigns.execute
+  events:
+    - httpApi:
+        method: PUT
+        path: /campaigns/order
+        authorizer:
+          name: cognitoAuthorizer
+
+editCampaign:
+  handler: src/handlers/campaigns/editCampaign.execute
+  events:
+    - httpApi:
+        method: PUT
+        path: /campaigns/{campaignId}
+        authorizer:
+          name: cognitoAuthorizer
+
+removeCampaign:
+  handler: src/handlers/campaigns/removeCampaign.execute
+  events:
+    - httpApi:
+        method: DELETE
+        path: /campaigns/{campaignId}
+        authorizer:
+          name: cognitoAuthorizer
