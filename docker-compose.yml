@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   mongo:
     image: mongo:6.0-jammy
@@ -10,6 +8,24 @@ services:
       - "27017:27017"
     volumes:
       - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  mongo-init:
+    image: mongo:6.0-jammy
+    container_name: mongo_init
+    depends_on:
+      mongo:
+        condition: service_healthy
+    command: >
+      mongosh --host mongo:27017 --quiet --eval
+      "try { rs.status().ok && print('RS already initialized') }
+       catch(e) { rs.initiate({ _id: 'rs0', members: [{ _id: 0, host: 'localhost:27017' }] }); print('RS initiated') }"
+    restart: "no"
 
   localstack:
     image: localstack/localstack:3.5
@@ -26,6 +42,17 @@ services:
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"  # necessário para lambdas em container
       - localstack_data:/var/lib/localstack
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: jaeger
+    restart: unless-stopped
+    ports:
+      - "4318:4318"   # OTLP/HTTP — recebe os traces da API
+      - "4317:4317"   # OTLP/gRPC
+      - "16686:16686" # Jaeger UI
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
 
 volumes:
   mongo_data:

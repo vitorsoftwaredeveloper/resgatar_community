@@ -15,8 +15,10 @@ provider:
     DB: ${self:custom.environment.DB}
     STAGE: ${self:provider.stage}
     SERVICE_NAME: ${self:custom.environment.SERVICE}
+    OTEL_EXPORTER_OTLP_ENDPOINT: http://localhost:4318
 
 plugins:
+  - ./src/observability/otel-plugin
   - serverless-esbuild
   - serverless-offline
 
