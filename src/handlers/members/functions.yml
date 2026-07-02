@@ -1,5 +1,6 @@
 createMember:
   handler: src/handlers/members/createMember.execute
+  reservedConcurrency: 3
   environment:
     USER_POOL_ID: ${self:custom.environment.USER_POOL_ID}
     CLIENT_ID: ${self:custom.environment.CLIENT_ID}

@@ -67,6 +67,12 @@ functions:
   - ${file(src/services/agents/functions.yml)}
 
 resources:
+  extensions:
+    HttpApiStage:
+      Properties:
+        DefaultRouteSettings:
+          ThrottlingBurstLimit: 50
+          ThrottlingRateLimit: 25
   Resources:
     ReceiptsBucket:
       Type: AWS::S3::Bucket
