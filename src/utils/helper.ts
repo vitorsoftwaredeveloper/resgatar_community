@@ -32,4 +32,8 @@ function formatUTCToDateBR(timestamp: number): string {
   });
 }
 
-export { decodeToken, parseDateBRToUTC, formatUTCToDateBR };
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+export { decodeToken, parseDateBRToUTC, formatUTCToDateBR, escapeRegExp };

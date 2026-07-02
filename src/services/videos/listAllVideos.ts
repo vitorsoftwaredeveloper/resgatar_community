@@ -1,29 +1,58 @@
 import { VideoModel } from "../../models/Video";
 import { MemberModel } from "../../models/Member";
-import { IVideoWithMember } from "../../types/videos";
+import { IPaginatedVideos } from "../../types/videos";
 import { buildThumbnailUrl } from "../../utils/youtube";
+import { escapeRegExp } from "../../utils/helper";
 
-export const listAllVideosService = async (): Promise<IVideoWithMember[]> => {
+interface VideoFilters {
+  title?: string;
+  memberId?: string;
+}
+
+export const listAllVideosService = async (
+  page: number,
+  limit: number,
+  filters: VideoFilters = {},
+): Promise<IPaginatedVideos> => {
   console.log("IN - listAllVideosService");
 
-  const videos = await VideoModel.find(
-    {},
-    { _id: 1, memberId: 1, url: 1, videoId: 1, title: 1 },
-    { sort: { createdAt: -1 }, lean: true },
-  );
+  const skip = (page - 1) * limit;
+
+  const query = {
+    ...(filters.title && {
+      title: { $regex: escapeRegExp(filters.title), $options: "i" },
+    }),
+    ...(filters.memberId && { memberId: filters.memberId }),
+  };
+  console.log("Mongo query:", JSON.stringify(query));
+  console.log("Mongo options:", JSON.stringify({ skip, limit, sort: { createdAt: -1 } }));
+
+  const [videos, total] = await Promise.all([
+    VideoModel.find(
+      query,
+      { _id: 1, memberId: 1, url: 1, videoId: 1, title: 1 },
+      { sort: { createdAt: -1 }, skip, limit, lean: true },
+    ),
+    VideoModel.count(query),
+  ]);
+
+  const totalPages = Math.ceil(total / limit);
+  console.log("Videos found:", JSON.stringify({ returned: videos.length, total, totalPages }));
 
   if (videos.length === 0) {
     console.log("OUT - listAllVideosService");
-    return [];
+    return { items: [], page, limit, total, totalPages };
   }
 
   const memberIds = Array.from(new Set(videos.map((v) => v.memberId)));
+  console.log("Member IDs to resolve:", JSON.stringify(memberIds));
 
   const members = await MemberModel.find(
     { _id: { $in: memberIds } },
     { _id: 1, firstName: 1, lastName: 1, profileImage: 1 },
     { lean: true },
   );
+  console.log("Members found:", members.length);
 
   const memberMap = new Map(
     members.map((m: any) => [
@@ -38,7 +67,7 @@ export const listAllVideosService = async (): Promise<IVideoWithMember[]> => {
 
   console.log("OUT - listAllVideosService");
 
-  return videos
+  const items = videos
     .filter((v) => memberMap.has(v.memberId))
     .map((v) => {
       const member = memberMap.get(v.memberId)!;
@@ -54,4 +83,6 @@ export const listAllVideosService = async (): Promise<IVideoWithMember[]> => {
         profileImage: member.profileImage,
       };
     });
+
+  return { items, page, limit, total, totalPages };
 };

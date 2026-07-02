@@ -18,4 +18,12 @@ interface IVideoWithMember {
   profileImage: string | null;
 }
 
-export { IVideo, IVideoWithMember };
+interface IPaginatedVideos {
+  items: IVideoWithMember[];
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
+export { IVideo, IVideoWithMember, IPaginatedVideos };
