@@ -12,6 +12,11 @@ export const execute = async (
   try {
     console.log("IN - createMember");
 
+    const bodySize = Buffer.byteLength(event.body ?? "", "utf8");
+    if (bodySize > 1_048_576) {
+      throw { statusCode: 413, message: "Payload too large" };
+    }
+
     const payload = parseRequestBody(event.body) as any;
 
     const { identification, ...rest } = payload;
