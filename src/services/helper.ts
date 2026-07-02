@@ -101,9 +101,19 @@ function getRemainingMonthsFromNow(monthIndex: number) {
   }, {} as any);
 }
 
+const findAdminPushTokens = async (): Promise<string[]> => {
+  const admins = await MemberModel.find(
+    { role: MEMBER_ROLES.ADMIN, pushToken: { $ne: null } },
+    { pushToken: 1 },
+    { lean: true },
+  );
+  return admins.map((a) => a.pushToken as string);
+};
+
 export {
   verifyAdmin,
   findMemberById,
   findMemberByEmail,
   createContributionByYear,
+  findAdminPushTokens,
 };

@@ -2,7 +2,8 @@ import { MemberModel } from "../../models/Member";
 import { ISignUpPayload, IMember } from "../../types/members";
 import { DUPLICATE_KEY_ERROR_CODE, STATUS_CODE } from "../../constants";
 import { createCognitoUser, removeMemberCognito } from "../../utils/cognito";
-import { createContributionByYear, findMemberByEmail } from "../helper";
+import { createContributionByYear, findMemberByEmail, findAdminPushTokens } from "../helper";
+import { sendPushNotificationToTokens } from "../../integrations/firebase";
 import { encrypt } from "../../utils/crypto";
 
 export const createMemberService = async (
@@ -88,6 +89,17 @@ const createMember = async (payload: ISignUpPayload): Promise<any> => {
     new Date().getFullYear(),
     new Date().getMonth(),
   );
+
+  findAdminPushTokens()
+    .then((tokens) => {
+      if (tokens.length === 0) return;
+      return sendPushNotificationToTokens(
+        tokens,
+        "Novo cadastro",
+        `Novo membro cadastrado: ${payload.email}`,
+      );
+    })
+    .catch((err) => console.error("Failed to notify admins of new member:", err));
 
   console.log("OUT - createMember");
   return memberData._id;
