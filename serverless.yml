@@ -9,6 +9,9 @@ custom:
     automatic: true
     number: 0
 
+package:
+  individually: true
+
 provider:
   name: aws
   runtime: nodejs24.x
