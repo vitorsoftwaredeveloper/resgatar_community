@@ -1,6 +1,6 @@
 {
   "environment":{
-    "DB": "${ssm:/resgatar_community/prod/db}",
+    "DB": "/resgatar_community/prod/db",
     "SERVICE": "resgatar_community",
     "COGNITO_URL": "${ssm:/resgatar_community/prod/cognito_url}",
     "CLIENT_ID": "${ssm:/resgatar_community/prod/client_id}",

@@ -47,6 +47,20 @@ provider:
         - s3:DeleteObject
       Resource:
         - arn:aws:s3:::${self:custom.environment.RECEIPTS_BUCKET_NAME}/*
+    - Effect: Allow
+      Action:
+        - ssm:GetParameter
+      Resource:
+        - arn:aws:ssm:${aws:region}:${aws:accountId}:parameter/resgatar_community/*
+    # Necessário apenas quando o parâmetro for SecureString (KMS alias/aws/ssm).
+    # Escopado por condição: só permite Decrypt via serviço SSM.
+    - Effect: Allow
+      Action:
+        - kms:Decrypt
+      Resource: "*"
+      Condition:
+        StringEquals:
+          kms:ViaService: ssm.${aws:region}.amazonaws.com
 
 plugins:
   - serverless-esbuild
