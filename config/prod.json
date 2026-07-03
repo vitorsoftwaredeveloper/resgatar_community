@@ -13,6 +13,7 @@
     "MPAGO_NOTIFICATION_URL": "${ssm:/resgatar_community/prod/mercado_pago_notification_url}",
     "ENCRYPTION_KEY": "${ssm:/resgatar_community/prod/encryption_key}",
     "FIREBASE_SERVICE_ACCOUNT": "${ssm:/resgatar_community/prod/firebase_service_account}",
+    "GOOGLE_TTS_API_KEY": "${ssm:/resgatar_community/prod/google_tts_api_key}",
     "RECEIPTS_BUCKET_NAME": "resgatar-community-receipts-prod"
   }
 }

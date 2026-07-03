@@ -1,0 +1,10 @@
+createTts:
+  handler: src/handlers/tts/createTts.execute
+  environment:
+    GOOGLE_TTS_API_KEY: ${self:custom.environment.GOOGLE_TTS_API_KEY}
+  events:
+    - httpApi:
+        method: POST
+        path: /tts
+        authorizer:
+          name: cognitoAuthorizer
