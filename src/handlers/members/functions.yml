@@ -4,6 +4,7 @@ createMember:
     USER_POOL_ID: ${self:custom.environment.USER_POOL_ID}
     CLIENT_ID: ${self:custom.environment.CLIENT_ID}
     ENCRYPTION_KEY: ${self:custom.environment.ENCRYPTION_KEY}
+    FIREBASE_SERVICE_ACCOUNT: ${self:custom.environment.FIREBASE_SERVICE_ACCOUNT}
   events:
     - httpApi:
         path: /members
