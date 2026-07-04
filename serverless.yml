@@ -23,6 +23,19 @@ provider:
     DB: ${self:custom.environment.DB}
 
   httpApi:
+    cors:
+      allowedOrigins:
+        - https://resgatar-browser.vercel.app
+      allowedHeaders:
+        - Content-Type
+        - Authorization
+      allowedMethods:
+        - GET
+        - POST
+        - PUT
+        - DELETE
+        - OPTIONS
+      allowCredentials: true
     authorizers:
       cognitoAuthorizer:
         type: jwt
