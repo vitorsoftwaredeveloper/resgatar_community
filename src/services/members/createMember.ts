@@ -90,7 +90,7 @@ const createMember = async (payload: ISignUpPayload): Promise<any> => {
     new Date().getMonth(),
   );
 
-  findAdminPushTokens()
+  await findAdminPushTokens()
     .then((tokens) => {
       if (tokens.length === 0) return;
       return sendPushNotificationToTokens(
