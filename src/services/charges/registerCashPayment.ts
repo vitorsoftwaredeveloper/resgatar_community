@@ -45,6 +45,7 @@ export const registerCashPaymentService = async (
     }
 
     const paidAt = new Date();
+    const value = payload.value ?? member.paymentInfo.amount;
 
     await ContributionModel.updateOne(
       { memberId, year },
@@ -52,7 +53,7 @@ export const registerCashPaymentService = async (
         $set: {
           [`months.${monthKey}.paid`]: true,
           [`months.${monthKey}.paidAt`]: paidAt,
-          [`months.${monthKey}.value`]: member.paymentInfo.amount,
+          [`months.${monthKey}.value`]: value,
           [`months.${monthKey}.paymentMethod`]:
             CONTRIBUTION_PAYMENT_METHOD.CASH,
         },
@@ -69,7 +70,7 @@ export const registerCashPaymentService = async (
       year,
       paid: true,
       paidAt,
-      value: member.paymentInfo.amount,
+      value,
       paymentMethod: CONTRIBUTION_PAYMENT_METHOD.CASH,
     };
   } catch (error) {

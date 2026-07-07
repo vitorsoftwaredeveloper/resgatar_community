@@ -5,6 +5,7 @@ interface ICreateChargePayload {
 interface IRegisterCashPaymentPayload {
   memberId: string;
   referenceMonth: number;
+  value?: string;
 }
 
 interface IChargesSummaryMember {
