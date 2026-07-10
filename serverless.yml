@@ -35,6 +35,7 @@ provider:
         - PUT
         - DELETE
         - OPTIONS
+        - PATCH
       allowCredentials: true
     authorizers:
       cognitoAuthorizer:
