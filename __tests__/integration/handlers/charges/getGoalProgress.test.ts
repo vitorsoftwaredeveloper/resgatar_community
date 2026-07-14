@@ -6,9 +6,14 @@ const mockResult = {
   year: 2026,
   month: 6,
   goal: 225,
+  dues: 225,
   collected: 150,
+  donations: 0,
+  expenses: 0,
   remaining: 75,
   percent: 66.67,
+  donationItems: [],
+  expenseItems: [],
 };
 
 function buildEvent(

@@ -1,5 +1,7 @@
 import { ContributionModel } from "../../../../src/models/Contribution";
 import { MemberModel } from "../../../../src/models/Member";
+import { DonationModel } from "../../../../src/models/Donation";
+import { ExpenseModel } from "../../../../src/models/Expense";
 import { getGoalProgressService } from "../../../../src/services/charges/getGoalProgress";
 
 const YEAR = 2026;
@@ -8,6 +10,8 @@ const MONTH = 6;
 describe("getGoalProgressService (integration)", () => {
   let contributionFindSpy: jest.SpyInstance;
   let memberFindSpy: jest.SpyInstance;
+  let donationFindSpy: jest.SpyInstance;
+  let expenseFindSpy: jest.SpyInstance;
 
   beforeEach(() => {
     contributionFindSpy = jest
@@ -16,6 +20,14 @@ describe("getGoalProgressService (integration)", () => {
 
     memberFindSpy = jest
       .spyOn(MemberModel, "find")
+      .mockResolvedValue([] as any);
+
+    donationFindSpy = jest
+      .spyOn(DonationModel, "find")
+      .mockResolvedValue([] as any);
+
+    expenseFindSpy = jest
+      .spyOn(ExpenseModel, "find")
       .mockResolvedValue([] as any);
   });
 
@@ -30,10 +42,103 @@ describe("getGoalProgressService (integration)", () => {
       year: YEAR,
       month: MONTH,
       goal: 0,
+      dues: 0,
       collected: 0,
+      donations: 0,
+      expenses: 0,
       remaining: 0,
       percent: 0,
+      donationItems: [],
+      expenseItems: [],
     });
+  });
+
+  it("should return the donation and expense items that make up the totals", async () => {
+    donationFindSpy.mockResolvedValue([
+      {
+        transactionId: "cash-1",
+        donorName: "Fulano",
+        amount: "30,00",
+        paymentMethodId: "cash",
+        dateApproved: new Date("2026-06-10"),
+      },
+    ] as any);
+
+    expenseFindSpy.mockResolvedValue([
+      {
+        _id: "e1",
+        description: "Aluguel",
+        amount: "45,00",
+        category: "rent",
+        referenceMonth: MONTH - 1,
+        referenceYear: YEAR,
+        date: 5,
+        adminId: "admin-1",
+      },
+    ] as any);
+
+    const result = await getGoalProgressService(YEAR, MONTH);
+
+    expect(result.donationItems).toEqual([
+      {
+        transactionId: "cash-1",
+        donorName: "Fulano",
+        amount: "30,00",
+        paymentMethodId: "cash",
+        dateApproved: new Date("2026-06-10"),
+      },
+    ]);
+    expect(result.expenseItems).toHaveLength(1);
+    expect(result.expenseItems[0]).toMatchObject({
+      _id: "e1",
+      description: "Aluguel",
+      amount: "45,00",
+    });
+    expect(result.donations).toBe(30);
+    expect(result.expenses).toBe(45);
+  });
+
+  it("should add approved donations and subtract expenses in the goal", async () => {
+    contributionFindSpy.mockResolvedValue([
+      { memberId: "m1", months: { june: { paid: false } } },
+    ] as any);
+
+    memberFindSpy.mockResolvedValue([
+      { _id: "m1", paymentInfo: { amount: "100,00" } },
+    ] as any);
+
+    donationFindSpy.mockResolvedValue([
+      { amount: "30,00" },
+      { amount: "20,00" },
+    ] as any);
+
+    expenseFindSpy.mockResolvedValue([{ amount: "45,00" }] as any);
+
+    const result = await getGoalProgressService(YEAR, MONTH);
+
+    // dues 100 + donations 50 - expenses 45 = 105
+    expect(result.dues).toBe(100);
+    expect(result.donations).toBe(50);
+    expect(result.expenses).toBe(45);
+    expect(result.goal).toBe(105);
+    // remaining/percent stay relative to dues (collection progress)
+    expect(result.collected).toBe(0);
+    expect(result.remaining).toBe(100);
+  });
+
+  it("should query donations and expenses with a 0-indexed reference month", async () => {
+    await getGoalProgressService(YEAR, MONTH);
+
+    expect(donationFindSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ referenceYear: YEAR, referenceMonth: MONTH - 1 }),
+      expect.anything(),
+      expect.anything(),
+    );
+    expect(expenseFindSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ referenceYear: YEAR, referenceMonth: MONTH - 1 }),
+      expect.anything(),
+      expect.anything(),
+    );
   });
 
   it("should throw 400 for an invalid month", async () => {
