@@ -29,12 +29,33 @@ describe("cleanupTransactions agent (integration)", () => {
     });
   });
 
-  it("should delete donations with PENDING and REJECTED status", async () => {
+  // Doação devolvida também é descartável (o webhook já apaga na hora; aqui é a
+  // rede de segurança). A charge devolvida, não: ela sustenta a reversão do mês
+  // na grade de Contribution.
+  it("should delete donations with PENDING, REJECTED and returned statuses", async () => {
     await execute();
 
     expect(deleteManyDonationsSpy).toHaveBeenCalledWith({
       status: {
-        $in: [TRANSACTION_STATUS.PENDING, TRANSACTION_STATUS.REJECTED],
+        $in: [
+          TRANSACTION_STATUS.PENDING,
+          TRANSACTION_STATUS.REJECTED,
+          TRANSACTION_STATUS.REFUNDED,
+          TRANSACTION_STATUS.CHARGED_BACK,
+        ],
+      },
+    });
+  });
+
+  it("should keep returned charges (they back the reverted contribution month)", async () => {
+    await execute();
+
+    expect(deleteManyChargesSpy).toHaveBeenCalledWith({
+      status: {
+        $in: expect.not.arrayContaining([
+          TRANSACTION_STATUS.REFUNDED,
+          TRANSACTION_STATUS.CHARGED_BACK,
+        ]),
       },
     });
   });

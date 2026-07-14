@@ -270,6 +270,7 @@ describe("processMercadoPagoWebhook — donation flow (integration)", () => {
   let createMpClientSpy: jest.SpyInstance;
   let donationFindOneSpy: jest.SpyInstance;
   let donationUpdateOneSpy: jest.SpyInstance;
+  let donationDeleteOneSpy: jest.SpyInstance;
   let memberModelFindByIdSpy: jest.SpyInstance;
   let sendPushSpy: jest.SpyInstance;
 
@@ -286,6 +287,10 @@ describe("processMercadoPagoWebhook — donation flow (integration)", () => {
     donationUpdateOneSpy = jest
       .spyOn(DonationModel, "updateOne")
       .mockResolvedValue({} as any);
+
+    donationDeleteOneSpy = jest
+      .spyOn(DonationModel, "deleteOne")
+      .mockResolvedValue({ deletedCount: 1 } as any);
 
     memberModelFindByIdSpy = jest
       .spyOn(MemberModel, "findById")
@@ -399,5 +404,54 @@ describe("processMercadoPagoWebhook — donation flow (integration)", () => {
     await processMercadoPagoWebhook(makePayload());
 
     expect(donationUpdateOneSpy).not.toHaveBeenCalled();
+  });
+
+  it.each([TRANSACTION_STATUS.REFUNDED, TRANSACTION_STATUS.CHARGED_BACK])(
+    "should delete the donation instead of updating it when payment comes back as %s",
+    async (returnedStatus) => {
+      mpClientMock.consultPayment.mockResolvedValue({
+        ...mockDonationPaymentData,
+        status: returnedStatus,
+      });
+      donationFindOneSpy.mockResolvedValue({
+        ...mockDonation,
+        status: TRANSACTION_STATUS.APPROVED,
+      });
+
+      await processMercadoPagoWebhook(makePayload());
+
+      expect(donationDeleteOneSpy).toHaveBeenCalledWith({
+        transactionId: "12345",
+      });
+      expect(donationUpdateOneSpy).not.toHaveBeenCalled();
+      expect(sendPushSpy).not.toHaveBeenCalled();
+    },
+  );
+
+  // Webhook repetido de um estorno: o registro já pode ter sido apagado (ou ter
+  // ficado como refunded no banco antes desta regra existir). O delete precisa
+  // rodar mesmo com o status igual, senão o lixo legado nunca sai.
+  it("should delete a donation already stored as refunded when the webhook repeats", async () => {
+    mpClientMock.consultPayment.mockResolvedValue({
+      ...mockDonationPaymentData,
+      status: TRANSACTION_STATUS.REFUNDED,
+    });
+    donationFindOneSpy.mockResolvedValue({
+      ...mockDonation,
+      status: TRANSACTION_STATUS.REFUNDED,
+    });
+
+    await processMercadoPagoWebhook(makePayload());
+
+    expect(donationDeleteOneSpy).toHaveBeenCalledWith({
+      transactionId: "12345",
+    });
+  });
+
+  it("should not delete the donation on non-returned statuses", async () => {
+    await processMercadoPagoWebhook(makePayload());
+
+    expect(donationDeleteOneSpy).not.toHaveBeenCalled();
+    expect(donationUpdateOneSpy).toHaveBeenCalled();
   });
 });

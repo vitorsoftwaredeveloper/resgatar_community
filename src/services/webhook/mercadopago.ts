@@ -183,6 +183,22 @@ const processDonationApproval = async (
     return;
   }
 
+  // Doação devolvida (refunded/charged_back) não é caixa e não é histórico útil:
+  // o dinheiro voltou para o doador. Ao contrário da charge — que precisa
+  // sobreviver para reverter o mês na grade de Contribution — a doação é um
+  // ledger isolado, então o registro é apagado em vez de virar uma linha morta
+  // que o front teria que filtrar. Vem antes da checagem de status inalterado
+  // para que um webhook repetido também limpe registros devolvidos legados.
+  if (isReturnedTransaction(paymentData.status)) {
+    await DonationModel.deleteOne({ transactionId: paymentId });
+    console.log("Deleted returned donation:", {
+      paymentId,
+      status: paymentData.status,
+    });
+    console.log("OUT - processDonationApproval");
+    return;
+  }
+
   if (donation.status === paymentData.status) {
     console.log("Status unchanged, skipping update:", paymentData.status);
     return;
