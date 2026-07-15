@@ -2,7 +2,12 @@ import { ContributionModel } from "../../models/Contribution";
 import { MemberModel } from "../../models/Member";
 import { DonationModel } from "../../models/Donation";
 import { ExpenseModel } from "../../models/Expense";
-import { MONTH_KEYS, TRANSACTION_STATUS } from "../../constants/charges";
+import { MonthlyGoalModel } from "../../models/MonthlyGoal";
+import {
+  MONTH_KEYS,
+  TRANSACTION_STATUS,
+  DEFAULT_MONTHLY_GOAL,
+} from "../../constants/charges";
 import { STATUS_CODE } from "../../constants";
 import { IExpenseDTO } from "../../types/expenses";
 
@@ -18,21 +23,27 @@ interface IGoalDonationItem {
 interface IGoalProgress {
   year: number;
   month: number;
-  // Meta líquida do mês: devido pelos colaboradores + doações − despesas.
-  goal: number;
-  // Total devido pelos colaboradores no mês (pagos + pendentes). Base do
-  // progresso de arrecadação das mensalidades.
+  // Meta-alvo do mês, definida por um admin. Se ninguém definiu, cai no
+  // DEFAULT_MONTHLY_GOAL (fallback só-de-leitura, não persistido).
+  targetGoal: number;
+  // Valor que conta para bater a meta: contribuições pagas + doações aprovadas.
+  // Despesas NÃO entram aqui.
+  achieved: number;
+  // Meta batida quando o arrecadado atinge o alvo.
+  goalReached: boolean;
+  // Progresso rumo à meta (achieved / targetGoal), em %.
+  achievedPercent: number;
+  // Total devido pelos colaboradores no mês (pagos + pendentes).
   dues: number;
   // Arrecadado das contribuições (o que foi efetivamente pago).
   collected: number;
   // Doações avulsas aprovadas do mês.
   donations: number;
-  // Despesas lançadas no mês.
+  // Despesas lançadas no mês (informativo, fora do cálculo da meta).
   expenses: number;
-  // Quanto falta os colaboradores pagarem (dues − collected), nunca negativo.
+  // Quanto falta arrecadar para bater a meta (targetGoal − achieved), nunca
+  // negativo.
   remaining: number;
-  // Progresso de arrecadação das mensalidades (collected / dues).
-  percent: number;
   // Lançamentos que compõem os totais acima, para detalhamento no front.
   donationItems: IGoalDonationItem[];
   expenseItems: IExpenseDTO[];
@@ -86,7 +97,8 @@ export const getGoalProgressService = async (
     // enquanto aqui month é 1-indexado (1 = janeiro).
     const referenceMonth = month - 1;
 
-    const [contributions, donationDocs, expenseDocs] = await Promise.all([
+    const [contributions, donationDocs, expenseDocs, monthlyGoalDoc] =
+      await Promise.all([
       ContributionModel.find(
         { year },
         { memberId: 1, [`months.${monthKey}`]: 1 },
@@ -111,6 +123,11 @@ export const getGoalProgressService = async (
         { referenceYear: year, referenceMonth },
         {},
         { lean: true, sort: { date: -1, createdAt: -1 } },
+      ),
+      MonthlyGoalModel.findOne(
+        { referenceYear: year, referenceMonth },
+        { amount: 1 },
+        { lean: true },
       ),
     ]);
 
@@ -165,20 +182,30 @@ export const getGoalProgressService = async (
     const roundedDonations = round2(donations);
     const roundedExpenses = round2(expenses);
 
-    const goal = round2(dues + roundedDonations - roundedExpenses);
-    const remaining = Math.max(round2(dues - collected), 0);
-    const percent = dues > 0 ? round2((collected / dues) * 100) : 0;
+    // Meta-alvo do admin; sem registro, usa o default (não persiste).
+    const targetGoal = (monthlyGoalDoc as any)?.amount
+      ? round2(parseAmount((monthlyGoalDoc as any).amount))
+      : DEFAULT_MONTHLY_GOAL;
+
+    // Só contribuições pagas + doações contam para bater a meta (despesas fora).
+    const achieved = round2(collected + roundedDonations);
+    const goalReached = achieved >= targetGoal;
+    const achievedPercent =
+      targetGoal > 0 ? round2((achieved / targetGoal) * 100) : 0;
+    const remaining = Math.max(round2(targetGoal - achieved), 0);
 
     return {
       year,
       month,
-      goal,
+      targetGoal,
+      achieved,
+      goalReached,
+      achievedPercent,
       dues,
       collected,
       donations: roundedDonations,
       expenses: roundedExpenses,
       remaining,
-      percent,
       donationItems: donationDocs.map(toDonationItem),
       expenseItems: expenseDocs.map(toExpenseItem),
     };

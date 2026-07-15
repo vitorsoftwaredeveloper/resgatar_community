@@ -32,6 +32,15 @@ getGoalProgress:
         authorizer:
           name: cognitoAuthorizer
 
+setMonthlyGoal:
+  handler: src/handlers/charges/setMonthlyGoal.execute
+  events:
+    - httpApi:
+        method: PUT
+        path: /charges/monthly-goal
+        authorizer:
+          name: cognitoAuthorizer
+
 getChargesSummary:
   handler: src/handlers/charges/getChargesSummary.execute
   events:

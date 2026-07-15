@@ -1,16 +1,10 @@
-import * as helperService from "../../../../src/services/helper";
 import { DonationModel } from "../../../../src/models/Donation";
 import { listDonationsService } from "../../../../src/services/donations/listDonations";
 
 describe("listDonationsService (integration)", () => {
-  let verifyAdminSpy: jest.SpyInstance;
   let findSpy: jest.SpyInstance;
 
   beforeEach(() => {
-    verifyAdminSpy = jest
-      .spyOn(helperService, "verifyAdmin")
-      .mockResolvedValue(undefined);
-
     findSpy = jest
       .spyOn(DonationModel, "find")
       .mockResolvedValue([] as any);
@@ -18,11 +12,8 @@ describe("listDonationsService (integration)", () => {
 
   afterEach(() => jest.restoreAllMocks());
 
-  it("should require admin access", async () => {
-    await listDonationsService("admin-id", 2026);
-
-    expect(verifyAdminSpy).toHaveBeenCalledWith("admin-id");
-  });
+  // A listagem de doações é aberta a qualquer membro autenticado (transparência
+  // para a comunidade), então o service não faz verificação de admin.
 
   it("should list only approved donations, leaving pending/returned ones out", async () => {
     await listDonationsService("admin-id", 2026);

@@ -25,6 +25,7 @@ describe("createMemberService (integration)", () => {
   let insertOneSpy: jest.SpyInstance;
   let createContributionSpy: jest.SpyInstance;
   let findMemberByEmailSpy: jest.SpyInstance;
+  let findAdminPushTokensSpy: jest.SpyInstance;
 
   beforeEach(() => {
     process.env.ENCRYPTION_KEY = "a".repeat(64);
@@ -32,6 +33,11 @@ describe("createMemberService (integration)", () => {
     findMemberByEmailSpy = jest
       .spyOn(helperService, "findMemberByEmail")
       .mockResolvedValue(null);
+
+    // Sem esse mock o service tenta MemberModel.find no Mongo real (timeout).
+    findAdminPushTokensSpy = jest
+      .spyOn(helperService, "findAdminPushTokens")
+      .mockResolvedValue([]);
 
     createCognitoUserSpy = jest
       .spyOn(cognitoUtil, "createCognitoUser")

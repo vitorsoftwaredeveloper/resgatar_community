@@ -5,13 +5,15 @@ import { execute } from "../../../../src/handlers/charges/getGoalProgress";
 const mockResult = {
   year: 2026,
   month: 6,
-  goal: 225,
+  targetGoal: 2000,
+  achieved: 150,
+  goalReached: false,
+  achievedPercent: 7.5,
   dues: 225,
   collected: 150,
   donations: 0,
   expenses: 0,
-  remaining: 75,
-  percent: 66.67,
+  remaining: 1850,
   donationItems: [],
   expenseItems: [],
 };
@@ -44,7 +46,7 @@ describe("getGoalProgress handler (integration)", () => {
 
     expect(result.statusCode).toBe(200);
     const body = JSON.parse(result.body);
-    expect(body.data.percent).toBe(66.67);
+    expect(body.data.achievedPercent).toBe(7.5);
   });
 
   it("should call service with year and month", async () => {

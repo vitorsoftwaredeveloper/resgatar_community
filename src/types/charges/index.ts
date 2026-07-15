@@ -2,6 +2,22 @@ interface ICreateChargePayload {
   referenceMonth: number;
 }
 
+// Payload público do endpoint de meta: mês 1-indexado (1 = janeiro), alinhado
+// ao contrato do getGoalProgress. O service converte para referenceMonth.
+interface ISetMonthlyGoalPayload {
+  year: number;
+  month: number;
+  amount: string;
+}
+
+interface IMonthlyGoal {
+  _id?: string;
+  referenceYear: number;
+  referenceMonth: number;
+  amount: string;
+  adminId: string;
+}
+
 interface IRegisterCashPaymentPayload {
   memberId: string;
   referenceMonth: number;
@@ -318,6 +334,8 @@ interface IChargeDTO {
 
 export {
   ICreateChargePayload,
+  ISetMonthlyGoalPayload,
+  IMonthlyGoal,
   IRegisterCashPaymentPayload,
   IChargesSummary,
   IChargesSummaryMember,

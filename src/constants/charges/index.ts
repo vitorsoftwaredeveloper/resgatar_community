@@ -41,6 +41,10 @@ const CONTRIBUTION_PAYMENT_METHOD = {
   CASH: "cash",
 };
 
+// Meta mensal padrão (em reais) usada quando o admin ainda não definiu uma
+// meta para o mês. É apenas um fallback de leitura — não é persistido.
+const DEFAULT_MONTHLY_GOAL = 2000;
+
 const MONTH_KEYS = [
   "january",
   "february",
@@ -65,4 +69,5 @@ export {
   isReturnedTransaction,
   CONTRIBUTION_PAYMENT_METHOD,
   MONTH_KEYS,
+  DEFAULT_MONTHLY_GOAL,
 };
