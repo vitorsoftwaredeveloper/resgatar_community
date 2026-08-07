@@ -78,7 +78,7 @@ describe("processMercadoPagoWebhook (integration)", () => {
 
     memberModelFindByIdSpy = jest
       .spyOn(MemberModel, "findById")
-      .mockResolvedValue({ _id: "member-1", pushToken: "token-abc" } as any);
+      .mockResolvedValue({ _id: "member-1", pushTokens: ["token-abc"] } as any);
 
     sendPushSpy = jest
       .spyOn(firebaseIntegration, "sendPushNotificationToTokens")
@@ -170,8 +170,8 @@ describe("processMercadoPagoWebhook (integration)", () => {
     expect(sendPushSpy).not.toHaveBeenCalled();
   });
 
-  it("should not send notification when member has no pushToken", async () => {
-    memberModelFindByIdSpy.mockResolvedValue({ _id: "member-1", pushToken: null } as any);
+  it("should not send notification when member has no pushTokens", async () => {
+    memberModelFindByIdSpy.mockResolvedValue({ _id: "member-1", pushTokens: [] } as any);
 
     await processMercadoPagoWebhook(makePayload());
 
@@ -294,7 +294,7 @@ describe("processMercadoPagoWebhook — donation flow (integration)", () => {
 
     memberModelFindByIdSpy = jest
       .spyOn(MemberModel, "findById")
-      .mockResolvedValue({ _id: "member-1", pushToken: "token-abc" } as any);
+      .mockResolvedValue({ _id: "member-1", pushTokens: ["token-abc"] } as any);
 
     sendPushSpy = jest
       .spyOn(firebaseIntegration, "sendPushNotificationToTokens")
@@ -379,8 +379,8 @@ describe("processMercadoPagoWebhook — donation flow (integration)", () => {
     expect(sendPushSpy).not.toHaveBeenCalled();
   });
 
-  it("should not send notification when member has no pushToken", async () => {
-    memberModelFindByIdSpy.mockResolvedValue({ _id: "member-1", pushToken: null } as any);
+  it("should not send notification when member has no pushTokens", async () => {
+    memberModelFindByIdSpy.mockResolvedValue({ _id: "member-1", pushTokens: [] } as any);
 
     await processMercadoPagoWebhook(makePayload());
 

@@ -87,6 +87,16 @@ updatePushToken:
         authorizer:
           name: cognitoAuthorizer
 
+removePushToken:
+  handler: src/handlers/members/removePushToken.execute
+  environment:
+  events:
+    - httpApi:
+        method: DELETE
+        path: /members/push-token
+        authorizer:
+          name: cognitoAuthorizer
+
 listBirthdayMembers:
   handler: src/handlers/members/listBirthdayMembers.execute
   environment:

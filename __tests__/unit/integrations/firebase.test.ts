@@ -1,8 +1,12 @@
 const sendMock = jest.fn();
 const sendEachForMulticastMock = jest.fn();
+const subscribeToTopicMock = jest.fn();
+const unsubscribeFromTopicMock = jest.fn();
 const messagingMock = jest.fn().mockReturnValue({
   send: sendMock,
   sendEachForMulticast: sendEachForMulticastMock,
+  subscribeToTopic: subscribeToTopicMock,
+  unsubscribeFromTopic: unsubscribeFromTopicMock,
 });
 const appMock = { messaging: messagingMock };
 
@@ -13,8 +17,11 @@ jest.mock("firebase-admin", () => ({
 }));
 
 import {
+  ALL_USERS_TOPIC,
   sendPushNotificationToAll,
   sendPushNotificationToTokens,
+  subscribeTokensToTopic,
+  unsubscribeTokensFromTopic,
 } from "../../../src/integrations/firebase";
 
 const FAKE_SERVICE_ACCOUNT = Buffer.from(
@@ -29,6 +36,8 @@ beforeEach(() => {
     failureCount: 0,
     responses: [{ success: true }],
   });
+  subscribeToTopicMock.mockResolvedValue({ successCount: 1, failureCount: 0 });
+  unsubscribeFromTopicMock.mockResolvedValue({ successCount: 1, failureCount: 0 });
 });
 
 afterEach(() => {
@@ -191,5 +200,101 @@ describe("sendPushNotificationToTokens", () => {
     await expect(
       sendPushNotificationToTokens(tokens, "T", "M")
     ).rejects.toThrow("Firebase error");
+  });
+});
+
+describe("sendPushNotificationToTokens batching", () => {
+  it("should split the send into batches of 500 tokens", async () => {
+    const manyTokens = Array.from({ length: 1200 }, (_, i) => `token-${i}`);
+
+    sendEachForMulticastMock.mockImplementation(async ({ tokens }: any) => ({
+      successCount: tokens.length,
+      failureCount: 0,
+      responses: tokens.map(() => ({ success: true })),
+    }));
+
+    await sendPushNotificationToTokens(manyTokens, "T", "M");
+
+    expect(sendEachForMulticastMock).toHaveBeenCalledTimes(3);
+    expect(sendEachForMulticastMock.mock.calls[0][0].tokens).toHaveLength(500);
+    expect(sendEachForMulticastMock.mock.calls[1][0].tokens).toHaveLength(500);
+    expect(sendEachForMulticastMock.mock.calls[2][0].tokens).toHaveLength(200);
+  });
+
+  it("should map invalid tokens back to the right batch offset", async () => {
+    const manyTokens = Array.from({ length: 600 }, (_, i) => `token-${i}`);
+
+    sendEachForMulticastMock.mockImplementation(async ({ tokens }: any) => ({
+      successCount: tokens.length - 1,
+      failureCount: 1,
+      responses: tokens.map((_: string, i: number) =>
+        i === 0
+          ? { success: false, error: { code: "messaging/invalid-registration-token" } }
+          : { success: true }
+      ),
+    }));
+
+    const result = await sendPushNotificationToTokens(manyTokens, "T", "M");
+
+    expect(result).toEqual(["token-0", "token-500"]);
+  });
+});
+
+describe("subscribeTokensToTopic", () => {
+  it("should subscribe to the broadcast topic by default", async () => {
+    await subscribeTokensToTopic(["token-1"]);
+
+    expect(subscribeToTopicMock).toHaveBeenCalledWith(["token-1"], ALL_USERS_TOPIC);
+  });
+
+  it("should accept an explicit topic", async () => {
+    await subscribeTokensToTopic(["token-1"], "outro_topico");
+
+    expect(subscribeToTopicMock).toHaveBeenCalledWith(["token-1"], "outro_topico");
+  });
+
+  it("should do nothing when the token list is empty", async () => {
+    await subscribeTokensToTopic([]);
+
+    expect(subscribeToTopicMock).not.toHaveBeenCalled();
+  });
+
+  it("should split the subscription into batches of 1000 tokens", async () => {
+    const manyTokens = Array.from({ length: 2500 }, (_, i) => `token-${i}`);
+
+    await subscribeTokensToTopic(manyTokens);
+
+    expect(subscribeToTopicMock).toHaveBeenCalledTimes(3);
+    expect(subscribeToTopicMock.mock.calls[0][0]).toHaveLength(1000);
+    expect(subscribeToTopicMock.mock.calls[2][0]).toHaveLength(500);
+  });
+
+  it("should throw when Firebase subscribeToTopic fails", async () => {
+    subscribeToTopicMock.mockRejectedValue(new Error("Firebase error"));
+
+    await expect(subscribeTokensToTopic(["token-1"])).rejects.toThrow("Firebase error");
+  });
+});
+
+describe("unsubscribeTokensFromTopic", () => {
+  it("should unsubscribe from the broadcast topic by default", async () => {
+    await unsubscribeTokensFromTopic(["token-1"]);
+
+    expect(unsubscribeFromTopicMock).toHaveBeenCalledWith(["token-1"], ALL_USERS_TOPIC);
+  });
+
+  it("should do nothing when the token list is empty", async () => {
+    await unsubscribeTokensFromTopic([]);
+
+    expect(unsubscribeFromTopicMock).not.toHaveBeenCalled();
+  });
+
+  it("should split the unsubscription into batches of 1000 tokens", async () => {
+    const manyTokens = Array.from({ length: 1001 }, (_, i) => `token-${i}`);
+
+    await unsubscribeTokensFromTopic(manyTokens);
+
+    expect(unsubscribeFromTopicMock).toHaveBeenCalledTimes(2);
+    expect(unsubscribeFromTopicMock.mock.calls[1][0]).toHaveLength(1);
   });
 });

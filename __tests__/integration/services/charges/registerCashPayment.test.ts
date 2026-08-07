@@ -15,7 +15,7 @@ const mockMember: IMember = {
   status: "active",
   paymentInfo: { datePayment: 5, amount: "50,00" },
   identification: { type: "CPF", numberType: "ENC:encrypted-cpf" },
-  pushToken: "token-abc",
+  pushTokens: ["token-abc"],
 };
 
 const ADMIN_ID = "admin-id";
@@ -108,8 +108,8 @@ describe("registerCashPaymentService (integration)", () => {
     );
   });
 
-  it("should not notify when target member has no pushToken", async () => {
-    findMemberByIdSpy.mockResolvedValue({ ...mockMember, pushToken: null });
+  it("should not notify when target member has no pushTokens", async () => {
+    findMemberByIdSpy.mockResolvedValue({ ...mockMember, pushTokens: [] });
 
     await registerCashPaymentService(ADMIN_ID, callPayload);
 

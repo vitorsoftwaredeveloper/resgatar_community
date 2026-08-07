@@ -13,6 +13,7 @@ module.exports = {
     "!src/**/__tests__/**",
     "!src/types/**",
     "!src/constants/**",
+    "!src/scripts/**",
   ],
   coverageReporters: ["text", "lcov", "html"],
   coverageDirectory: "coverage",

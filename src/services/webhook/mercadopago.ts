@@ -155,7 +155,7 @@ const notifyMember = async (
   const member = await MemberModel.findById(memberId, {}, { lean: true });
 
   await notifyPaymentConfirmed(
-    member?.pushToken,
+    member?.pushTokens,
     CONTRIBUTION_PAYMENT_METHOD.PIX,
     transactionId,
   );
@@ -231,7 +231,7 @@ const processDonationApproval = async (
       { lean: true },
     );
     await notifyPaymentConfirmed(
-      member?.pushToken,
+      member?.pushTokens,
       CONTRIBUTION_PAYMENT_METHOD.PIX,
       paymentId,
     );

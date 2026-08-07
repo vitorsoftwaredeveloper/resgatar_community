@@ -15,8 +15,8 @@ describe("paymentDayReminder agent (integration)", () => {
     memberFindSpy = jest
       .spyOn(MemberModel, "find")
       .mockResolvedValue([
-        { _id: "m1", firstName: "João", pushToken: "token-1" },
-        { _id: "m2", firstName: "Maria", pushToken: "token-2" },
+        { _id: "m1", firstName: "João", pushTokens: ["token-1"] },
+        { _id: "m2", firstName: "Maria", pushTokens: ["token-2"] },
       ] as any);
 
     memberUpdateManySpy = jest
@@ -82,8 +82,8 @@ describe("paymentDayReminder agent (integration)", () => {
     await execute();
 
     expect(memberUpdateManySpy).toHaveBeenCalledWith(
-      { pushToken: { $in: ["token-1"] } },
-      { $set: { pushToken: null } },
+      { pushTokens: { $in: ["token-1"] } },
+      { $pull: { pushTokens: { $in: ["token-1"] } } },
     );
   });
 
