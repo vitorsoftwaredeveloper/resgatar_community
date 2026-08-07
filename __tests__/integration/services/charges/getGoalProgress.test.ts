@@ -17,11 +17,11 @@ describe("getGoalProgressService (integration)", () => {
   let donationFindSpy: jest.SpyInstance;
   let expenseFindSpy: jest.SpyInstance;
   let monthlyGoalFindOneSpy: jest.SpyInstance;
-  let verifyInternalMemberSpy: jest.SpyInstance;
+  let verifyDashboardVisibilitySpy: jest.SpyInstance;
 
   beforeEach(() => {
-    verifyInternalMemberSpy = jest
-      .spyOn(helperService, "verifyInternalMember")
+    verifyDashboardVisibilitySpy = jest
+      .spyOn(helperService, "verifyDashboardVisibility")
       .mockResolvedValue(undefined);
 
     contributionFindSpy = jest
@@ -50,14 +50,17 @@ describe("getGoalProgressService (integration)", () => {
     jest.restoreAllMocks();
   });
 
-  it("should require an internal member before reading the progress", async () => {
+  it("should require dashboard visibility for communityGoal before reading the progress", async () => {
     await getGoalProgressService(REQUESTER_ID, YEAR, MONTH);
 
-    expect(verifyInternalMemberSpy).toHaveBeenCalledWith(REQUESTER_ID);
+    expect(verifyDashboardVisibilitySpy).toHaveBeenCalledWith(
+      REQUESTER_ID,
+      "communityGoal",
+    );
   });
 
-  it("should throw and read nothing when the caller is a guest", async () => {
-    verifyInternalMemberSpy.mockRejectedValue({
+  it("should throw and read nothing when the caller is a guest without communityGoal visibility", async () => {
+    verifyDashboardVisibilitySpy.mockRejectedValue({
       statusCode: 401,
       message: "Unauthorized access",
     });
@@ -300,13 +303,12 @@ describe("getGoalProgressService (integration)", () => {
     ] as any);
 
     memberFindSpy.mockResolvedValue([
-      { _id: "m1", paymentInfo: { amount: "100,00" } },
-      { _id: "m2", paymentInfo: { amount: "75,00" } },
+      { _id: "m1", role: "user", paymentInfo: { amount: "100,00" } },
+      { _id: "m2", role: "user", paymentInfo: { amount: "75,00" } },
     ] as any);
 
     const result = await getGoalProgressService(REQUESTER_ID, YEAR, MONTH);
 
-    // dues counts owed (paid + pending); achieved only what was collected.
     expect(result.dues).toBe(175);
     expect(result.collected).toBe(100);
     expect(result.achieved).toBe(100);
@@ -395,6 +397,36 @@ describe("getGoalProgressService (integration)", () => {
     const result = await getGoalProgressService(REQUESTER_ID, YEAR, MONTH);
 
     expect(result.collected).toBe(100);
+  });
+
+  it("should exclude a pending contribution from a member demoted back to guest", async () => {
+    contributionFindSpy.mockResolvedValue([
+      { memberId: "m1", months: { june: { paid: false } } },
+    ] as any);
+
+    memberFindSpy.mockResolvedValue([
+      { _id: "m1", role: "guest", paymentInfo: { amount: "100,00" } },
+    ] as any);
+
+    const result = await getGoalProgressService(REQUESTER_ID, YEAR, MONTH);
+
+    expect(result.dues).toBe(0);
+    expect(result.achieved).toBe(0);
+  });
+
+  it("should keep a paid contribution from a member demoted back to guest", async () => {
+    contributionFindSpy.mockResolvedValue([
+      { memberId: "m1", months: { june: { paid: true, value: "100,00", paymentMethod: "pix" } } },
+    ] as any);
+
+    memberFindSpy.mockResolvedValue([
+      { _id: "m1", role: "guest", paymentInfo: { amount: "100,00" } },
+    ] as any);
+
+    const result = await getGoalProgressService(REQUESTER_ID, YEAR, MONTH);
+
+    expect(result.collected).toBe(100);
+    expect(result.achieved).toBe(100);
   });
 
   it("should return year and month in the response", async () => {

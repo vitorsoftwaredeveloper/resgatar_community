@@ -1,7 +1,10 @@
 import { VideoModel } from "../../../../src/models/Video";
 import { MemberModel } from "../../../../src/models/Member";
 import * as youtubeUtil from "../../../../src/utils/youtube";
+import * as helperService from "../../../../src/services/helper";
 import { listAllVideosService } from "../../../../src/services/videos/listAllVideos";
+
+const REQUESTER_ID = "member-id-123";
 
 const mockVideos = [
   { _id: "v1", memberId: "m1", url: "https://youtu.be/abc1234abcd", videoId: "abc1234abcd", title: "My Video" },
@@ -19,6 +22,7 @@ describe("listAllVideosService (integration)", () => {
   let memberFindSpy: jest.SpyInstance;
 
   beforeEach(() => {
+    jest.spyOn(helperService, "verifyDashboardVisibility").mockResolvedValue(undefined);
     videoFindSpy = jest.spyOn(VideoModel, "find").mockResolvedValue(mockVideos as any);
     videoCountSpy = jest.spyOn(VideoModel, "count").mockResolvedValue(2 as any);
     memberFindSpy = jest.spyOn(MemberModel, "find").mockResolvedValue(mockMembers as any);
@@ -30,7 +34,7 @@ describe("listAllVideosService (integration)", () => {
   afterEach(() => jest.restoreAllMocks());
 
   it("should return a page of videos with member data joined", async () => {
-    const result = await listAllVideosService(1, 20);
+    const result = await listAllVideosService(REQUESTER_ID, 1, 20);
 
     expect(result.items).toHaveLength(2);
     expect(result.items[0]).toMatchObject({
@@ -53,7 +57,7 @@ describe("listAllVideosService (integration)", () => {
   it("should return pagination metadata", async () => {
     videoCountSpy.mockResolvedValue(45 as any);
 
-    const result = await listAllVideosService(2, 20);
+    const result = await listAllVideosService(REQUESTER_ID, 2, 20);
 
     expect(result.page).toBe(2);
     expect(result.limit).toBe(20);
@@ -65,7 +69,7 @@ describe("listAllVideosService (integration)", () => {
     videoFindSpy.mockResolvedValue([]);
     videoCountSpy.mockResolvedValue(0 as any);
 
-    const result = await listAllVideosService(1, 20);
+    const result = await listAllVideosService(REQUESTER_ID, 1, 20);
 
     expect(result.items).toHaveLength(0);
     expect(result.total).toBe(0);
@@ -76,27 +80,27 @@ describe("listAllVideosService (integration)", () => {
   it("should filter out videos whose member was deleted", async () => {
     memberFindSpy.mockResolvedValue([mockMembers[0]] as any);
 
-    const result = await listAllVideosService(1, 20);
+    const result = await listAllVideosService(REQUESTER_ID, 1, 20);
 
     expect(result.items).toHaveLength(1);
     expect(result.items[0].memberId).toBe("m1");
   });
 
   it("should include thumbnail URL for each video", async () => {
-    const result = await listAllVideosService(1, 20);
+    const result = await listAllVideosService(REQUESTER_ID, 1, 20);
 
     expect(result.items[0].thumbnail).toBe("https://img.youtube.com/vi/abc1234abcd/hqdefault.jpg");
     expect(result.items[1].thumbnail).toBe("https://img.youtube.com/vi/xyz5678efgh/hqdefault.jpg");
   });
 
   it("should not include title when video has no title", async () => {
-    const result = await listAllVideosService(1, 20);
+    const result = await listAllVideosService(REQUESTER_ID, 1, 20);
 
     expect(result.items[1].title).toBeUndefined();
   });
 
   it("should query videos sorted by createdAt descending with skip/limit", async () => {
-    await listAllVideosService(3, 10);
+    await listAllVideosService(REQUESTER_ID, 3, 10);
 
     expect(videoFindSpy).toHaveBeenCalledWith(
       {},
@@ -112,7 +116,7 @@ describe("listAllVideosService (integration)", () => {
     ] as any);
     memberFindSpy.mockResolvedValue([mockMembers[0]] as any);
 
-    await listAllVideosService(1, 20);
+    await listAllVideosService(REQUESTER_ID, 1, 20);
 
     const queriedIds = memberFindSpy.mock.calls[0][0]._id.$in;
     expect(queriedIds).toHaveLength(1);
@@ -122,11 +126,11 @@ describe("listAllVideosService (integration)", () => {
   it("should throw when VideoModel.find fails", async () => {
     videoFindSpy.mockRejectedValue(new Error("DB error"));
 
-    await expect(listAllVideosService(1, 20)).rejects.toThrow("DB error");
+    await expect(listAllVideosService(REQUESTER_ID, 1, 20)).rejects.toThrow("DB error");
   });
 
   it("should filter by title using a case-insensitive regex", async () => {
-    await listAllVideosService(1, 20, { title: "My" });
+    await listAllVideosService(REQUESTER_ID, 1, 20, { title: "My" });
 
     const expectedQuery = { title: { $regex: "My", $options: "i" } };
     expect(videoFindSpy).toHaveBeenCalledWith(
@@ -138,7 +142,7 @@ describe("listAllVideosService (integration)", () => {
   });
 
   it("should escape regex special characters in the title filter", async () => {
-    await listAllVideosService(1, 20, { title: "a.b*c" });
+    await listAllVideosService(REQUESTER_ID, 1, 20, { title: "a.b*c" });
 
     expect(videoFindSpy).toHaveBeenCalledWith(
       { title: { $regex: "a\\.b\\*c", $options: "i" } },
@@ -148,7 +152,7 @@ describe("listAllVideosService (integration)", () => {
   });
 
   it("should filter by memberId", async () => {
-    await listAllVideosService(1, 20, { memberId: "m1" });
+    await listAllVideosService(REQUESTER_ID, 1, 20, { memberId: "m1" });
 
     const expectedQuery = { memberId: "m1" };
     expect(videoFindSpy).toHaveBeenCalledWith(
@@ -160,7 +164,7 @@ describe("listAllVideosService (integration)", () => {
   });
 
   it("should combine title and memberId filters", async () => {
-    await listAllVideosService(1, 20, { title: "My", memberId: "m1" });
+    await listAllVideosService(REQUESTER_ID, 1, 20, { title: "My", memberId: "m1" });
 
     expect(videoFindSpy).toHaveBeenCalledWith(
       { title: { $regex: "My", $options: "i" }, memberId: "m1" },
@@ -170,7 +174,7 @@ describe("listAllVideosService (integration)", () => {
   });
 
   it("should query without filters when none are given", async () => {
-    await listAllVideosService(1, 20);
+    await listAllVideosService(REQUESTER_ID, 1, 20);
 
     expect(videoFindSpy).toHaveBeenCalledWith(
       {},
@@ -178,5 +182,27 @@ describe("listAllVideosService (integration)", () => {
       expect.any(Object),
     );
     expect(videoCountSpy).toHaveBeenCalledWith({});
+  });
+
+  it("should require dashboard visibility for videos before listing", async () => {
+    const verifySpy = jest.spyOn(helperService, "verifyDashboardVisibility");
+    verifySpy.mockResolvedValue(undefined);
+
+    await listAllVideosService(REQUESTER_ID, 1, 20);
+
+    expect(verifySpy).toHaveBeenCalledWith(REQUESTER_ID, "videos");
+  });
+
+  it("should throw and not query when caller is a guest without videos visibility", async () => {
+    jest.spyOn(helperService, "verifyDashboardVisibility").mockRejectedValue({
+      statusCode: 401,
+      message: "Unauthorized access",
+    });
+
+    await expect(listAllVideosService(REQUESTER_ID, 1, 20)).rejects.toMatchObject({
+      statusCode: 401,
+    });
+
+    expect(videoFindSpy).not.toHaveBeenCalled();
   });
 });

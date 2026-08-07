@@ -1,6 +1,7 @@
 import { ContributionModel } from "../../models/Contribution";
 import { MemberModel } from "../../models/Member";
 import { STATUS_CODE } from "../../constants";
+import { INTERNAL_ROLES } from "../../constants/members";
 import {
   CONTRIBUTION_PAYMENT_METHOD,
   MONTH_KEYS,
@@ -55,6 +56,7 @@ export const getChargesSummaryService = async (
         lastName: 1,
         profileImage: 1,
         status: 1,
+        role: 1,
         "paymentInfo.amount": 1,
       },
       { lean: true },
@@ -107,6 +109,8 @@ export const getChargesSummaryService = async (
           cash += paidValue;
         }
       } else {
+        if (!(INTERNAL_ROLES as readonly string[]).includes(member.role)) continue;
+
         goal += memberAmount;
 
         summaryMembers.push({

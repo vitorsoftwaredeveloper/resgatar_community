@@ -94,6 +94,7 @@ functions:
   - ${file(src/handlers/notifications/functions.yml)}
   - ${file(src/handlers/videos/functions.yml)}
   - ${file(src/handlers/commitments/functions.yml)}
+  - ${file(src/handlers/dashboardVisibility/functions.yml)}
   - ${file(src/handlers/campaigns/functions.yml)}
   - ${file(src/handlers/tts/functions.yml)}
   - ${file(src/handlers/webhook/functions.yml)}

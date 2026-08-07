@@ -4,26 +4,29 @@ import { listCommitmentsService } from "../../../../src/services/commitments/lis
 
 describe("listCommitmentsService (integration)", () => {
   let findSpy: jest.SpyInstance;
-  let verifyInternalMemberSpy: jest.SpyInstance;
+  let verifyDashboardVisibilitySpy: jest.SpyInstance;
 
   beforeEach(() => {
     findSpy = jest.spyOn(CommitmentModel, "find").mockResolvedValue([] as any);
 
-    verifyInternalMemberSpy = jest
-      .spyOn(helperService, "verifyInternalMember")
+    verifyDashboardVisibilitySpy = jest
+      .spyOn(helperService, "verifyDashboardVisibility")
       .mockResolvedValue(undefined);
   });
 
   afterEach(() => jest.restoreAllMocks());
 
-  it("should require an internal member before listing", async () => {
+  it("should require dashboard visibility for notices before listing", async () => {
     await listCommitmentsService("user-id");
 
-    expect(verifyInternalMemberSpy).toHaveBeenCalledWith("user-id");
+    expect(verifyDashboardVisibilitySpy).toHaveBeenCalledWith(
+      "user-id",
+      "notices",
+    );
   });
 
-  it("should throw and not query when caller is a guest", async () => {
-    verifyInternalMemberSpy.mockRejectedValue({
+  it("should throw and not query when caller is a guest without notices visibility", async () => {
+    verifyDashboardVisibilitySpy.mockRejectedValue({
       statusCode: 401,
       message: "Unauthorized access",
     });

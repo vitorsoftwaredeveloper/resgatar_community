@@ -35,11 +35,11 @@ const memberOtherMonth = {
 
 describe("listBirthdayMembersService (integration)", () => {
   let memberFindSpy: jest.SpyInstance;
-  let verifyInternalMemberSpy: jest.SpyInstance;
+  let verifyDashboardVisibilitySpy: jest.SpyInstance;
 
   beforeEach(() => {
-    verifyInternalMemberSpy = jest
-      .spyOn(helperService, "verifyInternalMember")
+    verifyDashboardVisibilitySpy = jest
+      .spyOn(helperService, "verifyDashboardVisibility")
       .mockResolvedValue(undefined);
 
     memberFindSpy = jest
@@ -53,14 +53,17 @@ describe("listBirthdayMembersService (integration)", () => {
 
   afterEach(() => jest.restoreAllMocks());
 
-  it("should require an internal member before listing", async () => {
+  it("should require dashboard visibility for birthdays before listing", async () => {
     await listBirthdayMembersService(REQUESTER_ID);
 
-    expect(verifyInternalMemberSpy).toHaveBeenCalledWith(REQUESTER_ID);
+    expect(verifyDashboardVisibilitySpy).toHaveBeenCalledWith(
+      REQUESTER_ID,
+      "birthdays",
+    );
   });
 
-  it("should throw and not query when the caller is a guest", async () => {
-    verifyInternalMemberSpy.mockRejectedValue({
+  it("should throw and not query when the caller is a guest without birthdays visibility", async () => {
+    verifyDashboardVisibilitySpy.mockRejectedValue({
       statusCode: 401,
       message: "Unauthorized access",
     });

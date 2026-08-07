@@ -1,14 +1,14 @@
 import { MemberModel } from "../../models/Member";
 import { IMember } from "../../types/members";
 import { INTERNAL_ROLES } from "../../constants/members";
-import { verifyInternalMember } from "../helper";
+import { verifyDashboardVisibility } from "../helper";
 
 export const listBirthdayMembersService = async (
   requesterId: string,
 ): Promise<Array<Partial<IMember>>> => {
   console.log("IN - listBirthdayMembersService");
 
-  await verifyInternalMember(requesterId);
+  await verifyDashboardVisibility(requesterId, "birthdays");
 
   const currentMonth = new Date().getMonth() + 1;
 

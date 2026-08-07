@@ -1,6 +1,9 @@
 import { APIGatewayEvent } from "aws-lambda";
+import * as helperUtil from "../../../../src/utils/helper";
 import * as listAllVideosServiceModule from "../../../../src/services/videos/listAllVideos";
 import { execute } from "../../../../src/handlers/videos/listAllVideos";
+
+const REQUESTER_ID = "member-id-123";
 
 const mockPaginatedVideos = {
   items: [
@@ -24,13 +27,18 @@ const mockPaginatedVideos = {
 function buildEvent(
   queryStringParameters: Record<string, string> | null = null,
 ): APIGatewayEvent {
-  return { body: null, headers: {}, queryStringParameters } as any;
+  return {
+    body: null,
+    headers: { authorization: "Bearer valid.token.here" },
+    queryStringParameters,
+  } as any;
 }
 
 describe("listAllVideos handler (integration)", () => {
   let listAllVideosSpy: jest.SpyInstance;
 
   beforeEach(() => {
+    jest.spyOn(helperUtil, "decodeToken").mockReturnValue({ sub: REQUESTER_ID } as any);
     listAllVideosSpy = jest
       .spyOn(listAllVideosServiceModule, "listAllVideosService")
       .mockResolvedValue(mockPaginatedVideos as any);
@@ -51,31 +59,31 @@ describe("listAllVideos handler (integration)", () => {
   it("should default to page 1 and limit 20 when no query params are given", async () => {
     await execute(buildEvent());
 
-    expect(listAllVideosSpy).toHaveBeenCalledWith(1, 20, {});
+    expect(listAllVideosSpy).toHaveBeenCalledWith(REQUESTER_ID, 1, 20, {});
   });
 
   it("should use page and limit from query params", async () => {
     await execute(buildEvent({ page: "3", limit: "10" }));
 
-    expect(listAllVideosSpy).toHaveBeenCalledWith(3, 10, {});
+    expect(listAllVideosSpy).toHaveBeenCalledWith(REQUESTER_ID, 3, 10, {});
   });
 
   it("should pass title filter from query params", async () => {
     await execute(buildEvent({ title: "My Video" }));
 
-    expect(listAllVideosSpy).toHaveBeenCalledWith(1, 20, { title: "My Video" });
+    expect(listAllVideosSpy).toHaveBeenCalledWith(REQUESTER_ID, 1, 20, { title: "My Video" });
   });
 
   it("should pass memberId filter from query params", async () => {
     await execute(buildEvent({ memberId: "m1" }));
 
-    expect(listAllVideosSpy).toHaveBeenCalledWith(1, 20, { memberId: "m1" });
+    expect(listAllVideosSpy).toHaveBeenCalledWith(REQUESTER_ID, 1, 20, { memberId: "m1" });
   });
 
   it("should pass both title and memberId filters together", async () => {
     await execute(buildEvent({ title: "My Video", memberId: "m1" }));
 
-    expect(listAllVideosSpy).toHaveBeenCalledWith(1, 20, {
+    expect(listAllVideosSpy).toHaveBeenCalledWith(REQUESTER_ID, 1, 20, {
       title: "My Video",
       memberId: "m1",
     });
@@ -84,7 +92,7 @@ describe("listAllVideos handler (integration)", () => {
   it("should ignore blank title/memberId query params", async () => {
     await execute(buildEvent({ title: "   ", memberId: "" }));
 
-    expect(listAllVideosSpy).toHaveBeenCalledWith(1, 20, {});
+    expect(listAllVideosSpy).toHaveBeenCalledWith(REQUESTER_ID, 1, 20, {});
   });
 
   it("should return 400 when page is invalid", async () => {

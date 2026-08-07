@@ -1,0 +1,17 @@
+getDashboardVisibility:
+  handler: src/handlers/dashboardVisibility/getDashboardVisibility.execute
+  events:
+    - httpApi:
+        method: GET
+        path: /dashboard-settings/guest-visibility
+        authorizer:
+          name: cognitoAuthorizer
+
+setDashboardVisibility:
+  handler: src/handlers/dashboardVisibility/setDashboardVisibility.execute
+  events:
+    - httpApi:
+        method: PUT
+        path: /dashboard-settings/guest-visibility
+        authorizer:
+          name: cognitoAuthorizer

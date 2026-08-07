@@ -1,13 +1,13 @@
 import { CommitmentModel } from "../../models/Commitment";
 import { ICommitmentResponse } from "../../types/commitments";
-import { verifyInternalMember } from "../helper";
+import { verifyDashboardVisibility } from "../helper";
 
 export const listCommitmentsService = async (
   requesterId: string,
 ): Promise<ICommitmentResponse[]> => {
   console.log("IN - listCommitmentsService");
 
-  await verifyInternalMember(requesterId);
+  await verifyDashboardVisibility(requesterId, "notices");
 
   const commitments = await CommitmentModel.find(
     {},

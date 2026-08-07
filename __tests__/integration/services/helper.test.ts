@@ -1,6 +1,7 @@
 import * as helperModule from "../../../src/services/helper";
 import { MemberModel } from "../../../src/models/Member";
 import { ContributionModel } from "../../../src/models/Contribution";
+import { DashboardVisibilitySettingsModel } from "../../../src/models/DashboardVisibilitySettings";
 import { IMember } from "../../../src/types/members";
 
 const mockMember: IMember = {
@@ -265,6 +266,69 @@ describe("services/helper", () => {
         { role: 1 },
         { lean: true },
       );
+    });
+  });
+
+  describe("verifyDashboardVisibility", () => {
+    let findByIdSpy: jest.SpyInstance;
+    let settingsFindOneSpy: jest.SpyInstance;
+
+    beforeEach(() => {
+      findByIdSpy = jest.spyOn(MemberModel, "findById");
+      settingsFindOneSpy = jest.spyOn(
+        DashboardVisibilitySettingsModel,
+        "findOne",
+      );
+    });
+
+    afterEach(() => jest.restoreAllMocks());
+
+    it("should resolve for internal member regardless of settings", async () => {
+      findByIdSpy.mockResolvedValue(mockMember as any);
+
+      await expect(
+        helperModule.verifyDashboardVisibility("member-id-123", "notices"),
+      ).resolves.not.toThrow();
+
+      expect(settingsFindOneSpy).not.toHaveBeenCalled();
+    });
+
+    it("should resolve for guest when the card is enabled", async () => {
+      findByIdSpy.mockResolvedValue({ ...mockMember, role: "guest" } as any);
+      settingsFindOneSpy.mockResolvedValue({
+        notices: true,
+        communityGoal: false,
+        birthdays: false,
+      } as any);
+
+      await expect(
+        helperModule.verifyDashboardVisibility("guest-id-123", "notices"),
+      ).resolves.not.toThrow();
+    });
+
+    it("should throw 401 for guest when the card is disabled", async () => {
+      findByIdSpy.mockResolvedValue({ ...mockMember, role: "guest" } as any);
+      settingsFindOneSpy.mockResolvedValue({
+        notices: false,
+        communityGoal: false,
+        birthdays: false,
+      } as any);
+
+      await expect(
+        helperModule.verifyDashboardVisibility("guest-id-123", "notices"),
+      ).rejects.toMatchObject({
+        statusCode: 401,
+        message: "Unauthorized access",
+      });
+    });
+
+    it("should throw 401 for guest when no settings document exists yet", async () => {
+      findByIdSpy.mockResolvedValue({ ...mockMember, role: "guest" } as any);
+      settingsFindOneSpy.mockResolvedValue(null);
+
+      await expect(
+        helperModule.verifyDashboardVisibility("guest-id-123", "birthdays"),
+      ).rejects.toMatchObject({ statusCode: 401 });
     });
   });
 
