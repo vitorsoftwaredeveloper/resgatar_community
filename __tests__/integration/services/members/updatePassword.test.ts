@@ -59,17 +59,44 @@ describe("updatePasswordService (integration)", () => {
     expect(changeCognitoPasswordSpy).toHaveBeenCalledWith("user-id-456", "Nova@Senha1");
   });
 
-  it("should return 403 when regular user tries to update another member password", async () => {
+  it("should throw 403 when regular user tries to update another member password", async () => {
     const otherMember = { ...regularMember, _id: "other-user-789" };
 
     findMemberByIdSpy
       .mockResolvedValueOnce(regularMember)
       .mockResolvedValueOnce(otherMember);
 
-    const result = await updatePasswordService("user-id-456", "Nova@Senha1", "other-user-789");
+    await expect(
+      updatePasswordService("user-id-456", "Nova@Senha1", "other-user-789")
+    ).rejects.toMatchObject({ statusCode: 403 });
 
-    expect(result).toMatchObject({ statusCode: 403 });
     expect(changeCognitoPasswordSpy).not.toHaveBeenCalled();
+  });
+
+  it("should throw 403 when guest tries to update another member password", async () => {
+    const guestMember = { ...regularMember, _id: "guest-id-789", role: "guest" as const };
+
+    findMemberByIdSpy
+      .mockResolvedValueOnce(guestMember)
+      .mockResolvedValueOnce(regularMember);
+
+    await expect(
+      updatePasswordService("guest-id-789", "Nova@Senha1", "user-id-456")
+    ).rejects.toMatchObject({ statusCode: 403 });
+
+    expect(changeCognitoPasswordSpy).not.toHaveBeenCalled();
+  });
+
+  it("should allow guest to update their own password", async () => {
+    const guestMember = { ...regularMember, _id: "guest-id-789", role: "guest" as const };
+
+    findMemberByIdSpy
+      .mockResolvedValueOnce(guestMember)
+      .mockResolvedValueOnce(guestMember);
+
+    await updatePasswordService("guest-id-789", "Nova@Senha1", "guest-id-789");
+
+    expect(changeCognitoPasswordSpy).toHaveBeenCalledWith("guest-id-789", "Nova@Senha1");
   });
 
   it("should fetch both caller and target member", async () => {

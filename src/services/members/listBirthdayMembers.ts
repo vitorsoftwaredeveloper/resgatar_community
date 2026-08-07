@@ -1,5 +1,6 @@
 import { MemberModel } from "../../models/Member";
 import { IMember } from "../../types/members";
+import { INTERNAL_ROLES } from "../../constants/members";
 
 export const listBirthdayMembersService = async (): Promise<
   Array<Partial<IMember>>
@@ -9,7 +10,7 @@ export const listBirthdayMembersService = async (): Promise<
   const currentMonth = new Date().getMonth() + 1;
 
   const allMembers = await MemberModel.find(
-    { dateOfBirth: { $ne: null } },
+    { role: { $in: INTERNAL_ROLES }, dateOfBirth: { $ne: null } },
     { firstName: 1, lastName: 1, dateOfBirth: 1, profileImage: 1 },
     { lean: true },
   );

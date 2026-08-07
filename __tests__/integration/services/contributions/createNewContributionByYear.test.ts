@@ -52,10 +52,20 @@ describe("createNewContributionByYearService (integration)", () => {
     expect(createContributionByYearSpy).not.toHaveBeenCalled();
   });
 
-  it("should fetch all members with only _id projection", async () => {
+  it("should fetch internal members with only _id projection", async () => {
     await createNewContributionByYearService("admin-id", 2025);
 
-    expect(findSpy).toHaveBeenCalledWith({}, { _id: 1 }, { lean: true });
+    expect(findSpy).toHaveBeenCalledWith(
+      { role: { $in: ["user", "admin"] } },
+      { _id: 1 },
+      { lean: true },
+    );
+  });
+
+  it("should not create contributions for guests", async () => {
+    await createNewContributionByYearService("admin-id", 2025);
+
+    expect(findSpy.mock.calls[0][0]).toEqual({ role: { $in: ["user", "admin"] } });
   });
 
   it("should create contribution for each member starting from january (monthIndex 0)", async () => {

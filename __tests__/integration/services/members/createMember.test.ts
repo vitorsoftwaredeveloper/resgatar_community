@@ -13,7 +13,6 @@ const basePayload: ISignUpPayload = {
   firstName: "João",
   lastName: "Silva",
   dateOfBirth: Date.UTC(1990, 0, 1),
-  role: "user",
   paymentInfo: { datePayment: 5, amount: "50,00" },
   identification: { type: "CPF", numberType: "52998224725" },
 };

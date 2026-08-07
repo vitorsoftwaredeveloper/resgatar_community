@@ -76,7 +76,17 @@ describe("listBirthdayMembersService (integration)", () => {
     await listBirthdayMembersService();
 
     expect(memberFindSpy).toHaveBeenCalledWith(
-      { dateOfBirth: { $ne: null } },
+      expect.objectContaining({ dateOfBirth: { $ne: null } }),
+      expect.any(Object),
+      expect.any(Object),
+    );
+  });
+
+  it("should exclude guests from the birthday list", async () => {
+    await listBirthdayMembersService();
+
+    expect(memberFindSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ role: { $in: ["user", "admin"] } }),
       expect.any(Object),
       expect.any(Object),
     );
