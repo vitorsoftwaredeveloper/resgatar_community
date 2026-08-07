@@ -30,6 +30,15 @@ listDonations:
         authorizer:
           name: cognitoAuthorizer
 
+listMyDonations:
+  handler: src/handlers/donations/listMyDonations.execute
+  events:
+    - httpApi:
+        method: GET
+        path: /donations/mine
+        authorizer:
+          name: cognitoAuthorizer
+
 consultDonation:
   handler: src/handlers/donations/consultDonation.execute
   events:
