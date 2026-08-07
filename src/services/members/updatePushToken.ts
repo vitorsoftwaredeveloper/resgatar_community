@@ -1,4 +1,24 @@
 import { MemberModel } from "../../models/Member";
+import { subscribeTokensToTopic } from "../../integrations/firebase";
+
+const MAX_TOKENS_PER_MEMBER = 10;
+
+const buildDedupedCappedTokens = (pushToken: string) => ({
+  $slice: [
+    {
+      $concatArrays: [
+        {
+          $filter: {
+            input: { $ifNull: ["$pushTokens", []] },
+            cond: { $ne: ["$$this", pushToken] },
+          },
+        },
+        [pushToken],
+      ],
+    },
+    -MAX_TOKENS_PER_MEMBER,
+  ],
+});
 
 export const updatePushTokenService = async (
   memberId: string,
@@ -7,16 +27,23 @@ export const updatePushTokenService = async (
   console.log("IN - updatePushTokenService");
 
   try {
-    // Registrar o push token (app aberto) é também um sinal de atividade,
-    // então carimbamos lastActiveAt no mesmo write — sem custo extra.
-    const result = await MemberModel.updateOne(
-      { _id: memberId },
-      { $set: { pushToken, lastActiveAt: new Date(), deletionWarnedAt: null } }
-    );
+    const result = await MemberModel.updateOne({ _id: memberId }, [
+      {
+        $set: {
+          pushTokens: buildDedupedCappedTokens(pushToken),
+          lastActiveAt: "$$NOW",
+          deletionWarnedAt: null,
+        },
+      },
+    ]);
 
     if (result.matchedCount === 0) {
       throw { statusCode: 404, message: "Member not found" };
     }
+
+    await subscribeTokensToTopic([pushToken]).catch((error) =>
+      console.error("Failed to subscribe push token to topic:", error)
+    );
   } catch (error) {
     throw error;
   } finally {

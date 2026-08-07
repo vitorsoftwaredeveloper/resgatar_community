@@ -16,7 +16,7 @@ const birthdayMember1 = {
   firstName: "João",
   lastName: "Silva",
   dateOfBirth: String(makeDob(todayMonth, todayDay)),
-  pushToken: "token-birthday-1",
+  pushTokens: ["token-birthday-1"],
 };
 
 const birthdayMember2 = {
@@ -24,7 +24,7 @@ const birthdayMember2 = {
   firstName: "Maria",
   lastName: "Santos",
   dateOfBirth: String(makeDob(todayMonth, todayDay)),
-  pushToken: null,
+  pushTokens: [],
 };
 
 const otherMember = {
@@ -32,7 +32,7 @@ const otherMember = {
   firstName: "Pedro",
   lastName: "Costa",
   dateOfBirth: String(makeDob(todayMonth === 12 ? 1 : todayMonth + 1, 1)),
-  pushToken: "token-other",
+  pushTokens: ["token-other"],
 };
 
 describe("birthdayNotification agent (integration)", () => {
@@ -127,8 +127,8 @@ describe("birthdayNotification agent (integration)", () => {
     await execute();
 
     expect(memberUpdateManySpy).toHaveBeenCalledWith(
-      { pushToken: { $in: expect.arrayContaining(["token-birthday-1"]) } },
-      { $set: { pushToken: null } },
+      { pushTokens: { $in: expect.arrayContaining(["token-birthday-1"]) } },
+      { $pull: { pushTokens: { $in: expect.arrayContaining(["token-birthday-1"]) } } },
     );
   });
 
@@ -160,7 +160,7 @@ describe("birthdayNotification agent (integration)", () => {
   it("should use plural message when multiple birthday members", async () => {
     memberFindSpy.mockResolvedValue([
       birthdayMember1,
-      { ...birthdayMember2, pushToken: "token-birthday-2" },
+      { ...birthdayMember2, pushTokens: ["token-birthday-2"] },
       otherMember,
     ] as any);
 

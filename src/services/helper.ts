@@ -167,11 +167,11 @@ function getRemainingMonthsFromNow(monthIndex: number) {
 
 const findAdminPushTokens = async (): Promise<string[]> => {
   const admins = await MemberModel.find(
-    { role: MEMBER_ROLES.ADMIN, pushToken: { $ne: null } },
-    { pushToken: 1 },
+    { role: MEMBER_ROLES.ADMIN, "pushTokens.0": { $exists: true } },
+    { pushTokens: 1 },
     { lean: true },
   );
-  return admins.map((a) => a.pushToken as string);
+  return admins.flatMap((a) => a.pushTokens ?? []);
 };
 
 export {

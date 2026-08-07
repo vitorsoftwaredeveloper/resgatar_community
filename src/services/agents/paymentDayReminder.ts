@@ -1,6 +1,7 @@
 import { db } from "../../db";
 import { MemberModel } from "../../models/Member";
 import { sendPushNotificationToTokens } from "../../integrations/firebase";
+import { clearInvalidPushTokens } from "../notifications/pushTokens";
 import { INTERNAL_ROLES } from "../../constants/members";
 
 export const execute = async () => {
@@ -15,9 +16,9 @@ export const execute = async () => {
       {
         role: { $in: INTERNAL_ROLES },
         "paymentInfo.datePayment": today,
-        pushToken: { $ne: null },
+        "pushTokens.0": { $exists: true },
       },
-      { pushToken: 1, firstName: 1 },
+      { pushTokens: 1, firstName: 1 },
       { lean: true },
     );
 
@@ -28,7 +29,7 @@ export const execute = async () => {
 
     if (members.length === 0) return;
 
-    const tokens = members.map((m) => m.pushToken as string);
+    const tokens = members.flatMap((m) => m.pushTokens ?? []);
 
     const invalidTokens = await sendPushNotificationToTokens(
       tokens,
@@ -36,13 +37,7 @@ export const execute = async () => {
       "Hoje é o seu dia de contribuição, contamos com sua generosidade!",
     );
 
-    if (invalidTokens.length > 0) {
-      await MemberModel.updateMany(
-        { pushToken: { $in: invalidTokens } },
-        { $set: { pushToken: null } },
-      );
-      console.log("Cleared invalid push tokens:", invalidTokens.length);
-    }
+    await clearInvalidPushTokens(invalidTokens);
   } catch (error) {
     console.error("Error sending payment day reminder:", error);
   } finally {
