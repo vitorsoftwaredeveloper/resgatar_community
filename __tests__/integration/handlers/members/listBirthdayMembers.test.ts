@@ -1,4 +1,5 @@
 import { APIGatewayEvent } from "aws-lambda";
+import * as helperUtil from "../../../../src/utils/helper";
 import * as listBirthdayMembersServiceModule from "../../../../src/services/members/listBirthdayMembers";
 import { execute } from "../../../../src/handlers/members/listBirthdayMembers";
 
@@ -8,13 +9,18 @@ const mockMembers = [
 ];
 
 function buildEvent(): APIGatewayEvent {
-  return {} as any;
+  return { headers: { authorization: "Bearer valid.token.here" } } as any;
 }
 
 describe("listBirthdayMembers handler (integration)", () => {
   let listBirthdayMembersServiceSpy: jest.SpyInstance;
+  let decodeTokenSpy: jest.SpyInstance;
 
   beforeEach(() => {
+    decodeTokenSpy = jest
+      .spyOn(helperUtil, "decodeToken")
+      .mockReturnValue({ sub: "member-id-123" } as any);
+
     listBirthdayMembersServiceSpy = jest
       .spyOn(listBirthdayMembersServiceModule, "listBirthdayMembersService")
       .mockResolvedValue(mockMembers as any);
@@ -30,10 +36,16 @@ describe("listBirthdayMembers handler (integration)", () => {
     expect(body.data).toHaveLength(2);
   });
 
-  it("should call listBirthdayMembersService", async () => {
+  it("should call listBirthdayMembersService with the caller id", async () => {
     await execute(buildEvent());
 
-    expect(listBirthdayMembersServiceSpy).toHaveBeenCalledTimes(1);
+    expect(listBirthdayMembersServiceSpy).toHaveBeenCalledWith("member-id-123");
+  });
+
+  it("should decode the authorization header", async () => {
+    await execute(buildEvent());
+
+    expect(decodeTokenSpy).toHaveBeenCalledWith("Bearer valid.token.here");
   });
 
   it("should return 200 with empty array when no birthday members", async () => {
@@ -46,11 +58,19 @@ describe("listBirthdayMembers handler (integration)", () => {
     expect(body.data).toHaveLength(0);
   });
 
-  it("should return error response when service throws", async () => {
+  it("should propagate statusCode from service error", async () => {
     listBirthdayMembersServiceSpy.mockRejectedValue({
-      statusCode: 500,
-      message: "Internal error",
+      statusCode: 401,
+      message: "Unauthorized access",
     });
+
+    const result = await execute(buildEvent());
+
+    expect(result.statusCode).toBe(401);
+  });
+
+  it("should return 500 when service throws unexpected error", async () => {
+    listBirthdayMembersServiceSpy.mockRejectedValue(new Error("Unexpected"));
 
     const result = await execute(buildEvent());
 

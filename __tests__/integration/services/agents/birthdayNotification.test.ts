@@ -65,6 +65,16 @@ describe("birthdayNotification agent (integration)", () => {
     expect(dbSpy).toHaveBeenCalledTimes(1);
   });
 
+  it("should exclude guests from both the birthday list and the community audience", async () => {
+    await execute();
+
+    expect(memberFindSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ role: { $in: ["user", "admin"] } }),
+      expect.any(Object),
+      expect.any(Object),
+    );
+  });
+
   it("should send community notification only to non-birthday members", async () => {
     await execute();
 

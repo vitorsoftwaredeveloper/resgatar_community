@@ -42,7 +42,7 @@ export const editMemberSchema: any = {
       required: ["datePayment", "amount"],
       additionalProperties: false,
     },
-    role: { type: "string", enum: ["admin", "user"] },
+    role: { type: "string", enum: ["admin", "user", "guest"] },
     identification: {
       type: "object",
       properties: {

@@ -1,5 +1,6 @@
 import { ContributionModel } from "../../models/Contribution";
 import { MemberModel } from "../../models/Member";
+import { INTERNAL_ROLES } from "../../constants/members";
 import {
   CONTRIBUTION_PAYMENT_METHOD,
   MONTH_KEYS,
@@ -56,6 +57,7 @@ export const getAnnualChargesSummaryService = async (
         lastName: 1,
         profileImage: 1,
         status: 1,
+        role: 1,
         "paymentInfo.amount": 1,
       },
       { lean: true },
@@ -106,6 +108,13 @@ export const getAnnualChargesSummaryService = async (
         // contribution doc (handles mid-year joins, where past months are
         // simply absent).
         if (!monthData) continue;
+
+        if (
+          !monthData.paid &&
+          !(INTERNAL_ROLES as readonly string[]).includes(member.role)
+        ) {
+          continue;
+        }
 
         const slot = monthAcc[month - 1];
         slot.counts.total += 1;

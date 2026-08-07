@@ -3,6 +3,7 @@ import { VideoModel } from "../../models/Video";
 import { IVideo } from "../../types/videos";
 import { STATUS_CODE } from "../../constants";
 import { extractVideoId, buildThumbnailUrl } from "../../utils/youtube";
+import { verifyInternalMember } from "../helper";
 
 export const createVideoService = async (
   memberId: string,
@@ -10,6 +11,8 @@ export const createVideoService = async (
   title?: string,
 ): Promise<{ _id: string; thumbnail: string }> => {
   console.log("IN - createVideoService");
+
+  await verifyInternalMember(memberId);
 
   const videoId = extractVideoId(url);
   if (!videoId) {

@@ -1,13 +1,13 @@
 import { CommitmentModel } from "../../models/Commitment";
 import { ICommitmentResponse } from "../../types/commitments";
+import { verifyDashboardVisibility } from "../helper";
 
-// Qualquer membro autenticado lê o mural na ordem curada pelo admin. O campo
-// `order` é a única fonte de verdade da sequência — o arraste no app define a
-// posição de todos os compromissos (semanais e datados), sem auto-cronologia.
-export const listCommitmentsService = async (): Promise<
-  ICommitmentResponse[]
-> => {
+export const listCommitmentsService = async (
+  requesterId: string,
+): Promise<ICommitmentResponse[]> => {
   console.log("IN - listCommitmentsService");
+
+  await verifyDashboardVisibility(requesterId, "notices");
 
   const commitments = await CommitmentModel.find(
     {},

@@ -1,6 +1,6 @@
 import { ChargeModel } from "../../models/Charge";
 import { STATUS_CODE } from "../../constants";
-import { findMemberById } from "../helper";
+import { findMemberById, verifyInternalMember } from "../helper";
 
 export const consultChargeService = async (
   memberId: string,
@@ -8,6 +8,7 @@ export const consultChargeService = async (
 ): Promise<any> => {
   console.log("IN - consultChargeService");
 
+  await verifyInternalMember(memberId);
   await findMemberById(memberId);
 
   try {

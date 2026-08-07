@@ -1,6 +1,7 @@
 import { db } from "../../db";
 import { MemberModel } from "../../models/Member";
 import { sendPushNotificationToTokens } from "../../integrations/firebase";
+import { INTERNAL_ROLES } from "../../constants/members";
 
 export const execute = async () => {
   console.log("IN - paymentDayReminder");
@@ -12,6 +13,7 @@ export const execute = async () => {
 
     const members = await MemberModel.find(
       {
+        role: { $in: INTERNAL_ROLES },
         "paymentInfo.datePayment": today,
         pushToken: { $ne: null },
       },

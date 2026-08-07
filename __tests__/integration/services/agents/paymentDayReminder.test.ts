@@ -48,6 +48,16 @@ describe("paymentDayReminder agent (integration)", () => {
     );
   });
 
+  it("should exclude guests from the payment reminder", async () => {
+    await execute();
+
+    expect(memberFindSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ role: { $in: ["user", "admin"] } }),
+      expect.any(Object),
+      expect.any(Object),
+    );
+  });
+
   it("should send push notification to all tokens", async () => {
     await execute();
 

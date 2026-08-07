@@ -29,9 +29,19 @@ describe("editMemberService (integration)", () => {
   let updateMemberCognitoEmailSpy: jest.SpyInstance;
   let encryptSpy: jest.SpyInstance;
   let executeMongoTransactionSpy: jest.SpyInstance;
+  let countAdminsSpy: jest.SpyInstance;
+  let ensureContributionSpy: jest.SpyInstance;
 
   beforeEach(() => {
     process.env.ENCRYPTION_KEY = "a".repeat(64);
+
+    countAdminsSpy = jest
+      .spyOn(helperService, "countAdmins")
+      .mockResolvedValue(3);
+
+    ensureContributionSpy = jest
+      .spyOn(helperService, "ensureContributionForCurrentYear")
+      .mockResolvedValue(undefined);
 
     findMemberByIdSpy = jest
       .spyOn(helperService, "findMemberById")
@@ -232,6 +242,102 @@ describe("editMemberService (integration)", () => {
     ).rejects.toMatchObject({ statusCode: 401 });
 
     expect(updateOneSpy).not.toHaveBeenCalled();
+  });
+
+  it("should throw 403 when an admin tries to change their own role", async () => {
+    findMemberByIdSpy.mockResolvedValue(adminMember);
+
+    await expect(
+      editMemberService("admin-id", "admin-id", { role: "user" }),
+    ).rejects.toMatchObject({ statusCode: 403 });
+
+    expect(updateOneSpy).not.toHaveBeenCalled();
+  });
+
+  it("should throw 409 when demoting the last remaining admin", async () => {
+    findMemberByIdSpy.mockResolvedValue({ ...adminMember, _id: "other-admin-id" });
+    countAdminsSpy.mockResolvedValue(1);
+
+    await expect(
+      editMemberService("admin-id", "other-admin-id", { role: "guest" }),
+    ).rejects.toMatchObject({ statusCode: 409 });
+
+    expect(updateOneSpy).not.toHaveBeenCalled();
+  });
+
+  it("should allow demoting an admin when others remain", async () => {
+    findMemberByIdSpy.mockResolvedValue({ ...adminMember, _id: "other-admin-id" });
+    countAdminsSpy.mockResolvedValue(2);
+
+    const result = await editMemberService("admin-id", "other-admin-id", {
+      role: "user",
+    });
+
+    expect(result.role).toBe("user");
+    expect(updateOneSpy).toHaveBeenCalled();
+  });
+
+  it("should not count admins when the target is not an admin", async () => {
+    await editMemberService("admin-id", "member-id-123", { role: "guest" });
+
+    expect(countAdminsSpy).not.toHaveBeenCalled();
+  });
+
+  it("should create the current year contribution when promoting a guest", async () => {
+    findMemberByIdSpy.mockResolvedValue({ ...existingMember, role: "guest" });
+
+    await editMemberService("admin-id", "member-id-123", { role: "user" });
+
+    expect(ensureContributionSpy).toHaveBeenCalledWith("member-id-123");
+  });
+
+  it("should create the contribution inside the transaction", async () => {
+    findMemberByIdSpy.mockResolvedValue({ ...existingMember, role: "guest" });
+
+    const callOrder: string[] = [];
+    executeMongoTransactionSpy.mockImplementation(async (fn) => {
+      callOrder.push("transactionStart");
+      return fn({} as any);
+    });
+    ensureContributionSpy.mockImplementation(async () => {
+      callOrder.push("ensureContribution");
+    });
+
+    await editMemberService("admin-id", "member-id-123", { role: "user" });
+
+    expect(callOrder).toEqual(["transactionStart", "ensureContribution"]);
+  });
+
+  it("should NOT create a contribution when demoting to guest", async () => {
+    await editMemberService("admin-id", "member-id-123", { role: "guest" });
+
+    expect(ensureContributionSpy).not.toHaveBeenCalled();
+  });
+
+  it("should NOT create a contribution when promoting an existing user to admin", async () => {
+    await editMemberService("admin-id", "member-id-123", { role: "admin" });
+
+    expect(ensureContributionSpy).not.toHaveBeenCalled();
+  });
+
+  it("should NOT create a contribution when the payload has no role", async () => {
+    findMemberByIdSpy.mockResolvedValue({ ...existingMember, role: "guest" });
+
+    await editMemberService("admin-id", "member-id-123", { firstName: "Novo" });
+
+    expect(ensureContributionSpy).not.toHaveBeenCalled();
+  });
+
+  it("should let a guest edit their own profile without touching role rules", async () => {
+    findMemberByIdSpy.mockResolvedValue({ ...existingMember, role: "guest" });
+
+    const result = await editMemberService("member-id-123", "member-id-123", {
+      firstName: "Proprio",
+    });
+
+    expect(verifyAdminSpy).not.toHaveBeenCalled();
+    expect(result.firstName).toBe("Proprio");
+    expect(result.role).toBe("guest");
   });
 
   it("should verify admin before finding the member to update", async () => {

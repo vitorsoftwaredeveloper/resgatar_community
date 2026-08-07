@@ -1,12 +1,9 @@
 import { CampaignModel } from "../../models/Campaign";
 import { ICampaignResponse } from "../../types/campaigns";
-import { verifyAdmin } from "../helper";
+import { verifyAdmin, verifyDashboardVisibility } from "../helper";
 
-// Lista as campanhas na ordem curada do carrossel, já com o banner base64.
-// Por padrão devolve só as ativas (uso do carrossel da home). Com
-// `includeInactive`, devolve todas — restrito a admin, para a tela de gestão.
 export const listCampaignsService = async (
-  adminId: string,
+  requesterId: string,
   includeInactive = false,
 ): Promise<ICampaignResponse[]> => {
   console.log("IN - listCampaignsService");
@@ -14,7 +11,9 @@ export const listCampaignsService = async (
   const filter = includeInactive ? {} : { active: true };
 
   if (includeInactive) {
-    await verifyAdmin(adminId);
+    await verifyAdmin(requesterId);
+  } else {
+    await verifyDashboardVisibility(requesterId, "banners");
   }
 
   const campaigns = await CampaignModel.find(

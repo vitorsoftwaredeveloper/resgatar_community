@@ -3,6 +3,7 @@ import { MemberModel } from "../../models/Member";
 import { IPaginatedVideos } from "../../types/videos";
 import { buildThumbnailUrl } from "../../utils/youtube";
 import { escapeRegExp } from "../../utils/helper";
+import { verifyDashboardVisibility } from "../helper";
 
 interface VideoFilters {
   title?: string;
@@ -10,11 +11,14 @@ interface VideoFilters {
 }
 
 export const listAllVideosService = async (
+  requesterId: string,
   page: number,
   limit: number,
   filters: VideoFilters = {},
 ): Promise<IPaginatedVideos> => {
   console.log("IN - listAllVideosService");
+
+  await verifyDashboardVisibility(requesterId, "videos");
 
   const skip = (page - 1) * limit;
 

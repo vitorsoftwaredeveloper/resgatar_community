@@ -1,6 +1,7 @@
 import mongoose, { Schema } from "mongoose";
 import { v4 as uuidv4 } from "uuid";
 import { createInstanceMongoose } from "../repositories/mongoose";
+import { ASSIGNABLE_ROLES, MEMBER_ROLES } from "../constants/members";
 
 const AddressSchema = new Schema(
   {
@@ -43,7 +44,11 @@ const MemberSchema = new Schema(
     bio: { type: String, trim: true, default: "" },
     dateOfBirth: { type: String, required: true },
     address: { type: AddressSchema },
-    role: { type: String, enum: ["admin", "user"], default: "user" },
+    role: {
+      type: String,
+      enum: ASSIGNABLE_ROLES,
+      default: MEMBER_ROLES.GUEST,
+    },
     paymentInfo: { type: PaymentInfoSchema, required: true },
     identification: { type: IdentificationSchema, required: true },
     status: { type: String, enum: ["active", "defaulter"], default: "active" },
@@ -65,4 +70,7 @@ const MemberSchema = new Schema(
   },
   { timestamps: true }
 );
+
+MemberSchema.index({ role: 1 });
+
 export const MemberModel = createInstanceMongoose("members", MemberSchema);

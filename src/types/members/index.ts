@@ -1,3 +1,5 @@
+type MemberRole = "admin" | "user" | "guest";
+
 interface ISignUpPayload {
   _id: string;
   email: string;
@@ -23,10 +25,10 @@ interface ISignUpPayload {
     type: "CPF" | "CNPJ";
     numberType: string;
   };
-  role: "admin" | "user";
 }
 
 type IMember = Omit<ISignUpPayload, "password"> & {
+  role: MemberRole;
   status: "active" | "defaulter";
   pushToken?: string | null;
   lastActiveAt?: Date;
@@ -48,4 +50,4 @@ interface IMemberCredentials {
   username: string;
 }
 
-export { ISignUpPayload, IMember, IMemberCredentials };
+export { MemberRole, ISignUpPayload, IMember, IMemberCredentials };

@@ -1,6 +1,7 @@
 import { db } from "../../db";
 import { MemberModel } from "../../models/Member";
 import { sendPushNotificationToTokens } from "../../integrations/firebase";
+import { INTERNAL_ROLES } from "../../constants/members";
 
 export const execute = async () => {
   console.log("IN - birthdayNotification");
@@ -13,7 +14,7 @@ export const execute = async () => {
     const todayDay = now.getDate();
 
     const allMembers = await MemberModel.find(
-      { dateOfBirth: { $ne: null } },
+      { role: { $in: INTERNAL_ROLES }, dateOfBirth: { $ne: null } },
       { firstName: 1, lastName: 1, dateOfBirth: 1, pushToken: 1 },
       { lean: true },
     );

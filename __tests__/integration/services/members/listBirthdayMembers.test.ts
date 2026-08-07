@@ -1,7 +1,9 @@
 import { MemberModel } from "../../../../src/models/Member";
+import * as helperService from "../../../../src/services/helper";
 import { listBirthdayMembersService } from "../../../../src/services/members/listBirthdayMembers";
 
 const currentMonth = new Date().getMonth() + 1;
+const REQUESTER_ID = "member-id-123";
 
 function makeDob(month: number, day: number): string {
   return String(new Date(2000, month - 1, day).getTime());
@@ -33,8 +35,13 @@ const memberOtherMonth = {
 
 describe("listBirthdayMembersService (integration)", () => {
   let memberFindSpy: jest.SpyInstance;
+  let verifyDashboardVisibilitySpy: jest.SpyInstance;
 
   beforeEach(() => {
+    verifyDashboardVisibilitySpy = jest
+      .spyOn(helperService, "verifyDashboardVisibility")
+      .mockResolvedValue(undefined);
+
     memberFindSpy = jest
       .spyOn(MemberModel, "find")
       .mockResolvedValue([
@@ -46,8 +53,30 @@ describe("listBirthdayMembersService (integration)", () => {
 
   afterEach(() => jest.restoreAllMocks());
 
+  it("should require dashboard visibility for birthdays before listing", async () => {
+    await listBirthdayMembersService(REQUESTER_ID);
+
+    expect(verifyDashboardVisibilitySpy).toHaveBeenCalledWith(
+      REQUESTER_ID,
+      "birthdays",
+    );
+  });
+
+  it("should throw and not query when the caller is a guest without birthdays visibility", async () => {
+    verifyDashboardVisibilitySpy.mockRejectedValue({
+      statusCode: 401,
+      message: "Unauthorized access",
+    });
+
+    await expect(
+      listBirthdayMembersService("guest-id-123"),
+    ).rejects.toMatchObject({ statusCode: 401 });
+
+    expect(memberFindSpy).not.toHaveBeenCalled();
+  });
+
   it("should return only members whose birth month matches the current month", async () => {
-    const result = await listBirthdayMembersService();
+    const result = await listBirthdayMembersService(REQUESTER_ID);
 
     const ids = result.map((m: any) => m._id);
     expect(ids).toContain("m1");
@@ -56,7 +85,7 @@ describe("listBirthdayMembersService (integration)", () => {
   });
 
   it("should return members sorted by day ascending", async () => {
-    const result = await listBirthdayMembersService();
+    const result = await listBirthdayMembersService(REQUESTER_ID);
 
     const days = result.map((m: any) =>
       new Date(Number(m.dateOfBirth)).getDate(),
@@ -67,23 +96,33 @@ describe("listBirthdayMembersService (integration)", () => {
   it("should return an empty array when no members have birthday this month", async () => {
     memberFindSpy.mockResolvedValue([memberOtherMonth] as any);
 
-    const result = await listBirthdayMembersService();
+    const result = await listBirthdayMembersService(REQUESTER_ID);
 
     expect(result).toHaveLength(0);
   });
 
   it("should query only members with dateOfBirth set", async () => {
-    await listBirthdayMembersService();
+    await listBirthdayMembersService(REQUESTER_ID);
 
     expect(memberFindSpy).toHaveBeenCalledWith(
-      { dateOfBirth: { $ne: null } },
+      expect.objectContaining({ dateOfBirth: { $ne: null } }),
+      expect.any(Object),
+      expect.any(Object),
+    );
+  });
+
+  it("should exclude guests from the birthday list", async () => {
+    await listBirthdayMembersService(REQUESTER_ID);
+
+    expect(memberFindSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ role: { $in: ["user", "admin"] } }),
       expect.any(Object),
       expect.any(Object),
     );
   });
 
   it("should include firstName, lastName, dateOfBirth and profileImage in projection", async () => {
-    await listBirthdayMembersService();
+    await listBirthdayMembersService(REQUESTER_ID);
 
     expect(memberFindSpy).toHaveBeenCalledWith(
       expect.any(Object),
@@ -102,7 +141,7 @@ describe("listBirthdayMembersService (integration)", () => {
       { ...memberThisMonth1, dateOfBirth: null },
     ] as any);
 
-    const result = await listBirthdayMembersService();
+    const result = await listBirthdayMembersService(REQUESTER_ID);
 
     expect(result).toHaveLength(0);
   });

@@ -1,9 +1,43 @@
 import { MemberModel } from "../../models/Member";
-import { IMember } from "../../types/members";
+import { IMember, MemberRole } from "../../types/members";
 import { updateMemberCognitoEmail } from "../../utils/cognito";
 import { executeMongoTransaction } from "../../utils/mongoose";
-import { findMemberById, verifyAdmin } from "../helper";
+import {
+  countAdmins,
+  ensureContributionForCurrentYear,
+  findMemberById,
+  verifyAdmin,
+} from "../helper";
 import { encrypt } from "../../utils/crypto";
+import { STATUS_CODE } from "../../constants";
+import { MEMBER_ROLES } from "../../constants/members";
+
+const assertRoleChangeAllowed = async (
+  requesterId: string,
+  member: IMember,
+  nextRole: MemberRole,
+): Promise<void> => {
+  console.log("IN - assertRoleChangeAllowed");
+
+  if (requesterId === member._id) {
+    throw {
+      statusCode: STATUS_CODE.FORBIDDEN,
+      message: "Não é possível alterar o próprio nível de acesso.",
+    };
+  }
+
+  const isDemotingAdmin =
+    member.role === MEMBER_ROLES.ADMIN && nextRole !== MEMBER_ROLES.ADMIN;
+
+  if (isDemotingAdmin && (await countAdmins()) <= 1) {
+    throw {
+      statusCode: STATUS_CODE.CONFLICT,
+      message: "A comunidade precisa de ao menos um administrador.",
+    };
+  }
+
+  console.log("OUT - assertRoleChangeAllowed");
+};
 
 export const editMemberService = async (
   requesterId: string,
@@ -21,6 +55,16 @@ export const editMemberService = async (
   }
 
   const member = await findMemberById(memberId);
+
+  const isPromotingFromGuest =
+    payload.role !== undefined &&
+    member.role === MEMBER_ROLES.GUEST &&
+    payload.role !== MEMBER_ROLES.GUEST;
+
+  if (payload.role !== undefined) {
+    await assertRoleChangeAllowed(requesterId, member, payload.role);
+  }
+
   try {
     const updatedMember: IMember = {
       ...member,
@@ -58,6 +102,10 @@ export const editMemberService = async (
       await MemberModel.updateOne({ _id: memberId }, updatedMember, {
         session,
       });
+
+      if (isPromotingFromGuest) {
+        await ensureContributionForCurrentYear(memberId);
+      }
 
       if (payload.email && member.email !== payload.email) {
         await updateMemberCognitoEmail(member._id, payload.email as string);

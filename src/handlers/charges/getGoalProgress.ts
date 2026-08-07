@@ -2,12 +2,17 @@ import { APIGatewayEvent, APIGatewayProxyResult } from "aws-lambda";
 import { STATUS_CODE } from "../../constants";
 import { sendErrorResponse, sendSuccessResponse } from "../../utils/http";
 import { getGoalProgressService } from "../../services/charges/getGoalProgress";
+import { decodeToken } from "../../utils/helper";
 
 export const execute = async (
   event: APIGatewayEvent,
 ): Promise<APIGatewayProxyResult> => {
   try {
     console.log("IN - getGoalProgress");
+
+    const memberCredentials = decodeToken(
+      event.headers.authorization as string,
+    );
 
     const now = new Date();
     const query = event.queryStringParameters || {};
@@ -26,7 +31,11 @@ export const execute = async (
       });
     }
 
-    const response = await getGoalProgressService(year, month);
+    const response = await getGoalProgressService(
+      memberCredentials.sub,
+      year,
+      month,
+    );
 
     return sendSuccessResponse(
       "Goal progress retrieved successfully!",

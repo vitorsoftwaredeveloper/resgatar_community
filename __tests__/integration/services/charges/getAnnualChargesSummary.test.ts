@@ -13,6 +13,7 @@ const buildMember = (overrides: any = {}) => ({
   lastName: "Silva",
   profileImage: null,
   status: "active",
+  role: "user",
   paymentInfo: { amount: "100,00" },
   ...overrides,
 });
@@ -477,7 +478,47 @@ describe("getAnnualChargesSummaryService (integration)", () => {
     expect(result.byMember[0].photo).toBeNull();
   });
 
-  // --- rounding ---
+  it("should exclude a pending month from a member demoted back to guest", async () => {
+    contributionFindSpy.mockResolvedValue([
+      { memberId: "m1", months: { january: { paid: false } } },
+    ] as any);
+
+    memberFindSpy.mockResolvedValue([
+      buildMember({ _id: "m1", role: "guest" }),
+    ] as any);
+
+    const result = await getAnnualChargesSummaryService(ADMIN_ID, PAST_YEAR);
+
+    expect(result.totals.goal).toBe(0);
+    expect(result.totals.counts).toEqual({ paid: 0, pending: 0 });
+    expect(result.byMonth[0].counts.total).toBe(0);
+    expect(result.byMember).toHaveLength(1);
+    expect(result.byMember[0].monthsPending).toBe(0);
+  });
+
+  it("should keep a paid month from a member demoted back to guest", async () => {
+    contributionFindSpy.mockResolvedValue([
+      {
+        memberId: "m1",
+        months: {
+          january: { paid: true, value: "100,00", paymentMethod: "pix", paidAt: new Date() },
+          february: { paid: false },
+        },
+      },
+    ] as any);
+
+    memberFindSpy.mockResolvedValue([
+      buildMember({ _id: "m1", role: "guest" }),
+    ] as any);
+
+    const result = await getAnnualChargesSummaryService(ADMIN_ID, PAST_YEAR);
+
+    expect(result.totals.collected).toBe(100);
+    expect(result.byMonth[0].counts).toEqual({ paid: 1, pending: 0, total: 1 });
+    expect(result.byMonth[1].counts).toEqual({ paid: 0, pending: 0, total: 0 });
+    expect(result.byMember[0].monthsPaid).toBe(1);
+    expect(result.byMember[0].monthsPending).toBe(0);
+  });
 
   it("should round all monetary values to 2 decimal places", async () => {
     contributionFindSpy.mockResolvedValue([

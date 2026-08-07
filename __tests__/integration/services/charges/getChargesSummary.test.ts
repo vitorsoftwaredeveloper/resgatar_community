@@ -13,6 +13,7 @@ const buildMember = (overrides: any = {}) => ({
   lastName: "Silva",
   profileImage: null,
   status: "active",
+  role: "user",
   paymentInfo: { amount: "100,00" },
   ...overrides,
 });
@@ -287,6 +288,38 @@ describe("getChargesSummaryService (integration)", () => {
     expect(member.paid).toBe(false);
     expect(member.method).toBeUndefined();
     expect(member.paidAt).toBeUndefined();
+  });
+
+  it("should exclude an unpaid month from a member demoted back to guest", async () => {
+    contributionFindSpy.mockResolvedValue([
+      { memberId: "member-1", months: { june: { paid: false } } },
+    ] as any);
+
+    memberFindSpy.mockResolvedValue([
+      buildMember({ _id: "member-1", role: "guest" }),
+    ] as any);
+
+    const result = await getChargesSummaryService(ADMIN_ID, YEAR, MONTH);
+
+    expect(result.goal).toBe(0);
+    expect(result.counts).toEqual({ paid: 0, pending: 0, total: 0 });
+    expect(result.members).toHaveLength(0);
+  });
+
+  it("should keep a paid month from a member demoted back to guest", async () => {
+    contributionFindSpy.mockResolvedValue([
+      { memberId: "member-1", months: { june: { paid: true, value: "100,00", paymentMethod: "pix", paidAt: new Date() } } },
+    ] as any);
+
+    memberFindSpy.mockResolvedValue([
+      buildMember({ _id: "member-1", role: "guest" }),
+    ] as any);
+
+    const result = await getChargesSummaryService(ADMIN_ID, YEAR, MONTH);
+
+    expect(result.goal).toBe(100);
+    expect(result.collected).toBe(100);
+    expect(result.counts).toEqual({ paid: 1, pending: 0, total: 1 });
   });
 
   it("should return zeroed summary when no contributions exist for the month", async () => {

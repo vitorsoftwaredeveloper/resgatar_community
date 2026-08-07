@@ -1,6 +1,7 @@
 import * as helperModule from "../../../src/services/helper";
 import { MemberModel } from "../../../src/models/Member";
 import { ContributionModel } from "../../../src/models/Contribution";
+import { DashboardVisibilitySettingsModel } from "../../../src/models/DashboardVisibilitySettings";
 import { IMember } from "../../../src/types/members";
 
 const mockMember: IMember = {
@@ -208,6 +209,187 @@ describe("services/helper", () => {
       Object.values(months).forEach((month: any) => {
         expect(month.paid).toBe(false);
       });
+    });
+  });
+
+  describe("verifyInternalMember", () => {
+    let findByIdSpy: jest.SpyInstance;
+
+    beforeEach(() => {
+      findByIdSpy = jest.spyOn(MemberModel, "findById");
+    });
+
+    afterEach(() => jest.restoreAllMocks());
+
+    it("should resolve when member is admin", async () => {
+      findByIdSpy.mockResolvedValue(adminMember as any);
+
+      await expect(
+        helperModule.verifyInternalMember("admin-id-123"),
+      ).resolves.not.toThrow();
+    });
+
+    it("should resolve when member is user", async () => {
+      findByIdSpy.mockResolvedValue(mockMember as any);
+
+      await expect(
+        helperModule.verifyInternalMember("member-id-123"),
+      ).resolves.not.toThrow();
+    });
+
+    it("should throw 401 when member is guest", async () => {
+      findByIdSpy.mockResolvedValue({ ...mockMember, role: "guest" } as any);
+
+      await expect(
+        helperModule.verifyInternalMember("guest-id-123"),
+      ).rejects.toMatchObject({
+        statusCode: 401,
+        message: "Unauthorized access",
+      });
+    });
+
+    it("should throw 404 when member is not found", async () => {
+      findByIdSpy.mockResolvedValue(null);
+
+      await expect(
+        helperModule.verifyInternalMember("unknown-id"),
+      ).rejects.toMatchObject({ statusCode: 404 });
+    });
+
+    it("should only read the role field", async () => {
+      findByIdSpy.mockResolvedValue(mockMember as any);
+
+      await helperModule.verifyInternalMember("member-id-123");
+
+      expect(findByIdSpy).toHaveBeenCalledWith(
+        "member-id-123",
+        { role: 1 },
+        { lean: true },
+      );
+    });
+  });
+
+  describe("verifyDashboardVisibility", () => {
+    let findByIdSpy: jest.SpyInstance;
+    let settingsFindOneSpy: jest.SpyInstance;
+
+    beforeEach(() => {
+      findByIdSpy = jest.spyOn(MemberModel, "findById");
+      settingsFindOneSpy = jest.spyOn(
+        DashboardVisibilitySettingsModel,
+        "findOne",
+      );
+    });
+
+    afterEach(() => jest.restoreAllMocks());
+
+    it("should resolve for internal member regardless of settings", async () => {
+      findByIdSpy.mockResolvedValue(mockMember as any);
+
+      await expect(
+        helperModule.verifyDashboardVisibility("member-id-123", "notices"),
+      ).resolves.not.toThrow();
+
+      expect(settingsFindOneSpy).not.toHaveBeenCalled();
+    });
+
+    it("should resolve for guest when the card is enabled", async () => {
+      findByIdSpy.mockResolvedValue({ ...mockMember, role: "guest" } as any);
+      settingsFindOneSpy.mockResolvedValue({
+        notices: true,
+        communityGoal: false,
+        birthdays: false,
+      } as any);
+
+      await expect(
+        helperModule.verifyDashboardVisibility("guest-id-123", "notices"),
+      ).resolves.not.toThrow();
+    });
+
+    it("should throw 401 for guest when the card is disabled", async () => {
+      findByIdSpy.mockResolvedValue({ ...mockMember, role: "guest" } as any);
+      settingsFindOneSpy.mockResolvedValue({
+        notices: false,
+        communityGoal: false,
+        birthdays: false,
+      } as any);
+
+      await expect(
+        helperModule.verifyDashboardVisibility("guest-id-123", "notices"),
+      ).rejects.toMatchObject({
+        statusCode: 401,
+        message: "Unauthorized access",
+      });
+    });
+
+    it("should throw 401 for guest when no settings document exists yet", async () => {
+      findByIdSpy.mockResolvedValue({ ...mockMember, role: "guest" } as any);
+      settingsFindOneSpy.mockResolvedValue(null);
+
+      await expect(
+        helperModule.verifyDashboardVisibility("guest-id-123", "birthdays"),
+      ).rejects.toMatchObject({ statusCode: 401 });
+    });
+  });
+
+  describe("countAdmins", () => {
+    afterEach(() => jest.restoreAllMocks());
+
+    it("should count only members with admin role", async () => {
+      const countSpy = jest
+        .spyOn(MemberModel, "count")
+        .mockResolvedValue(2 as any);
+
+      const result = await helperModule.countAdmins();
+
+      expect(countSpy).toHaveBeenCalledWith({ role: "admin" });
+      expect(result).toBe(2);
+    });
+  });
+
+  describe("ensureContributionForCurrentYear", () => {
+    let findOneSpy: jest.SpyInstance;
+    let insertOneSpy: jest.SpyInstance;
+
+    beforeEach(() => {
+      findOneSpy = jest.spyOn(ContributionModel, "findOne");
+      insertOneSpy = jest
+        .spyOn(ContributionModel, "insertOne")
+        .mockResolvedValue({} as any);
+    });
+
+    afterEach(() => jest.restoreAllMocks());
+
+    it("should create the contribution for the current year when none exists", async () => {
+      findOneSpy.mockResolvedValue(null);
+
+      await helperModule.ensureContributionForCurrentYear("member-id-123");
+
+      expect(insertOneSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          memberId: "member-id-123",
+          year: new Date().getFullYear(),
+        }),
+      );
+    });
+
+    it("should not create a second contribution when one already exists", async () => {
+      findOneSpy.mockResolvedValue({ _id: "contribution-1" } as any);
+
+      await helperModule.ensureContributionForCurrentYear("member-id-123");
+
+      expect(insertOneSpy).not.toHaveBeenCalled();
+    });
+
+    it("should start the contribution at the current month, without retroactive months", async () => {
+      findOneSpy.mockResolvedValue(null);
+
+      await helperModule.ensureContributionForCurrentYear("member-id-123");
+
+      const months = insertOneSpy.mock.calls[0][0].months;
+      const monthsRemaining = 12 - new Date().getMonth();
+
+      expect(Object.keys(months)).toHaveLength(monthsRemaining);
     });
   });
 });

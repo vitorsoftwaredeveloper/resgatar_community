@@ -1,11 +1,14 @@
 import { VideoModel } from "../../models/Video";
 import { STATUS_CODE } from "../../constants";
+import { verifyInternalMember } from "../helper";
 
 export const removeVideoService = async (
   memberId: string,
   videoId: string,
 ): Promise<void> => {
   console.log("IN - removeVideoService");
+
+  await verifyInternalMember(memberId);
 
   const video = await VideoModel.findById(videoId, {}, { lean: true });
   if (!video) {

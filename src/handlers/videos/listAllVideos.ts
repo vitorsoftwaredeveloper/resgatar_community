@@ -2,6 +2,7 @@ import { APIGatewayEvent, APIGatewayProxyResult } from "aws-lambda";
 import { sendErrorResponse, sendSuccessResponse } from "../../utils/http";
 import { listAllVideosService } from "../../services/videos/listAllVideos";
 import { STATUS_CODE } from "../../constants";
+import { decodeToken } from "../../utils/helper";
 import { parsePagination, parseVideoFilters } from "./helper";
 
 export const execute = async (
@@ -11,12 +12,18 @@ export const execute = async (
   console.log("Query params:", JSON.stringify(event.queryStringParameters));
 
   try {
+    const memberCredentials = decodeToken(event.headers.authorization as string);
     const { page, limit } = parsePagination(event.queryStringParameters);
     const filters = parseVideoFilters(event.queryStringParameters);
     console.log("Pagination:", JSON.stringify({ page, limit }));
     console.log("Filters:", JSON.stringify(filters));
 
-    const videos = await listAllVideosService(page, limit, filters);
+    const videos = await listAllVideosService(
+      memberCredentials.sub,
+      page,
+      limit,
+      filters,
+    );
     console.log(
       "Result:",
       JSON.stringify({

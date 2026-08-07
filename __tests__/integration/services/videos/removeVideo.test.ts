@@ -1,4 +1,5 @@
 import { VideoModel } from "../../../../src/models/Video";
+import * as helperService from "../../../../src/services/helper";
 import { removeVideoService } from "../../../../src/services/videos/removeVideo";
 
 const mockVideo = {
@@ -11,6 +12,7 @@ const mockVideo = {
 describe("removeVideoService (integration)", () => {
   let findByIdSpy: jest.SpyInstance;
   let deleteOneSpy: jest.SpyInstance;
+  let verifyInternalMemberSpy: jest.SpyInstance;
 
   beforeEach(() => {
     findByIdSpy = jest
@@ -20,9 +22,32 @@ describe("removeVideoService (integration)", () => {
     deleteOneSpy = jest
       .spyOn(VideoModel, "deleteOne")
       .mockResolvedValue({} as any);
+
+    verifyInternalMemberSpy = jest
+      .spyOn(helperService, "verifyInternalMember")
+      .mockResolvedValue(undefined);
   });
 
   afterEach(() => jest.restoreAllMocks());
+
+  it("should require an internal member before removing", async () => {
+    await removeVideoService("member-id-123", "video-id-123");
+
+    expect(verifyInternalMemberSpy).toHaveBeenCalledWith("member-id-123");
+  });
+
+  it("should throw and not delete when the caller is a guest", async () => {
+    verifyInternalMemberSpy.mockRejectedValue({
+      statusCode: 401,
+      message: "Unauthorized access",
+    });
+
+    await expect(
+      removeVideoService("guest-id-123", "video-id-123"),
+    ).rejects.toMatchObject({ statusCode: 401 });
+
+    expect(deleteOneSpy).not.toHaveBeenCalled();
+  });
 
   it("should delete the video when owner requests removal", async () => {
     await removeVideoService("member-id-123", "video-id-123");

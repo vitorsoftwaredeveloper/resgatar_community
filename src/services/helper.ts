@@ -1,8 +1,10 @@
 import { STATUS_CODE } from "../constants";
-import { MEMBER_ROLES } from "../constants/members";
+import { INTERNAL_ROLES, MEMBER_ROLES } from "../constants/members";
 import { ContributionModel } from "../models/Contribution";
 import { MemberModel } from "../models/Member";
 import { IMember } from "../types/members";
+import { DashboardVisibilityCardKey } from "../types/dashboardVisibility";
+import { getDashboardVisibilitySettings } from "./dashboardVisibility/getDashboardVisibility";
 
 const findMemberById = async (
   memberId: string,
@@ -45,13 +47,16 @@ const findMemberByEmail = async (
   return member;
 };
 
-const verifyAdmin = async (memberId: string): Promise<void> => {
-  console.log("IN - verifyAdmin");
+const verifyRole = async (
+  memberId: string,
+  allowedRoles: readonly string[],
+): Promise<void> => {
+  console.log("IN - verifyRole");
 
   try {
-    const member = await findMemberById(memberId, {}, { lean: true });
+    const member = await findMemberById(memberId, { role: 1 }, { lean: true });
 
-    if (!(member.role === MEMBER_ROLES.ADMIN)) {
+    if (!allowedRoles.includes(member.role)) {
       throw {
         message: "Unauthorized access",
         statusCode: STATUS_CODE.UNAUTHORIZED,
@@ -61,8 +66,42 @@ const verifyAdmin = async (memberId: string): Promise<void> => {
     throw err;
   }
 
-  console.log("OUT - verifyAdmin");
+  console.log("OUT - verifyRole");
 };
+
+const verifyAdmin = (memberId: string): Promise<void> =>
+  verifyRole(memberId, [MEMBER_ROLES.ADMIN]);
+
+const verifyInternalMember = (memberId: string): Promise<void> =>
+  verifyRole(memberId, INTERNAL_ROLES);
+
+const verifyDashboardVisibility = async (
+  memberId: string,
+  cardKey: DashboardVisibilityCardKey,
+): Promise<void> => {
+  console.log("IN - verifyDashboardVisibility");
+
+  const member = await findMemberById(memberId, { role: 1 }, { lean: true });
+
+  if ((INTERNAL_ROLES as readonly string[]).includes(member.role)) {
+    console.log("OUT - verifyDashboardVisibility");
+    return;
+  }
+
+  const settings = await getDashboardVisibilitySettings();
+
+  if (!settings[cardKey]) {
+    throw {
+      message: "Unauthorized access",
+      statusCode: STATUS_CODE.UNAUTHORIZED,
+    };
+  }
+
+  console.log("OUT - verifyDashboardVisibility");
+};
+
+const countAdmins = (): Promise<number> =>
+  MemberModel.count({ role: MEMBER_ROLES.ADMIN });
 
 const createContributionByYear = (
   memberId: string,
@@ -74,6 +113,31 @@ const createContributionByYear = (
     year,
     months: getRemainingMonthsFromNow(monthIndex),
   });
+
+const ensureContributionForCurrentYear = async (
+  memberId: string,
+): Promise<void> => {
+  console.log("IN - ensureContributionForCurrentYear");
+
+  const now = new Date();
+  const year = now.getFullYear();
+
+  const existing = await ContributionModel.findOne(
+    { memberId, year },
+    { _id: 1 },
+    { lean: true },
+  );
+
+  if (existing) {
+    console.log("Contribution already exists for", { memberId, year });
+    console.log("OUT - ensureContributionForCurrentYear");
+    return;
+  }
+
+  await createContributionByYear(memberId, year, now.getMonth());
+
+  console.log("OUT - ensureContributionForCurrentYear");
+};
 
 function getRemainingMonthsFromNow(monthIndex: number) {
   const monthKeys = [
@@ -111,9 +175,14 @@ const findAdminPushTokens = async (): Promise<string[]> => {
 };
 
 export {
+  verifyRole,
   verifyAdmin,
+  verifyInternalMember,
+  verifyDashboardVisibility,
+  countAdmins,
   findMemberById,
   findMemberByEmail,
   createContributionByYear,
+  ensureContributionForCurrentYear,
   findAdminPushTokens,
 };

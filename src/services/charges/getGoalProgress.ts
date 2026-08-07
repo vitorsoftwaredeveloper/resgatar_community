@@ -9,7 +9,9 @@ import {
   DEFAULT_MONTHLY_GOAL,
 } from "../../constants/charges";
 import { STATUS_CODE } from "../../constants";
+import { INTERNAL_ROLES } from "../../constants/members";
 import { IExpenseDTO } from "../../types/expenses";
+import { verifyDashboardVisibility } from "../helper";
 
 // DTO enxuto para exibir a doação na tela de meta (sem QR code / dados de MP).
 interface IGoalDonationItem {
@@ -79,10 +81,13 @@ const parseAmount = (value?: string | null): number => {
 const round2 = (value: number): number => Math.round(value * 100) / 100;
 
 export const getGoalProgressService = async (
+  requesterId: string,
   year: number,
   month: number,
 ): Promise<IGoalProgress> => {
   console.log("IN - getGoalProgressService");
+
+  await verifyDashboardVisibility(requesterId, "communityGoal");
 
   try {
     const monthKey = MONTH_KEYS[month - 1];
@@ -138,22 +143,33 @@ export const getGoalProgressService = async (
 
     const members = await MemberModel.find(
       { _id: { $in: memberIds } },
-      { "paymentInfo.amount": 1 },
+      { role: 1, "paymentInfo.amount": 1 },
       { lean: true },
     );
 
-    const amountMap = new Map(
-      members.map((m: any) => [m._id, parseAmount(m.paymentInfo?.amount)]),
+    const memberInfoMap = new Map(
+      members.map((m: any) => [
+        m._id,
+        { amount: parseAmount(m.paymentInfo?.amount), role: m.role },
+      ]),
     );
 
     let dues = 0;
     let collected = 0;
 
     for (const contribution of expected) {
-      const memberAmount = amountMap.get(contribution.memberId) ?? 0;
+      const memberInfo = memberInfoMap.get(contribution.memberId);
+      const memberAmount = memberInfo?.amount ?? 0;
       if (memberAmount === 0) continue;
 
       const monthData: any = contribution.months[monthKey];
+
+      if (
+        !monthData.paid &&
+        !(INTERNAL_ROLES as readonly string[]).includes(memberInfo!.role)
+      ) {
+        continue;
+      }
 
       if (monthData.paid) {
         // For paid months, use the value recorded at payment time so that
