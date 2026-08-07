@@ -32,7 +32,7 @@ const assertRoleChangeAllowed = async (
   if (isDemotingAdmin && (await countAdmins()) <= 1) {
     throw {
       statusCode: STATUS_CODE.CONFLICT,
-      message: "A comunidade precisa de ao menos um coordenador.",
+      message: "A comunidade precisa de ao menos um administrador.",
     };
   }
 
