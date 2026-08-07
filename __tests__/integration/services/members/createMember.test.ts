@@ -89,10 +89,10 @@ describe("createMemberService (integration)", () => {
     );
   });
 
-  it("should call createContributionByYear after inserting member", async () => {
+  it("should NOT create a contribution: a guest owes no monthly fee", async () => {
     await createMemberService({ ...basePayload });
 
-    expect(createContributionSpy).toHaveBeenCalled();
+    expect(createContributionSpy).not.toHaveBeenCalled();
   });
 
   it("should return the cognito user id", async () => {
@@ -199,21 +199,20 @@ describe("createMemberService (integration)", () => {
     });
   });
 
-  it("should default role to user when not provided", async () => {
-    const payload = { ...basePayload, role: undefined as any };
-    await createMemberService(payload);
+  it("should create the member as guest", async () => {
+    await createMemberService({ ...basePayload });
 
     expect(insertOneSpy).toHaveBeenCalledWith(
-      expect.objectContaining({ role: "user" }),
+      expect.objectContaining({ role: "guest" }),
     );
   });
 
-  it("should force role to user even if an admin role is provided (privilege escalation)", async () => {
+  it("should force role to guest even if a role is provided (privilege escalation)", async () => {
     const payload = { ...basePayload, role: "admin" as any };
     await createMemberService(payload);
 
     expect(insertOneSpy).toHaveBeenCalledWith(
-      expect.objectContaining({ role: "user" }),
+      expect.objectContaining({ role: "guest" }),
     );
   });
 });

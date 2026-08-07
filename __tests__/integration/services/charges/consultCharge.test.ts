@@ -34,6 +34,7 @@ describe("consultChargeService (integration)", () => {
   let findMemberByIdSpy: jest.SpyInstance;
   let findOneChargeSpy: jest.SpyInstance;
   let createMercadoPagoClientSpy: jest.SpyInstance;
+  let verifyInternalMemberSpy: jest.SpyInstance;
 
   beforeEach(() => {
     findMemberByIdSpy = jest
@@ -47,10 +48,33 @@ describe("consultChargeService (integration)", () => {
     createMercadoPagoClientSpy = jest
       .spyOn(mercadopagoIntegration, "createMercadoPagoClient")
       .mockResolvedValue({ consultPayment: jest.fn() } as any);
+
+    verifyInternalMemberSpy = jest
+      .spyOn(helperService, "verifyInternalMember")
+      .mockResolvedValue(undefined);
   });
 
   afterEach(() => {
     jest.restoreAllMocks();
+  });
+
+  it("should require an internal member before consulting", async () => {
+    await consultChargeService("member-id-123", "123456");
+
+    expect(verifyInternalMemberSpy).toHaveBeenCalledWith("member-id-123");
+  });
+
+  it("should throw and not read the charge when the caller is a guest", async () => {
+    verifyInternalMemberSpy.mockRejectedValue({
+      statusCode: 401,
+      message: "Unauthorized access",
+    });
+
+    await expect(
+      consultChargeService("guest-id-123", "123456"),
+    ).rejects.toMatchObject({ statusCode: 401 });
+
+    expect(findOneChargeSpy).not.toHaveBeenCalled();
   });
 
   it("should verify member exists before consulting", async () => {

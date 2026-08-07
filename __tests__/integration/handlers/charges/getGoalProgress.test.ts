@@ -1,4 +1,5 @@
 import { APIGatewayEvent } from "aws-lambda";
+import * as helperUtil from "../../../../src/utils/helper";
 import * as getGoalProgressServiceModule from "../../../../src/services/charges/getGoalProgress";
 import { execute } from "../../../../src/handlers/charges/getGoalProgress";
 
@@ -30,8 +31,13 @@ function buildEvent(
 
 describe("getGoalProgress handler (integration)", () => {
   let getGoalProgressServiceSpy: jest.SpyInstance;
+  let decodeTokenSpy: jest.SpyInstance;
 
   beforeEach(() => {
+    decodeTokenSpy = jest
+      .spyOn(helperUtil, "decodeToken")
+      .mockReturnValue({ sub: "member-id-123" } as any);
+
     getGoalProgressServiceSpy = jest
       .spyOn(getGoalProgressServiceModule, "getGoalProgressService")
       .mockResolvedValue(mockResult);
@@ -49,10 +55,14 @@ describe("getGoalProgress handler (integration)", () => {
     expect(body.data.achievedPercent).toBe(7.5);
   });
 
-  it("should call service with year and month", async () => {
+  it("should call service with the caller id, year and month", async () => {
     await execute(buildEvent({ year: "2026", month: "6" }));
 
-    expect(getGoalProgressServiceSpy).toHaveBeenCalledWith(2026, 6);
+    expect(getGoalProgressServiceSpy).toHaveBeenCalledWith(
+      "member-id-123",
+      2026,
+      6,
+    );
   });
 
   it("should default to current year and month when query is absent", async () => {
@@ -60,6 +70,7 @@ describe("getGoalProgress handler (integration)", () => {
     await execute(buildEvent(null));
 
     expect(getGoalProgressServiceSpy).toHaveBeenCalledWith(
+      "member-id-123",
       now.getFullYear(),
       now.getMonth() + 1,
     );
@@ -98,10 +109,20 @@ describe("getGoalProgress handler (integration)", () => {
     expect(result.statusCode).toBe(500);
   });
 
-  it("should not require admin — handler has no decodeToken call", async () => {
-    // Handler does not call decodeToken, so any authenticated request works.
+  it("should decode the authorization header", async () => {
+    await execute(buildEvent({ year: "2026", month: "6" }));
+
+    expect(decodeTokenSpy).toHaveBeenCalledWith("Bearer valid.token.here");
+  });
+
+  it("should propagate 401 when the service rejects a guest", async () => {
+    getGoalProgressServiceSpy.mockRejectedValue({
+      statusCode: 401,
+      message: "Unauthorized access",
+    });
+
     const result = await execute(buildEvent({ year: "2026", month: "6" }));
 
-    expect(result.statusCode).toBe(200);
+    expect(result.statusCode).toBe(401);
   });
 });

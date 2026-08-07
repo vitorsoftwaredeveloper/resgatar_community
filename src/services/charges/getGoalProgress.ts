@@ -10,6 +10,7 @@ import {
 } from "../../constants/charges";
 import { STATUS_CODE } from "../../constants";
 import { IExpenseDTO } from "../../types/expenses";
+import { verifyInternalMember } from "../helper";
 
 // DTO enxuto para exibir a doação na tela de meta (sem QR code / dados de MP).
 interface IGoalDonationItem {
@@ -79,10 +80,13 @@ const parseAmount = (value?: string | null): number => {
 const round2 = (value: number): number => Math.round(value * 100) / 100;
 
 export const getGoalProgressService = async (
+  requesterId: string,
   year: number,
   month: number,
 ): Promise<IGoalProgress> => {
   console.log("IN - getGoalProgressService");
+
+  await verifyInternalMember(requesterId);
 
   try {
     const monthKey = MONTH_KEYS[month - 1];

@@ -3,11 +3,13 @@ import { MemberModel } from "../../../../src/models/Member";
 import { DonationModel } from "../../../../src/models/Donation";
 import { ExpenseModel } from "../../../../src/models/Expense";
 import { MonthlyGoalModel } from "../../../../src/models/MonthlyGoal";
+import * as helperService from "../../../../src/services/helper";
 import { getGoalProgressService } from "../../../../src/services/charges/getGoalProgress";
 import { DEFAULT_MONTHLY_GOAL } from "../../../../src/constants/charges";
 
 const YEAR = 2026;
 const MONTH = 6;
+const REQUESTER_ID = "member-id-123";
 
 describe("getGoalProgressService (integration)", () => {
   let contributionFindSpy: jest.SpyInstance;
@@ -15,8 +17,13 @@ describe("getGoalProgressService (integration)", () => {
   let donationFindSpy: jest.SpyInstance;
   let expenseFindSpy: jest.SpyInstance;
   let monthlyGoalFindOneSpy: jest.SpyInstance;
+  let verifyInternalMemberSpy: jest.SpyInstance;
 
   beforeEach(() => {
+    verifyInternalMemberSpy = jest
+      .spyOn(helperService, "verifyInternalMember")
+      .mockResolvedValue(undefined);
+
     contributionFindSpy = jest
       .spyOn(ContributionModel, "find")
       .mockResolvedValue([] as any);
@@ -43,8 +50,38 @@ describe("getGoalProgressService (integration)", () => {
     jest.restoreAllMocks();
   });
 
+  it("should require an internal member before reading the progress", async () => {
+    await getGoalProgressService(REQUESTER_ID, YEAR, MONTH);
+
+    expect(verifyInternalMemberSpy).toHaveBeenCalledWith(REQUESTER_ID);
+  });
+
+  it("should throw and read nothing when the caller is a guest", async () => {
+    verifyInternalMemberSpy.mockRejectedValue({
+      statusCode: 401,
+      message: "Unauthorized access",
+    });
+
+    await expect(
+      getGoalProgressService("guest-id-123", YEAR, MONTH),
+    ).rejects.toMatchObject({ statusCode: 401 });
+
+    expect(contributionFindSpy).not.toHaveBeenCalled();
+    expect(donationFindSpy).not.toHaveBeenCalled();
+  });
+
+  it("should count donations without filtering by donor role, so guest donations reach the goal", async () => {
+    donationFindSpy.mockResolvedValue([{ amount: "30,00" }] as any);
+
+    const result = await getGoalProgressService(REQUESTER_ID, YEAR, MONTH);
+
+    expect(donationFindSpy.mock.calls[0][0]).not.toHaveProperty("role");
+    expect(result.donations).toBe(30);
+    expect(result.achieved).toBe(30);
+  });
+
   it("should return zeroed progress with the default goal when nothing exists", async () => {
-    const result = await getGoalProgressService(YEAR, MONTH);
+    const result = await getGoalProgressService(REQUESTER_ID, YEAR, MONTH);
 
     expect(result).toEqual({
       year: YEAR,
@@ -87,7 +124,7 @@ describe("getGoalProgressService (integration)", () => {
       },
     ] as any);
 
-    const result = await getGoalProgressService(YEAR, MONTH);
+    const result = await getGoalProgressService(REQUESTER_ID, YEAR, MONTH);
 
     expect(result.donationItems).toEqual([
       {
@@ -127,7 +164,7 @@ describe("getGoalProgressService (integration)", () => {
 
     expenseFindSpy.mockResolvedValue([{ amount: "45,00" }] as any);
 
-    const result = await getGoalProgressService(YEAR, MONTH);
+    const result = await getGoalProgressService(REQUESTER_ID, YEAR, MONTH);
 
     expect(result.collected).toBe(100);
     expect(result.donations).toBe(50);
@@ -153,7 +190,7 @@ describe("getGoalProgressService (integration)", () => {
 
     monthlyGoalFindOneSpy.mockResolvedValue({ amount: "100,00" } as any);
 
-    const result = await getGoalProgressService(YEAR, MONTH);
+    const result = await getGoalProgressService(REQUESTER_ID, YEAR, MONTH);
 
     expect(result.expenses).toBe(5000);
     expect(result.achieved).toBe(100);
@@ -161,7 +198,7 @@ describe("getGoalProgressService (integration)", () => {
   });
 
   it("should query donations, expenses and the monthly goal with a 0-indexed reference month", async () => {
-    await getGoalProgressService(YEAR, MONTH);
+    await getGoalProgressService(REQUESTER_ID, YEAR, MONTH);
 
     expect(donationFindSpy).toHaveBeenCalledWith(
       expect.objectContaining({ referenceYear: YEAR, referenceMonth: MONTH - 1 }),
@@ -181,7 +218,7 @@ describe("getGoalProgressService (integration)", () => {
   });
 
   it("should throw 400 for an invalid month", async () => {
-    await expect(getGoalProgressService(YEAR, 13)).rejects.toMatchObject({
+    await expect(getGoalProgressService(REQUESTER_ID, YEAR, 13)).rejects.toMatchObject({
       statusCode: 400,
     });
   });
@@ -200,7 +237,7 @@ describe("getGoalProgressService (integration)", () => {
       { _id: "m1", paymentInfo: { amount: "150,00" } },
     ] as any);
 
-    const result = await getGoalProgressService(YEAR, MONTH);
+    const result = await getGoalProgressService(REQUESTER_ID, YEAR, MONTH);
 
     expect(result.targetGoal).toBe(500);
     expect(result.achieved).toBe(150);
@@ -225,7 +262,7 @@ describe("getGoalProgressService (integration)", () => {
 
     donationFindSpy.mockResolvedValue([{ amount: "20,00" }] as any);
 
-    const result = await getGoalProgressService(YEAR, MONTH);
+    const result = await getGoalProgressService(REQUESTER_ID, YEAR, MONTH);
 
     expect(result.achieved).toBe(100);
     expect(result.goalReached).toBe(true);
@@ -247,7 +284,7 @@ describe("getGoalProgressService (integration)", () => {
       { _id: "m1", paymentInfo: { amount: "200,00" } },
     ] as any);
 
-    const result = await getGoalProgressService(YEAR, MONTH);
+    const result = await getGoalProgressService(REQUESTER_ID, YEAR, MONTH);
 
     expect(result.remaining).toBe(0);
     expect(result.goalReached).toBe(true);
@@ -267,7 +304,7 @@ describe("getGoalProgressService (integration)", () => {
       { _id: "m2", paymentInfo: { amount: "75,00" } },
     ] as any);
 
-    const result = await getGoalProgressService(YEAR, MONTH);
+    const result = await getGoalProgressService(REQUESTER_ID, YEAR, MONTH);
 
     // dues counts owed (paid + pending); achieved only what was collected.
     expect(result.dues).toBe(175);
@@ -286,14 +323,14 @@ describe("getGoalProgressService (integration)", () => {
       { _id: "m1", paymentInfo: { amount: "10,00" } },
     ] as any);
 
-    const result = await getGoalProgressService(YEAR, MONTH);
+    const result = await getGoalProgressService(REQUESTER_ID, YEAR, MONTH);
 
     expect(result.collected).toBe(100);
     expect(result.achieved).toBe(100);
   });
 
   it("should not expose member-level details", async () => {
-    const result = await getGoalProgressService(YEAR, MONTH);
+    const result = await getGoalProgressService(REQUESTER_ID, YEAR, MONTH);
 
     expect(result).not.toHaveProperty("members");
     expect(result).not.toHaveProperty("byMethod");
@@ -310,7 +347,7 @@ describe("getGoalProgressService (integration)", () => {
       { _id: "m1", paymentInfo: { amount: "100,00" } },
     ] as any);
 
-    const result = await getGoalProgressService(YEAR, MONTH);
+    const result = await getGoalProgressService(REQUESTER_ID, YEAR, MONTH);
 
     expect(result.collected).toBe(100);
   });
@@ -324,7 +361,7 @@ describe("getGoalProgressService (integration)", () => {
       { _id: "m1", paymentInfo: { amount: null } },
     ] as any);
 
-    const result = await getGoalProgressService(YEAR, MONTH);
+    const result = await getGoalProgressService(REQUESTER_ID, YEAR, MONTH);
 
     expect(result.dues).toBe(0);
     expect(result.achieved).toBe(0);
@@ -341,7 +378,7 @@ describe("getGoalProgressService (integration)", () => {
       { _id: "m1", paymentInfo: { amount: "100,00" } },
     ] as any);
 
-    const result = await getGoalProgressService(YEAR, MONTH);
+    const result = await getGoalProgressService(REQUESTER_ID, YEAR, MONTH);
 
     expect(result.collected).toBe(100);
   });
@@ -355,13 +392,13 @@ describe("getGoalProgressService (integration)", () => {
       { _id: "m1", paymentInfo: { amount: "100,00" } },
     ] as any);
 
-    const result = await getGoalProgressService(YEAR, MONTH);
+    const result = await getGoalProgressService(REQUESTER_ID, YEAR, MONTH);
 
     expect(result.collected).toBe(100);
   });
 
   it("should return year and month in the response", async () => {
-    const result = await getGoalProgressService(2025, 3);
+    const result = await getGoalProgressService(REQUESTER_ID, 2025, 3);
 
     expect(result.year).toBe(2025);
     expect(result.month).toBe(3);

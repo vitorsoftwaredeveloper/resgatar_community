@@ -7,7 +7,7 @@ import {
 import { createMercadoPagoClient } from "../../integrations/mercadopago";
 import { PAYMENT_METHOD_ID } from "../../constants/charges";
 import { IMember } from "../../types/members";
-import { findMemberById } from "../helper";
+import { findMemberById, verifyInternalMember } from "../helper";
 import { decrypt, encrypt } from "../../utils/crypto";
 
 export const createChargeService = async (
@@ -15,6 +15,8 @@ export const createChargeService = async (
   payload: ICreateChargePayload,
 ): Promise<any> => {
   console.log("IN - createChargeService");
+
+  await verifyInternalMember(memberId);
 
   const member: IMember = await findMemberById(memberId);
 

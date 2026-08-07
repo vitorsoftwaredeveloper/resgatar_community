@@ -47,7 +47,7 @@ const MemberSchema = new Schema(
     role: {
       type: String,
       enum: ASSIGNABLE_ROLES,
-      default: MEMBER_ROLES.USER,
+      default: MEMBER_ROLES.GUEST,
     },
     paymentInfo: { type: PaymentInfoSchema, required: true },
     identification: { type: IdentificationSchema, required: true },

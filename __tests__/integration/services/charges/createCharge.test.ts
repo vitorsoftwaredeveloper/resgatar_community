@@ -45,6 +45,7 @@ describe("createChargeService (integration)", () => {
   let encryptSpy: jest.SpyInstance;
   let insertOneSpy: jest.SpyInstance;
   let createPaymentMock: jest.Mock;
+  let verifyInternalMemberSpy: jest.SpyInstance;
 
   beforeEach(() => {
     process.env.ENCRYPTION_KEY = "a".repeat(64);
@@ -52,6 +53,10 @@ describe("createChargeService (integration)", () => {
     findMemberByIdSpy = jest
       .spyOn(helperService, "findMemberById")
       .mockResolvedValue(mockMember);
+
+    verifyInternalMemberSpy = jest
+      .spyOn(helperService, "verifyInternalMember")
+      .mockResolvedValue(undefined);
 
     decryptSpy = jest
       .spyOn(cryptoUtil, "decrypt")
@@ -75,6 +80,26 @@ describe("createChargeService (integration)", () => {
   afterEach(() => {
     jest.restoreAllMocks();
     delete process.env.ENCRYPTION_KEY;
+  });
+
+  it("should require an internal member before creating charge", async () => {
+    await createChargeService("member-id-123", { referenceMonth: 5 });
+
+    expect(verifyInternalMemberSpy).toHaveBeenCalledWith("member-id-123");
+  });
+
+  it("should throw and not create a charge when the caller is a guest", async () => {
+    verifyInternalMemberSpy.mockRejectedValue({
+      statusCode: 401,
+      message: "Unauthorized access",
+    });
+
+    await expect(
+      createChargeService("guest-id-123", { referenceMonth: 5 }),
+    ).rejects.toMatchObject({ statusCode: 401 });
+
+    expect(createPaymentMock).not.toHaveBeenCalled();
+    expect(insertOneSpy).not.toHaveBeenCalled();
   });
 
   it("should find member before creating charge", async () => {

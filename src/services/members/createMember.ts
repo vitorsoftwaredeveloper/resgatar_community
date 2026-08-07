@@ -2,7 +2,8 @@ import { MemberModel } from "../../models/Member";
 import { ISignUpPayload, IMember } from "../../types/members";
 import { DUPLICATE_KEY_ERROR_CODE, STATUS_CODE } from "../../constants";
 import { createCognitoUser, removeMemberCognito } from "../../utils/cognito";
-import { createContributionByYear, findMemberByEmail, findAdminPushTokens } from "../helper";
+import { findMemberByEmail, findAdminPushTokens } from "../helper";
+import { MEMBER_ROLES } from "../../constants/members";
 import { sendPushNotificationToTokens } from "../../integrations/firebase";
 import { encrypt } from "../../utils/crypto";
 
@@ -71,7 +72,7 @@ const createMember = async (payload: ISignUpPayload): Promise<any> => {
       type: payload.identification.type,
       numberType: encrypt(payload.identification.numberType),
     },
-    role: "user",
+    role: MEMBER_ROLES.GUEST,
   };
 
   await MemberModel.insertOne(memberData).catch(async (error) => {
@@ -84,19 +85,13 @@ const createMember = async (payload: ISignUpPayload): Promise<any> => {
     throw error;
   });
 
-  await createContributionByYear(
-    payload._id,
-    new Date().getFullYear(),
-    new Date().getMonth(),
-  );
-
   await findAdminPushTokens()
     .then((tokens) => {
       if (tokens.length === 0) return;
       return sendPushNotificationToTokens(
         tokens,
-        "Novo cadastro",
-        `Novo membro cadastrado: ${payload.email}`,
+        "Novo convidado",
+        `${payload.firstName} ${payload.lastName} se cadastrou e aguarda liberação de acesso.`,
       );
     })
     .catch((err) => console.error("Failed to notify admins of new member:", err));
