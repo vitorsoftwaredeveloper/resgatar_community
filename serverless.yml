@@ -26,7 +26,6 @@ provider:
     cors:
       allowedOrigins:
         - https://resgatar-browser.vercel.app
-        - http://localhost:3000
       allowedHeaders:
         - Content-Type
         - Authorization
