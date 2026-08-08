@@ -10,20 +10,23 @@ const MULTICAST_BATCH_SIZE = 500;
 
 const INVALID_TOKEN_CODES = [
   "messaging/invalid-registration-token",
-  "messaging/invalid-argument",
   "messaging/registration-token-not-registered",
 ];
 
 type MulticastBody = Omit<admin.messaging.MulticastMessage, "tokens">;
 
-const toAbsoluteLink = (link?: string): string | undefined => {
+const toHttpsLink = (link?: string): string | undefined => {
   if (!link) return undefined;
-  if (/^https?:\/\//.test(link)) return link;
 
-  const base = (process.env.FRONTEND_URL ?? "").replace(/\/$/, "");
-  if (!base) return undefined;
+  const absolute = /^https?:\/\//.test(link)
+    ? link
+    : (() => {
+        const base = (process.env.FRONTEND_URL ?? "").replace(/\/$/, "");
+        if (!base) return undefined;
+        return `${base}${link.startsWith("/") ? link : `/${link}`}`;
+      })();
 
-  return `${base}${link.startsWith("/") ? link : `/${link}`}`;
+  return absolute?.startsWith("https://") ? absolute : undefined;
 };
 
 const chunk = <T>(items: T[], size: number): T[][] => {
@@ -38,7 +41,6 @@ const buildData = (payload: INotificationPayload): Record<string, string> => ({
   ...(payload.data ?? {}),
   title: payload.title,
   body: payload.body,
-  ...(payload.link ? { url: payload.link } : {}),
 });
 
 const sendBatches = async (
@@ -73,14 +75,17 @@ const sendDataOnlyToWebTokens = (
   tokens: string[],
   payload: INotificationPayload,
 ): Promise<ITokenSendResult[]> => {
-  const absoluteLink = toAbsoluteLink(payload.link);
+  const httpsLink = toHttpsLink(payload.link);
 
   return sendBatches(tokens, {
     webpush: {
-      headers: { Urgency: "high" },
-      ...(absoluteLink ? { fcmOptions: { link: absoluteLink } } : {}),
+      headers: { Urgency: "high", TTL: "86400" },
+      ...(httpsLink ? { fcmOptions: { link: httpsLink } } : {}),
     },
-    data: buildData(payload),
+    data: {
+      ...buildData(payload),
+      ...(payload.link ? { url: payload.link } : {}),
+    },
   });
 };
 

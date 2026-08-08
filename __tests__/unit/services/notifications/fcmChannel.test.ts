@@ -74,7 +74,15 @@ describe("sendByFcm", () => {
 
     expect(message.notification).toBeUndefined();
     expect(message.data).toMatchObject({ title: "T", body: "B" });
-    expect(message.webpush.headers).toEqual({ Urgency: "high" });
+    expect(message.webpush.headers.Urgency).toBe("high");
+  });
+
+  it("should send a TTL so the push survives a device that is offline", async () => {
+    await sendByFcm([makeDevice("web-1", "web")], { title: "T", body: "B" });
+
+    const message = sendEachForMulticastMock.mock.calls[0][0];
+
+    expect(message.webpush.headers.TTL).toBe("86400");
   });
 
   it("should turn a relative link into an absolute fcm link for web tokens", async () => {
@@ -116,6 +124,50 @@ describe("sendByFcm", () => {
     const message = sendEachForMulticastMock.mock.calls[0][0];
 
     expect(message.webpush.fcmOptions).toBeUndefined();
+  });
+
+  it("should omit the fcm link when the frontend is not served over https", async () => {
+    process.env.FRONTEND_URL = "http://localhost:3000";
+
+    await sendByFcm([makeDevice("web-1", "web")], {
+      title: "T",
+      body: "B",
+      link: "/bills",
+    });
+
+    const message = sendEachForMulticastMock.mock.calls[0][0];
+
+    expect(message.webpush.fcmOptions).toBeUndefined();
+    expect(message.data.url).toBe("/bills");
+  });
+
+  it("should not carry the web route in the data sent to native tokens", async () => {
+    await sendByFcm([makeDevice("native-1")], {
+      title: "T",
+      body: "B",
+      link: "/bills",
+    });
+
+    const message = sendEachForMulticastMock.mock.calls[0][0];
+
+    expect(message.data.url).toBeUndefined();
+  });
+
+  it("should not treat a rejected message as a dead token", async () => {
+    sendEachForMulticastMock.mockResolvedValue({
+      successCount: 0,
+      failureCount: 1,
+      responses: [
+        { success: false, error: { code: "messaging/invalid-argument" } },
+      ],
+    });
+
+    const result = await sendByFcm([makeDevice("web-1", "web")], {
+      title: "T",
+      body: "B",
+    });
+
+    expect(result[0]).toMatchObject({ success: false, invalidToken: false });
   });
 
   it("should split web and native devices into separate sends", async () => {
