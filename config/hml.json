@@ -14,6 +14,7 @@
     "ENCRYPTION_KEY": "${ssm:/resgatar_community/encryption_key}",
     "FIREBASE_SERVICE_ACCOUNT": "${ssm:/resgatar_community/firebase_service_account}",
     "GOOGLE_TTS_API_KEY": "${ssm:/resgatar_community/google_tts_api_key}",
+    "FRONTEND_URL": "https://resgatar-browser.vercel.app",
     "RECEIPTS_BUCKET_NAME": "resgatar-community-receipts-hml"
   }
 }

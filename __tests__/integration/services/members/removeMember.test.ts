@@ -4,6 +4,7 @@ import { MemberModel } from "../../../../src/models/Member";
 import { ContributionModel } from "../../../../src/models/Contribution";
 import { ChargeModel } from "../../../../src/models/Charge";
 import { VideoModel } from "../../../../src/models/Video";
+import { DeviceModel } from "../../../../src/models/Device";
 import { removeMemberService } from "../../../../src/services/members/removeMember";
 
 describe("removeMemberService (integration)", () => {
@@ -13,6 +14,7 @@ describe("removeMemberService (integration)", () => {
   let deleteManyContributionSpy: jest.SpyInstance;
   let deleteManyChargeSpy: jest.SpyInstance;
   let deleteManyVideoSpy: jest.SpyInstance;
+  let deleteManyDeviceSpy: jest.SpyInstance;
 
   beforeEach(() => {
     verifyAdminSpy = jest
@@ -37,6 +39,10 @@ describe("removeMemberService (integration)", () => {
 
     deleteManyVideoSpy = jest
       .spyOn(VideoModel, "deleteMany")
+      .mockResolvedValue({} as any);
+
+    deleteManyDeviceSpy = jest
+      .spyOn(DeviceModel, "deleteMany")
       .mockResolvedValue({} as any);
   });
 
@@ -103,18 +109,21 @@ describe("removeMemberService (integration)", () => {
     expect(deleteManyVideoSpy).toHaveBeenCalledWith({ memberId: "member-id" });
   });
 
-  it("should delete member, contributions, charges and videos in parallel", async () => {
+  it("should delete every artifact owned by the member in parallel", async () => {
     const order: string[] = [];
 
     deleteOneMemberSpy.mockImplementation(async () => { order.push("member"); return {}; });
     deleteManyContributionSpy.mockImplementation(async () => { order.push("contribution"); return {}; });
     deleteManyChargeSpy.mockImplementation(async () => { order.push("charge"); return {}; });
     deleteManyVideoSpy.mockImplementation(async () => { order.push("video"); return {}; });
+    deleteManyDeviceSpy.mockImplementation(async () => { order.push("device"); return {}; });
 
     await removeMemberService("admin-id", "member-id");
 
-    expect(order).toHaveLength(4);
-    expect(order).toEqual(expect.arrayContaining(["member", "contribution", "charge", "video"]));
+    expect(order).toHaveLength(5);
+    expect(order).toEqual(
+      expect.arrayContaining(["member", "contribution", "charge", "video", "device"]),
+    );
   });
 
   it("should throw when Cognito removal fails", async () => {

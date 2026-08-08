@@ -1,25 +1,13 @@
-import { MemberModel } from "../../models/Member";
-import { unsubscribeTokensFromTopic } from "../../integrations/firebase";
+import { removeDeviceService } from "../devices/removeDevice";
 
 export const removePushTokenService = async (
   memberId: string,
-  pushToken: string
+  pushToken: string,
 ): Promise<void> => {
   console.log("IN - removePushTokenService");
 
   try {
-    const result = await MemberModel.updateOne(
-      { _id: memberId },
-      { $pull: { pushTokens: pushToken } }
-    );
-
-    if (result.matchedCount === 0) {
-      throw { statusCode: 404, message: "Member not found" };
-    }
-
-    await unsubscribeTokensFromTopic([pushToken]).catch((error) =>
-      console.error("Failed to unsubscribe push token from topic:", error)
-    );
+    await removeDeviceService(memberId, pushToken);
   } catch (error) {
     throw error;
   } finally {

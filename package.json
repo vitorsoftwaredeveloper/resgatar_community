@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "scripts": {
     "dev": "nodemon",
-    "migrate:push-tokens": "ts-node --transpile-only --compiler-options '{\"module\":\"CommonJS\",\"ignoreDeprecations\":\"5.0\"}' src/scripts/migratePushTokens.ts",
-    "migrate:push-tokens:hml": "DB=$(node -p \"require('./config/hml.json').environment.DB\") npm run migrate:push-tokens --",
-    "migrate:push-tokens:prod": "DB=$(node -p \"require('./config/prod.json').environment.DB\") npm run migrate:push-tokens --",
+    "migrate:devices": "ts-node --transpile-only --compiler-options '{\"module\":\"CommonJS\",\"ignoreDeprecations\":\"5.0\"}' src/scripts/migrateDevices.ts",
+    "migrate:devices:hml": "DB=$(node -p \"require('./config/hml.json').environment.DB\") npm run migrate:devices --",
+    "migrate:devices:prod": "DB=$(node -p \"require('./config/prod.json').environment.DB\") npm run migrate:devices --",
     "deploy:dev": "serverless deploy --stage dev",
     "predeploy:hml": "npm run migrate:push-tokens:hml",
     "deploy:hml": "serverless deploy --stage hml",

@@ -1,31 +1,23 @@
 import * as dbModule from "../../../../src/db";
 import { MemberModel } from "../../../../src/models/Member";
-import * as firebaseIntegration from "../../../../src/integrations/firebase";
+import * as notificationEngine from "../../../../src/services/notifications/sendNotification";
 import { execute } from "../../../../src/services/agents/paymentDayReminder";
 
 describe("paymentDayReminder agent (integration)", () => {
   let dbSpy: jest.SpyInstance;
   let memberFindSpy: jest.SpyInstance;
-  let memberUpdateManySpy: jest.SpyInstance;
-  let sendPushSpy: jest.SpyInstance;
+  let sendSpy: jest.SpyInstance;
 
   beforeEach(() => {
     dbSpy = jest.spyOn(dbModule, "db").mockResolvedValue(undefined as any);
 
     memberFindSpy = jest
       .spyOn(MemberModel, "find")
-      .mockResolvedValue([
-        { _id: "m1", firstName: "João", pushTokens: ["token-1"] },
-        { _id: "m2", firstName: "Maria", pushTokens: ["token-2"] },
-      ] as any);
+      .mockResolvedValue([{ _id: "m1" }, { _id: "m2" }] as any);
 
-    memberUpdateManySpy = jest
-      .spyOn(MemberModel, "updateMany")
-      .mockResolvedValue({} as any);
-
-    sendPushSpy = jest
-      .spyOn(firebaseIntegration, "sendPushNotificationToTokens")
-      .mockResolvedValue([]);
+    sendSpy = jest
+      .spyOn(notificationEngine, "sendNotification")
+      .mockResolvedValue(undefined);
   });
 
   afterEach(() => jest.restoreAllMocks());
@@ -58,41 +50,27 @@ describe("paymentDayReminder agent (integration)", () => {
     );
   });
 
-  it("should send push notification to all tokens", async () => {
+  it("should notify every member due today", async () => {
     await execute();
 
-    expect(sendPushSpy).toHaveBeenCalledWith(
-      ["token-1", "token-2"],
-      "Lembrete de Pagamento",
-      expect.any(String),
+    expect(sendSpy).toHaveBeenCalledWith(
+      ["m1", "m2"],
+      expect.objectContaining({ title: "Lembrete de Pagamento" }),
     );
   });
 
-  it("should not send notification when no members have payment due today", async () => {
+  it("should deep link to the bills screen", async () => {
+    await execute();
+
+    expect(sendSpy.mock.calls[0][1].link).toBe("/bills");
+  });
+
+  it("should not send anything when nobody has a payment due today", async () => {
     memberFindSpy.mockResolvedValue([]);
 
     await execute();
 
-    expect(sendPushSpy).not.toHaveBeenCalled();
-  });
-
-  it("should clear invalid push tokens returned by Firebase", async () => {
-    sendPushSpy.mockResolvedValue(["token-1"]);
-
-    await execute();
-
-    expect(memberUpdateManySpy).toHaveBeenCalledWith(
-      { pushTokens: { $in: ["token-1"] } },
-      { $pull: { pushTokens: { $in: ["token-1"] } } },
-    );
-  });
-
-  it("should not call updateMany when there are no invalid tokens", async () => {
-    sendPushSpy.mockResolvedValue([]);
-
-    await execute();
-
-    expect(memberUpdateManySpy).not.toHaveBeenCalled();
+    expect(sendSpy).not.toHaveBeenCalled();
   });
 
   it("should not throw when an error occurs", async () => {

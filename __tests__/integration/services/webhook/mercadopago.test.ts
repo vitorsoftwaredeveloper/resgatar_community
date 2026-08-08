@@ -1,9 +1,8 @@
 import { ChargeModel } from "../../../../src/models/Charge";
 import { ContributionModel } from "../../../../src/models/Contribution";
 import { DonationModel } from "../../../../src/models/Donation";
-import { MemberModel } from "../../../../src/models/Member";
 import * as mercadopagoIntegration from "../../../../src/integrations/mercadopago";
-import * as firebaseIntegration from "../../../../src/integrations/firebase";
+import * as notificationEngine from "../../../../src/services/notifications/sendNotification";
 import * as mongooseUtil from "../../../../src/utils/mongoose";
 import { processMercadoPagoWebhook } from "../../../../src/services/webhook/mercadopago";
 import { TRANSACTION_STATUS } from "../../../../src/constants/charges";
@@ -54,7 +53,6 @@ describe("processMercadoPagoWebhook (integration)", () => {
   let chargeModelFindOneSpy: jest.SpyInstance;
   let chargeModelUpdateOneSpy: jest.SpyInstance;
   let contributionModelUpdateOneSpy: jest.SpyInstance;
-  let memberModelFindByIdSpy: jest.SpyInstance;
   let sendPushSpy: jest.SpyInstance;
   let executeTransactionSpy: jest.SpyInstance;
 
@@ -76,13 +74,9 @@ describe("processMercadoPagoWebhook (integration)", () => {
       .spyOn(ContributionModel, "updateOne")
       .mockResolvedValue({} as any);
 
-    memberModelFindByIdSpy = jest
-      .spyOn(MemberModel, "findById")
-      .mockResolvedValue({ _id: "member-1", pushTokens: ["token-abc"] } as any);
-
     sendPushSpy = jest
-      .spyOn(firebaseIntegration, "sendPushNotificationToTokens")
-      .mockResolvedValue([]);
+      .spyOn(notificationEngine, "sendNotification")
+      .mockResolvedValue(undefined);
 
     executeTransactionSpy = jest
       .spyOn(mongooseUtil, "executeMongoTransaction")
@@ -137,13 +131,14 @@ describe("processMercadoPagoWebhook (integration)", () => {
     await processMercadoPagoWebhook(makePayload());
 
     expect(sendPushSpy).toHaveBeenCalledWith(
-      ["token-abc"],
-      "Pagamento confirmado!",
-      expect.any(String),
+      ["member-1"],
       expect.objectContaining({
-        type: "PAYMENT_CONFIRMED",
-        paymentMethod: "pix",
-        transactionId: String(mockCharge.transactionId),
+        title: "Pagamento confirmado!",
+        data: expect.objectContaining({
+          type: "PAYMENT_CONFIRMED",
+          paymentMethod: "pix",
+          transactionId: String(mockCharge.transactionId),
+        }),
       }),
     );
   });
@@ -156,22 +151,14 @@ describe("processMercadoPagoWebhook (integration)", () => {
 
     expect(sendPushSpy).toHaveBeenCalledWith(
       expect.any(Array),
-      expect.any(String),
-      expect.any(String),
-      expect.objectContaining({ transactionId: "99999" }),
+      expect.objectContaining({
+        data: expect.objectContaining({ transactionId: "99999" }),
+      }),
     );
   });
 
   it("should not send notification when payment is not approved", async () => {
     mpClientMock.consultPayment.mockResolvedValue({ ...mockPaymentData, status: TRANSACTION_STATUS.REJECTED });
-
-    await processMercadoPagoWebhook(makePayload());
-
-    expect(sendPushSpy).not.toHaveBeenCalled();
-  });
-
-  it("should not send notification when member has no pushTokens", async () => {
-    memberModelFindByIdSpy.mockResolvedValue({ _id: "member-1", pushTokens: [] } as any);
 
     await processMercadoPagoWebhook(makePayload());
 
@@ -271,7 +258,6 @@ describe("processMercadoPagoWebhook — donation flow (integration)", () => {
   let donationFindOneSpy: jest.SpyInstance;
   let donationUpdateOneSpy: jest.SpyInstance;
   let donationDeleteOneSpy: jest.SpyInstance;
-  let memberModelFindByIdSpy: jest.SpyInstance;
   let sendPushSpy: jest.SpyInstance;
 
   beforeEach(() => {
@@ -292,13 +278,9 @@ describe("processMercadoPagoWebhook — donation flow (integration)", () => {
       .spyOn(DonationModel, "deleteOne")
       .mockResolvedValue({ deletedCount: 1 } as any);
 
-    memberModelFindByIdSpy = jest
-      .spyOn(MemberModel, "findById")
-      .mockResolvedValue({ _id: "member-1", pushTokens: ["token-abc"] } as any);
-
     sendPushSpy = jest
-      .spyOn(firebaseIntegration, "sendPushNotificationToTokens")
-      .mockResolvedValue([]);
+      .spyOn(notificationEngine, "sendNotification")
+      .mockResolvedValue(undefined);
   });
 
   afterEach(() => jest.restoreAllMocks());
@@ -357,12 +339,13 @@ describe("processMercadoPagoWebhook — donation flow (integration)", () => {
     await processMercadoPagoWebhook(makePayload());
 
     expect(sendPushSpy).toHaveBeenCalledWith(
-      ["token-abc"],
-      "Pagamento confirmado!",
-      expect.any(String),
+      ["member-1"],
       expect.objectContaining({
-        type: "PAYMENT_CONFIRMED",
-        transactionId: "12345",
+        title: "Pagamento confirmado!",
+        data: expect.objectContaining({
+          type: "PAYMENT_CONFIRMED",
+          transactionId: "12345",
+        }),
       }),
     );
   });
@@ -373,14 +356,6 @@ describe("processMercadoPagoWebhook — donation flow (integration)", () => {
       status: TRANSACTION_STATUS.REJECTED,
     });
     donationFindOneSpy.mockResolvedValue({ ...mockDonation, status: TRANSACTION_STATUS.PENDING });
-
-    await processMercadoPagoWebhook(makePayload());
-
-    expect(sendPushSpy).not.toHaveBeenCalled();
-  });
-
-  it("should not send notification when member has no pushTokens", async () => {
-    memberModelFindByIdSpy.mockResolvedValue({ _id: "member-1", pushTokens: [] } as any);
 
     await processMercadoPagoWebhook(makePayload());
 

@@ -1,6 +1,5 @@
 import { MemberModel } from "../../models/Member";
-import { sendPushNotificationToTokens } from "../../integrations/firebase";
-import { clearInvalidPushTokens } from "../notifications/pushTokens";
+import { sendNotification } from "../notifications/sendNotification";
 import { purgeMember } from "../members/helper";
 
 // Política de retenção de contas inativas. Muitos usuários desinstalam o app
@@ -16,7 +15,7 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 const warnInactiveMembers = async (inactiveCutoff: Date) => {
   const toWarn = await MemberModel.find(
     { lastActiveAt: { $lt: inactiveCutoff }, deletionWarnedAt: null },
-    { _id: 1, pushTokens: 1 },
+    { _id: 1 },
     { lean: true },
   );
 
@@ -24,17 +23,13 @@ const warnInactiveMembers = async (inactiveCutoff: Date) => {
 
   if (toWarn.length === 0) return;
 
-  const tokens = toWarn.flatMap((m) => m.pushTokens ?? []);
-
-  if (tokens.length > 0) {
-    const invalidTokens = await sendPushNotificationToTokens(
-      tokens,
-      "Sentimos sua falta!",
-      `Faz tempo que você não aparece. Entre no app nos próximos ${GRACE_DAYS} dias para manter sua conta ativa.`,
-    );
-
-    await clearInvalidPushTokens(invalidTokens);
-  }
+  await sendNotification(
+    toWarn.map((member) => String(member._id)),
+    {
+      title: "Sentimos sua falta!",
+      body: `Faz tempo que você não aparece. Entre no app nos próximos ${GRACE_DAYS} dias para manter sua conta ativa.`,
+    },
+  );
 
   await MemberModel.updateMany(
     { _id: { $in: toWarn.map((m) => m._id) } },

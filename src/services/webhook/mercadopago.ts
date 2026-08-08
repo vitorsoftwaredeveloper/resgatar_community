@@ -1,7 +1,6 @@
 import { ChargeModel } from "../../models/Charge";
 import { ContributionModel } from "../../models/Contribution";
 import { DonationModel } from "../../models/Donation";
-import { MemberModel } from "../../models/Member";
 import { createMercadoPagoClient } from "../../integrations/mercadopago";
 import { DONATION_EXTERNAL_REFERENCE } from "../donations/createDonationPix";
 import { notifyPaymentConfirmed } from "../notifications/notifyPaymentConfirmed";
@@ -152,10 +151,8 @@ const notifyMember = async (
 ): Promise<void> => {
   console.log("IN - notifyMember", { memberId });
 
-  const member = await MemberModel.findById(memberId, {}, { lean: true });
-
   await notifyPaymentConfirmed(
-    member?.pushTokens,
+    memberId,
     CONTRIBUTION_PAYMENT_METHOD.PIX,
     transactionId,
   );
@@ -225,13 +222,8 @@ const processDonationApproval = async (
   );
 
   if (paymentData.status === TRANSACTION_STATUS.APPROVED) {
-    const member = await MemberModel.findById(
-      donation.memberId,
-      {},
-      { lean: true },
-    );
     await notifyPaymentConfirmed(
-      member?.pushTokens,
+      donation.memberId,
       CONTRIBUTION_PAYMENT_METHOD.PIX,
       paymentId,
     );

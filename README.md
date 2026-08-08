@@ -36,7 +36,7 @@ O Resgatar Community é uma plataforma de gestão comunitária que oferece:
 - Painéis financeiros para o administrador: resumo mensal e anual de arrecadação, progresso de meta e balanço anual (entradas x saídas)
 - Gestão de despesas da comunidade (CRUD) com categorias, resumo mensal e upload/visualização de comprovantes em S3 via URLs pré-assinadas
 - Gerenciamento de vídeos do YouTube: cadastro, listagem enriquecida (thumbnail, dados do membro) e remoção
-- Envio de push notifications via Firebase Cloud Messaging (FCM) para todos os usuários (notificações manuais e Liturgia Diária automatizada)
+- Envio de push notifications via Firebase Cloud Messaging (FCM) para app nativo e navegador (Chrome/Safari), com registro de dispositivos por token, mensagem por plataforma e poda automática de tokens mortos
 - Webhook do MercadoPago para atualização automática de status de pagamento e push notification ao membro na aprovação
 - Criptografia de dados sensíveis com AES-256-GCM
 - Tarefas agendadas diárias: remoção de cobranças expiradas, Liturgia Diária, lembrete de dia de pagamento e parabéns aos aniversariantes
@@ -51,7 +51,7 @@ A autenticação é feita por JWT do AWS Cognito. Além de estar autenticado, al
 
 Qualquer membro autenticado pode:
 
-- **Conta:** ver os próprios dados (`GET /members`), editar o próprio perfil, trocar a própria senha, atualizar o push token FCM e excluir a própria conta
+- **Conta:** ver os próprios dados (`GET /members`), editar o próprio perfil, trocar a própria senha, registrar/remover o dispositivo de push e excluir a própria conta
 - **Pagamentos:** criar a própria cobrança no MercadoPago (PIX/Boleto/Cartão) e consultar o status da transação
 - **Meta da comunidade:** consultar o progresso da meta de arrecadação do mês (`GET /charges/goal-progress`)
 - **Contribuições:** criar o registro de contribuição anual
@@ -178,6 +178,7 @@ As configurações por ambiente ficam em `config/{stage}.json` e são injetadas 
 | `MPAGO_NOTIFICATION_URL`   | URL de notificação (webhook) informada ao MercadoPago na criação da cobrança | createCharge                    |
 | `MPAGO_WEBHOOK_SECRET`     | Segredo para validação de assinatura do webhook do MercadoPago              | webhook                           |
 | `FIREBASE_SERVICE_ACCOUNT` | JSON da conta de serviço do Firebase codificado em Base64                   | notifications, charges, agents    |
+| `FRONTEND_URL`             | Origem do front usada para montar o link absoluto do web push               | todas as lambdas                  |
 
 ---
 
@@ -195,9 +196,10 @@ As configurações por ambiente ficam em `config/{stage}.json` e são injetadas 
 | GET    | `/members/birthdays`           | ✅     | Lista os aniversariantes do mês corrente                         |
 | GET    | `/members/{memberId}`          | 🔑     | Consulta um membro específico por id                             |
 | PUT    | `/members/{memberId}`          | 👤     | Atualiza os dados de um membro (alterar `role` exige admin)      |
-| DELETE | `/members/{memberId}`          | 👤     | Remove o membro e seus dados (contribuições, cobranças, vídeos)  |
+| DELETE | `/members/{memberId}`          | 👤     | Remove o membro e seus dados (contribuições, cobranças, vídeos, dispositivos) |
 | PUT    | `/members/{memberId}/password` | ✅     | Atualiza a senha do membro via Cognito                           |
-| PATCH  | `/members/push-token`          | ✅     | Atualiza o push token FCM do membro autenticado                  |
+| PATCH  | `/members/push-token`          | ✅     | Registra o push token do app nativo (compatibilidade; grava em `devices`) |
+| DELETE | `/members/push-token`          | ✅     | Remove o push token do app nativo (compatibilidade)              |
 
 ### Vídeos
 
@@ -246,9 +248,16 @@ As configurações por ambiente ficam em `config/{stage}.json` e são injetadas 
 
 ### Notificações
 
-| Método | Rota             | Acesso | Descrição                                                  |
-| ------ | ---------------- | ------ | ---------------------------------------------------------- |
-| POST   | `/notifications` | 🔑     | Envia push notification via FCM para todos os usuários      |
+| Método | Rota             | Acesso | Descrição                                                        |
+| ------ | ---------------- | ------ | ---------------------------------------------------------------- |
+| POST   | `/notifications` | 🔑     | Envia push notification via FCM para todos os dispositivos        |
+
+### Dispositivos
+
+| Método | Rota               | Acesso | Descrição                                                             |
+| ------ | ------------------ | ------ | --------------------------------------------------------------------- |
+| POST   | `/devices`         | ✅     | Registra (upsert por token) o dispositivo web do membro autenticado    |
+| DELETE | `/devices/{token}` | ✅     | Remove o dispositivo do membro autenticado                             |
 
 ### Webhook
 

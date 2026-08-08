@@ -53,7 +53,6 @@ const MemberSchema = new Schema(
     identification: { type: IdentificationSchema, required: true },
     status: { type: String, enum: ["active", "defaulter"], default: "active" },
     profileImage: { type: String, default: null },
-    pushTokens: { type: [String], default: [] },
     lastActiveAt: { type: Date, default: () => new Date() },
     deletionWarnedAt: { type: Date, default: null },
     readingStreak: {
@@ -72,6 +71,5 @@ const MemberSchema = new Schema(
 );
 
 MemberSchema.index({ role: 1 });
-MemberSchema.index({ pushTokens: 1 });
 
 export const MemberModel = createInstanceMongoose("members", MemberSchema);

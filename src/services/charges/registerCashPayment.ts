@@ -61,7 +61,7 @@ export const registerCashPaymentService = async (
     );
 
     await notifyPaymentConfirmed(
-      member.pushTokens,
+      String(member._id),
       CONTRIBUTION_PAYMENT_METHOD.CASH,
     );
 

@@ -1,29 +1,37 @@
-import * as firebaseIntegration from "../../../../src/integrations/firebase";
+import * as dbModule from "../../../../src/db";
+import * as notificationEngine from "../../../../src/services/notifications/sendNotification";
 import { execute } from "../../../../src/services/agents/dailyLiturgy";
 
 describe("dailyLiturgy agent (integration)", () => {
-  let sendPushSpy: jest.SpyInstance;
+  let broadcastSpy: jest.SpyInstance;
 
   beforeEach(() => {
-    sendPushSpy = jest
-      .spyOn(firebaseIntegration, "sendPushNotificationToAll")
-      .mockResolvedValue(undefined as any);
+    jest.spyOn(dbModule, "db").mockResolvedValue(undefined as any);
+
+    broadcastSpy = jest
+      .spyOn(notificationEngine, "sendNotificationToAllMembers")
+      .mockResolvedValue(undefined);
   });
 
   afterEach(() => jest.restoreAllMocks());
 
-  it("should send push notification to all members", async () => {
+  it("should broadcast to every registered device", async () => {
     await execute();
 
-    expect(sendPushSpy).toHaveBeenCalledTimes(1);
-    expect(sendPushSpy).toHaveBeenCalledWith(
-      "Liturgia Diária",
-      expect.any(String),
+    expect(broadcastSpy).toHaveBeenCalledTimes(1);
+    expect(broadcastSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "Liturgia Diária" }),
     );
   });
 
-  it("should not throw when push notification fails", async () => {
-    sendPushSpy.mockRejectedValue(new Error("Firebase unavailable"));
+  it("should deep link to the readings screen", async () => {
+    await execute();
+
+    expect(broadcastSpy.mock.calls[0][0].link).toBe("/readings");
+  });
+
+  it("should not throw when the broadcast fails", async () => {
+    broadcastSpy.mockRejectedValue(new Error("Firebase unavailable"));
 
     await expect(execute()).resolves.not.toThrow();
   });

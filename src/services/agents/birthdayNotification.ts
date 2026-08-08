@@ -1,7 +1,6 @@
 import { db } from "../../db";
 import { MemberModel } from "../../models/Member";
-import { sendPushNotificationToTokens } from "../../integrations/firebase";
-import { clearInvalidPushTokens } from "../notifications/pushTokens";
+import { sendNotification } from "../notifications/sendNotification";
 import { INTERNAL_ROLES } from "../../constants/members";
 
 export const execute = async () => {
@@ -16,7 +15,7 @@ export const execute = async () => {
 
     const allMembers = await MemberModel.find(
       { role: { $in: INTERNAL_ROLES }, dateOfBirth: { $ne: null } },
-      { firstName: 1, lastName: 1, dateOfBirth: 1, pushTokens: 1 },
+      { firstName: 1, lastName: 1, dateOfBirth: 1 },
       { lean: true },
     );
 
@@ -36,38 +35,26 @@ export const execute = async () => {
       .map((m) => `${m.firstName} ${m.lastName}`)
       .join(", ");
 
-    const communityTokens = allMembers
+    const communityIds = allMembers
       .filter((m) => !birthdayIds.has(String(m._id)))
-      .flatMap((m) => m.pushTokens ?? []);
-
-    const birthdayTokens = birthdayMembers.flatMap((m) => m.pushTokens ?? []);
+      .map((m) => String(m._id));
 
     const communityBody =
       birthdayMembers.length === 1
         ? `Hoje é aniversário de ${names}! Deseje um feliz aniversário!`
         : `Hoje é aniversário de ${names}! Deseje um feliz aniversário a eles!`;
 
-    const allInvalidTokens: string[] = [];
-
-    if (communityTokens.length > 0) {
-      const invalid = await sendPushNotificationToTokens(
-        communityTokens,
-        "🎂 Aniversariantes do dia",
-        communityBody,
-      );
-      allInvalidTokens.push(...invalid);
+    if (communityIds.length > 0) {
+      await sendNotification(communityIds, {
+        title: "🎂 Aniversariantes do dia",
+        body: communityBody,
+      });
     }
 
-    if (birthdayTokens.length > 0) {
-      const invalid = await sendPushNotificationToTokens(
-        birthdayTokens,
-        "🎉 Feliz Aniversário!",
-        "A comunidade Resgatar deseja a você um feliz aniversário! Que Deus te abençoe!",
-      );
-      allInvalidTokens.push(...invalid);
-    }
-
-    await clearInvalidPushTokens(allInvalidTokens);
+    await sendNotification([...birthdayIds], {
+      title: "🎉 Feliz Aniversário!",
+      body: "A comunidade Resgatar deseja a você um feliz aniversário! Que Deus te abençoe!",
+    });
   } catch (error) {
     console.error("Error sending birthday notification:", error);
   } finally {

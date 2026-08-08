@@ -21,11 +21,13 @@ provider:
   environment:
     STAGE: ${self:provider.stage}
     DB: ${self:custom.environment.DB}
+    FRONTEND_URL: ${self:custom.environment.FRONTEND_URL}
 
   httpApi:
     cors:
       allowedOrigins:
         - https://resgatar-browser.vercel.app
+        - http://localhost:3000
       allowedHeaders:
         - Content-Type
         - Authorization
@@ -91,6 +93,7 @@ functions:
   - ${file(src/handlers/balance/functions.yml)}
   - ${file(src/handlers/donations/functions.yml)}
   - ${file(src/handlers/notifications/functions.yml)}
+  - ${file(src/handlers/devices/functions.yml)}
   - ${file(src/handlers/videos/functions.yml)}
   - ${file(src/handlers/commitments/functions.yml)}
   - ${file(src/handlers/dashboardVisibility/functions.yml)}

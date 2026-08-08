@@ -1,6 +1,6 @@
 import * as dbModule from "../../../../src/db";
 import { MemberModel } from "../../../../src/models/Member";
-import * as firebaseIntegration from "../../../../src/integrations/firebase";
+import * as notificationEngine from "../../../../src/services/notifications/sendNotification";
 import { execute } from "../../../../src/services/agents/birthdayNotification";
 
 const today = new Date();
@@ -16,7 +16,6 @@ const birthdayMember1 = {
   firstName: "João",
   lastName: "Silva",
   dateOfBirth: String(makeDob(todayMonth, todayDay)),
-  pushTokens: ["token-birthday-1"],
 };
 
 const birthdayMember2 = {
@@ -24,7 +23,6 @@ const birthdayMember2 = {
   firstName: "Maria",
   lastName: "Santos",
   dateOfBirth: String(makeDob(todayMonth, todayDay)),
-  pushTokens: [],
 };
 
 const otherMember = {
@@ -32,14 +30,15 @@ const otherMember = {
   firstName: "Pedro",
   lastName: "Costa",
   dateOfBirth: String(makeDob(todayMonth === 12 ? 1 : todayMonth + 1, 1)),
-  pushTokens: ["token-other"],
 };
+
+const callFor = (spy: jest.SpyInstance, memberId: string) =>
+  spy.mock.calls.filter(([ids]) => ids.includes(memberId));
 
 describe("birthdayNotification agent (integration)", () => {
   let dbSpy: jest.SpyInstance;
   let memberFindSpy: jest.SpyInstance;
-  let memberUpdateManySpy: jest.SpyInstance;
-  let sendPushToTokensSpy: jest.SpyInstance;
+  let sendSpy: jest.SpyInstance;
 
   beforeEach(() => {
     dbSpy = jest.spyOn(dbModule, "db").mockResolvedValue(undefined as any);
@@ -48,13 +47,9 @@ describe("birthdayNotification agent (integration)", () => {
       .spyOn(MemberModel, "find")
       .mockResolvedValue([birthdayMember1, birthdayMember2, otherMember] as any);
 
-    memberUpdateManySpy = jest
-      .spyOn(MemberModel, "updateMany")
-      .mockResolvedValue({} as any);
-
-    sendPushToTokensSpy = jest
-      .spyOn(firebaseIntegration, "sendPushNotificationToTokens")
-      .mockResolvedValue([]);
+    sendSpy = jest
+      .spyOn(notificationEngine, "sendNotification")
+      .mockResolvedValue(undefined);
   });
 
   afterEach(() => jest.restoreAllMocks());
@@ -75,69 +70,39 @@ describe("birthdayNotification agent (integration)", () => {
     );
   });
 
-  it("should send community notification only to non-birthday members", async () => {
+  it("should send the community notification only to non-birthday members", async () => {
     await execute();
 
-    const communityCalls = sendPushToTokensSpy.mock.calls.filter(
-      ([tokens]) => tokens.includes("token-other"),
-    );
+    const communityCalls = callFor(sendSpy, "m3");
+
     expect(communityCalls).toHaveLength(1);
-    expect(communityCalls[0][0]).not.toContain("token-birthday-1");
+    expect(communityCalls[0][0]).not.toContain("m1");
   });
 
-  it("should send birthday notification only to birthday members with token", async () => {
+  it("should send the birthday notification only to birthday members", async () => {
     await execute();
 
-    const birthdayCalls = sendPushToTokensSpy.mock.calls.filter(
-      ([tokens]) => tokens.includes("token-birthday-1"),
-    );
+    const birthdayCalls = callFor(sendSpy, "m1");
+
     expect(birthdayCalls).toHaveLength(1);
-    expect(birthdayCalls[0][0]).not.toContain("token-other");
+    expect(birthdayCalls[0][0]).not.toContain("m3");
+    expect(birthdayCalls[0][1].title).toContain("Feliz Aniversário");
   });
 
-  it("should not include null push tokens in birthday notification", async () => {
-    await execute();
-
-    const allTokensSent = sendPushToTokensSpy.mock.calls.flatMap(([tokens]) => tokens);
-    expect(allTokensSent).not.toContain(null);
-  });
-
-  it("should mention birthday member name in community notification body", async () => {
+  it("should mention the birthday member name in the community body", async () => {
     memberFindSpy.mockResolvedValue([birthdayMember1, otherMember] as any);
 
     await execute();
 
-    const communityCalls = sendPushToTokensSpy.mock.calls.filter(
-      ([tokens]) => tokens.includes("token-other"),
-    );
-    expect(communityCalls[0][2]).toContain("João Silva");
+    expect(callFor(sendSpy, "m3")[0][1].body).toContain("João Silva");
   });
 
-  it("should not send any notification when no members have birthday today", async () => {
+  it("should not send anything when nobody has a birthday today", async () => {
     memberFindSpy.mockResolvedValue([otherMember] as any);
 
     await execute();
 
-    expect(sendPushToTokensSpy).not.toHaveBeenCalled();
-  });
-
-  it("should clear invalid push tokens returned by Firebase", async () => {
-    sendPushToTokensSpy.mockResolvedValue(["token-birthday-1"]);
-
-    await execute();
-
-    expect(memberUpdateManySpy).toHaveBeenCalledWith(
-      { pushTokens: { $in: expect.arrayContaining(["token-birthday-1"]) } },
-      { $pull: { pushTokens: { $in: expect.arrayContaining(["token-birthday-1"]) } } },
-    );
-  });
-
-  it("should not call updateMany when there are no invalid tokens", async () => {
-    sendPushToTokensSpy.mockResolvedValue([]);
-
-    await execute();
-
-    expect(memberUpdateManySpy).not.toHaveBeenCalled();
+    expect(sendSpy).not.toHaveBeenCalled();
   });
 
   it("should not throw when an error occurs", async () => {
@@ -146,29 +111,19 @@ describe("birthdayNotification agent (integration)", () => {
     await expect(execute()).resolves.not.toThrow();
   });
 
-  it("should use singular message when only one birthday member", async () => {
+  it("should use the singular message when there is a single birthday member", async () => {
     memberFindSpy.mockResolvedValue([birthdayMember1, otherMember] as any);
 
     await execute();
 
-    const communityCalls = sendPushToTokensSpy.mock.calls.filter(
-      ([tokens]) => tokens.includes("token-other"),
+    expect(callFor(sendSpy, "m3")[0][1].body).toMatch(
+      /aniversário de João Silva!/,
     );
-    expect(communityCalls[0][2]).toMatch(/aniversário de João Silva!/);
   });
 
-  it("should use plural message when multiple birthday members", async () => {
-    memberFindSpy.mockResolvedValue([
-      birthdayMember1,
-      { ...birthdayMember2, pushTokens: ["token-birthday-2"] },
-      otherMember,
-    ] as any);
-
+  it("should use the plural message when there are several birthday members", async () => {
     await execute();
 
-    const communityCalls = sendPushToTokensSpy.mock.calls.filter(
-      ([tokens]) => tokens.includes("token-other"),
-    );
-    expect(communityCalls[0][2]).toMatch(/a eles/);
+    expect(callFor(sendSpy, "m3")[0][1].body).toMatch(/a eles/);
   });
 });

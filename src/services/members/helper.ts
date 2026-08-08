@@ -3,6 +3,7 @@
 
 import { ChargeModel } from "../../models/Charge";
 import { ContributionModel } from "../../models/Contribution";
+import { DeviceModel } from "../../models/Device";
 import { MemberModel } from "../../models/Member";
 import { VideoModel } from "../../models/Video";
 import { removeMemberCognito } from "../../utils/cognito";
@@ -38,6 +39,7 @@ const purgeMember = async (idMember: string): Promise<void> => {
     ContributionModel.deleteMany({ memberId: idMember }),
     ChargeModel.deleteMany({ memberId: idMember }),
     VideoModel.deleteMany({ memberId: idMember }),
+    DeviceModel.deleteMany({ memberId: idMember }),
   ]);
 };
 

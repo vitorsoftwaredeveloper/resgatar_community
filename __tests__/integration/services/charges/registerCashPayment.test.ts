@@ -1,5 +1,5 @@
 import * as helperService from "../../../../src/services/helper";
-import * as firebaseIntegration from "../../../../src/integrations/firebase";
+import * as notificationEngine from "../../../../src/services/notifications/sendNotification";
 import { ContributionModel } from "../../../../src/models/Contribution";
 import { registerCashPaymentService } from "../../../../src/services/charges/registerCashPayment";
 import { IMember } from "../../../../src/types/members";
@@ -15,7 +15,6 @@ const mockMember: IMember = {
   status: "active",
   paymentInfo: { datePayment: 5, amount: "50,00" },
   identification: { type: "CPF", numberType: "ENC:encrypted-cpf" },
-  pushTokens: ["token-abc"],
 };
 
 const ADMIN_ID = "admin-id";
@@ -29,7 +28,7 @@ describe("registerCashPaymentService (integration)", () => {
   let findMemberByIdSpy: jest.SpyInstance;
   let findOneSpy: jest.SpyInstance;
   let updateOneSpy: jest.SpyInstance;
-  let sendPushSpy: jest.SpyInstance;
+  let sendNotificationSpy: jest.SpyInstance;
 
   beforeEach(() => {
     verifyAdminSpy = jest
@@ -50,9 +49,9 @@ describe("registerCashPaymentService (integration)", () => {
       .spyOn(ContributionModel, "updateOne")
       .mockResolvedValue({} as any);
 
-    sendPushSpy = jest
-      .spyOn(firebaseIntegration, "sendPushNotificationToTokens")
-      .mockResolvedValue([]);
+    sendNotificationSpy = jest
+      .spyOn(notificationEngine, "sendNotification")
+      .mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -100,20 +99,17 @@ describe("registerCashPaymentService (integration)", () => {
   it("should notify the target member after registering the payment", async () => {
     await registerCashPaymentService(ADMIN_ID, callPayload);
 
-    expect(sendPushSpy).toHaveBeenCalledWith(
-      ["token-abc"],
-      "Pagamento confirmado!",
-      "Seu pagamento foi processado com sucesso.",
-      expect.objectContaining({ type: "PAYMENT_CONFIRMED", paymentMethod: "cash" })
+    expect(sendNotificationSpy).toHaveBeenCalledWith(
+      [MEMBER_ID],
+      expect.objectContaining({
+        title: "Pagamento confirmado!",
+        body: "Seu pagamento foi processado com sucesso.",
+        data: expect.objectContaining({
+          type: "PAYMENT_CONFIRMED",
+          paymentMethod: "cash",
+        }),
+      })
     );
-  });
-
-  it("should not notify when target member has no pushTokens", async () => {
-    findMemberByIdSpy.mockResolvedValue({ ...mockMember, pushTokens: [] });
-
-    await registerCashPaymentService(ADMIN_ID, callPayload);
-
-    expect(sendPushSpy).not.toHaveBeenCalled();
   });
 
   it("should return the registered payment summary", async () => {
@@ -160,7 +156,7 @@ describe("registerCashPaymentService (integration)", () => {
     ).rejects.toMatchObject({ statusCode: 409 });
 
     expect(updateOneSpy).not.toHaveBeenCalled();
-    expect(sendPushSpy).not.toHaveBeenCalled();
+    expect(sendNotificationSpy).not.toHaveBeenCalled();
   });
 
   it("should throw when target member is not found", async () => {

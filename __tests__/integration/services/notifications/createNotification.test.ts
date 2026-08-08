@@ -1,5 +1,5 @@
 import * as helperService from "../../../../src/services/helper";
-import * as firebaseIntegration from "../../../../src/integrations/firebase";
+import * as notificationEngine from "../../../../src/services/notifications/sendNotification";
 import { createNotificationService } from "../../../../src/services/notifications/createNotification";
 import { INotification } from "../../../../src/types/notification";
 
@@ -10,15 +10,15 @@ const validNotification: INotification = {
 
 describe("createNotificationService (integration)", () => {
   let verifyAdminSpy: jest.SpyInstance;
-  let sendPushNotificationToAllSpy: jest.SpyInstance;
+  let broadcastSpy: jest.SpyInstance;
 
   beforeEach(() => {
     verifyAdminSpy = jest
       .spyOn(helperService, "verifyAdmin")
       .mockResolvedValue(undefined);
 
-    sendPushNotificationToAllSpy = jest
-      .spyOn(firebaseIntegration, "sendPushNotificationToAll")
+    broadcastSpy = jest
+      .spyOn(notificationEngine, "sendNotificationToAllMembers")
       .mockResolvedValue(undefined);
   });
 
@@ -39,30 +39,30 @@ describe("createNotificationService (integration)", () => {
       createNotificationService("user-id", validNotification)
     ).rejects.toMatchObject({ statusCode: 401 });
 
-    expect(sendPushNotificationToAllSpy).not.toHaveBeenCalled();
+    expect(broadcastSpy).not.toHaveBeenCalled();
   });
 
-  it("should call sendPushNotificationToAll with correct title and description", async () => {
+  it("should broadcast the title and description", async () => {
     await createNotificationService("admin-id", validNotification);
 
-    expect(sendPushNotificationToAllSpy).toHaveBeenCalledWith(
-      validNotification.title,
-      validNotification.description
-    );
+    expect(broadcastSpy).toHaveBeenCalledWith({
+      title: validNotification.title,
+      body: validNotification.description,
+    });
   });
 
-  it("should NOT call Firebase when admin verification fails", async () => {
+  it("should NOT broadcast when admin verification fails", async () => {
     verifyAdminSpy.mockRejectedValue({ statusCode: 401, message: "Unauthorized access" });
 
     await expect(
       createNotificationService("user-id", validNotification)
     ).rejects.toBeDefined();
 
-    expect(sendPushNotificationToAllSpy).not.toHaveBeenCalled();
+    expect(broadcastSpy).not.toHaveBeenCalled();
   });
 
-  it("should throw when Firebase fails", async () => {
-    sendPushNotificationToAllSpy.mockRejectedValue(new Error("Firebase error"));
+  it("should throw when the broadcast fails", async () => {
+    broadcastSpy.mockRejectedValue(new Error("Firebase error"));
 
     await expect(
       createNotificationService("admin-id", validNotification)

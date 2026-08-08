@@ -2,9 +2,9 @@ import { MemberModel } from "../../models/Member";
 import { ISignUpPayload, IMember } from "../../types/members";
 import { DUPLICATE_KEY_ERROR_CODE, STATUS_CODE } from "../../constants";
 import { createCognitoUser, removeMemberCognito } from "../../utils/cognito";
-import { findMemberByEmail, findAdminPushTokens } from "../helper";
+import { findMemberByEmail, findAdminIds } from "../helper";
 import { MEMBER_ROLES } from "../../constants/members";
-import { sendPushNotificationToTokens } from "../../integrations/firebase";
+import { sendNotification } from "../notifications/sendNotification";
 import { encrypt } from "../../utils/crypto";
 
 export const createMemberService = async (
@@ -85,15 +85,14 @@ const createMember = async (payload: ISignUpPayload): Promise<any> => {
     throw error;
   });
 
-  await findAdminPushTokens()
-    .then((tokens) => {
-      if (tokens.length === 0) return;
-      return sendPushNotificationToTokens(
-        tokens,
-        "Novo convidado",
-        `${payload.firstName} ${payload.lastName} se cadastrou e aguarda liberação de acesso.`,
-      );
-    })
+  await findAdminIds()
+    .then((adminIds) =>
+      sendNotification(adminIds, {
+        title: "Novo convidado",
+        body: `${payload.firstName} ${payload.lastName} se cadastrou e aguarda liberação de acesso.`,
+        link: "/member-actions",
+      }),
+    )
     .catch((err) => console.error("Failed to notify admins of new member:", err));
 
   console.log("OUT - createMember");

@@ -30,7 +30,6 @@ interface ISignUpPayload {
 type IMember = Omit<ISignUpPayload, "password"> & {
   role: MemberRole;
   status: "active" | "defaulter";
-  pushTokens?: string[];
   lastActiveAt?: Date;
   deletionWarnedAt?: Date | null;
 };

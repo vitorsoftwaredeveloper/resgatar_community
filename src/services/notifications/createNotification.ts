@@ -1,6 +1,6 @@
 import { verifyAdmin } from "../helper";
 import { INotification } from "../../types/notification";
-import { sendPushNotificationToAll } from "../../integrations/firebase";
+import { sendNotificationToAllMembers } from "./sendNotification";
 
 export const createNotificationService = async (
   adminId: string,
@@ -11,10 +11,10 @@ export const createNotificationService = async (
   try {
     await verifyAdmin(adminId);
 
-    await sendPushNotificationToAll(
-      notification.title,
-      notification.description,
-    );
+    await sendNotificationToAllMembers({
+      title: notification.title,
+      body: notification.description,
+    });
   } catch (error) {
     throw error;
   } finally {
