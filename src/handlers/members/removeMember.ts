@@ -10,17 +10,17 @@ export const execute = async (
 ): Promise<APIGatewayProxyResult> => {
   console.log("IN - removeMember");
 
-  const requester = decodeToken(event.headers.authorization as string);
-
-  const memberToRemoveId = event.pathParameters?.memberId as string;
-  if (!memberToRemoveId) {
-    throw {
-      statusCode: STATUS_CODE.BAD_REQUEST,
-      message: "Member Id is required",
-    };
-  }
-
   try {
+    const requester = decodeToken(event.headers.authorization as string);
+
+    const memberToRemoveId = event.pathParameters?.memberId as string;
+    if (!memberToRemoveId) {
+      return sendErrorResponse({
+        statusCode: STATUS_CODE.BAD_REQUEST,
+        message: "Member Id is required",
+      });
+    }
+
     await removeMemberService(requester.sub, memberToRemoveId);
 
     return sendSuccessResponse("", STATUS_CODE.NO_CONTENT);

@@ -27,15 +27,19 @@ export const updatePushTokenService = async (
   console.log("IN - updatePushTokenService");
 
   try {
-    const result = await MemberModel.updateOne({ _id: memberId }, [
-      {
-        $set: {
-          pushTokens: buildDedupedCappedTokens(pushToken),
-          lastActiveAt: "$$NOW",
-          deletionWarnedAt: null,
+    const result = await MemberModel.updateOne(
+      { _id: memberId },
+      [
+        {
+          $set: {
+            pushTokens: buildDedupedCappedTokens(pushToken),
+            lastActiveAt: "$$NOW",
+            deletionWarnedAt: null,
+          },
         },
-      },
-    ]);
+      ],
+      { updatePipeline: true },
+    );
 
     if (result.matchedCount === 0) {
       throw { statusCode: 404, message: "Member not found" };

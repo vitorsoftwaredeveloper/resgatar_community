@@ -11,28 +11,30 @@ export const execute = async (
 ): Promise<APIGatewayProxyResult> => {
   console.log("IN - updatePassword");
 
-  const memberCredentials = decodeToken(event.headers.authorization as string);
-  const payload = parseRequestBody(event.body) as any;
-  const memberId = event.pathParameters?.memberId;
-
-  const errors = validate(updatePasswordSchema, payload);
-  console.log("Errors:", errors);
-  if (errors.length > 0) {
-    throw {
-      statusCode: 400,
-      message: "Validation Error",
-      errors,
-    };
-  }
-
-  if (!memberId) {
-    return sendErrorResponse({
-      statusCode: STATUS_CODE.BAD_REQUEST,
-      message: "Member ID is required in path parameters",
-    });
-  }
-
   try {
+    const memberCredentials = decodeToken(
+      event.headers.authorization as string,
+    );
+    const payload = parseRequestBody(event.body) as any;
+    const memberId = event.pathParameters?.memberId;
+
+    const errors = validate(updatePasswordSchema, payload);
+    console.log("Errors:", errors);
+    if (errors.length > 0) {
+      return sendErrorResponse({
+        statusCode: STATUS_CODE.BAD_REQUEST,
+        message: "Validation Error",
+        errors,
+      });
+    }
+
+    if (!memberId) {
+      return sendErrorResponse({
+        statusCode: STATUS_CODE.BAD_REQUEST,
+        message: "Member ID is required in path parameters",
+      });
+    }
+
     await updatePasswordService(
       memberCredentials.sub,
       payload.password,
